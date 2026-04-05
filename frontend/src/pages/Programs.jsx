@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { programs as programsApi, profile as profileApi } from '../api';
+import { programs as programsApi, profile as profileApi, points as pointsApi } from '../api';
 import { Spinner, BackHeader } from '../components/UI';
 import { G, GL, GLL, GOLD, BD, INK, INK2, INK3, OW, W, RED, REDBG, sans, serif } from '../utils/theme';
 
@@ -25,7 +25,8 @@ function LecturePage({ prog, mod, lec, progress, onBack, onComplete, flash }) {
       await profileApi.saveProgress({ lectureId: lec.id, checks: newChecks, completed: !!allDone });
       if (allDone && !saved) {
         setSaved(true);
-        flash('✓ Этап завершён');
+        flash('✓ Этап завершён +10 баллов');
+        pointsApi.award(10, 'lecture_complete', lec.id, 'lecture').catch(() => {});
         onComplete(lec.id);
       }
     } catch (e) { /* non-blocking */ }

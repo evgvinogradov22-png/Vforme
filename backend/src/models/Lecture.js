@@ -8,6 +8,7 @@ const Lecture = sequelize.define('Lecture', {
   videoUrl: { type: DataTypes.STRING },
   content:  { type: DataTypes.JSONB },
   tasks:    { type: DataTypes.JSONB },
+  points:   { type: DataTypes.INTEGER, defaultValue: 10 },
   order:    { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { timestamps: true });
 module.exports = Lecture;

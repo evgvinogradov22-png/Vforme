@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { profile as profileApi } from '../api';
+import { profile as profileApi, points as pointsApi } from '../api';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from '../components/UI';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, OW, W, RED, REDBG, sans, serif } from '../utils/theme';
@@ -24,11 +24,17 @@ function ScoreBadge({ label, value }) {
 export default function Cabinet() {
   const { user, logout } = useAuth();
   const [answers, setAnswers] = useState({});
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [pointsHistory, setPointsHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    profileApi.get()
-      .then(p => { if (p?.answers) setAnswers(p.answers); })
+    Promise.all([profileApi.get(), pointsApi.get()])
+      .then(([p, pts]) => {
+        if (p?.answers) setAnswers(p.answers);
+        setTotalPoints(pts.total || 0);
+        setPointsHistory(pts.history || []);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -49,9 +55,29 @@ export default function Cabinet() {
         <div style={{ fontFamily: serif, fontSize: 24, color: W, fontWeight: 600 }}>{a.name || user?.name || 'Участница'}</div>
         <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginTop: 4, fontFamily: sans }}>{user?.email || '—'}</div>
         {a.city && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 2, fontFamily: sans }}>📍 {a.city}</div>}
+
+        {/* БАЛЛЫ */}
+        <div style={{ marginTop: 20, display: 'inline-block', background: 'rgba(196,162,107,0.2)', border: '1px solid rgba(196,162,107,0.4)', borderRadius: 20, padding: '10px 24px' }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: GOLD, fontFamily: serif }}>{totalPoints}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontFamily: sans, letterSpacing: 1 }}>БАЛЛОВ</div>
+        </div>
       </div>
 
       <div style={{ padding: '24px 20px' }}>
+
+        {/* ИСТОРИЯ БАЛЛОВ */}
+        {pointsHistory.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12, fontFamily: sans }}>ИСТОРИЯ БАЛЛОВ</div>
+            {pointsHistory.slice(0, 5).map((p, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid ' + BD }}>
+                <div style={{ fontSize: 14, color: INK, fontFamily: sans }}>{p.reason === 'lecture_complete' ? '✓ Урок завершён' : p.reason === 'module_complete' ? '🏆 Модуль завершён' : p.reason || 'Начисление'}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: GOLD, fontFamily: sans }}>+{p.amount}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {(a.weight || a.height || a.goal_weight || a.waist || a.hips) && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 14, fontFamily: sans }}>МОИ ПАРАМЕТРЫ</div>
@@ -74,7 +100,7 @@ export default function Cabinet() {
           </div>
         )}
 
-        {(a.sleep_score !== undefined || a.skin_score !== undefined || a.stress_score !== undefined || a.activity_score !== undefined || a.energy_score !== undefined) && (
+        {(a.sleep_score !== undefined || a.energy_score !== undefined) && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 14, fontFamily: sans }}>ОЦЕНКИ ИЗ АНКЕТЫ</div>
             <ScoreBadge label="Качество сна" value={a.sleep_score} />

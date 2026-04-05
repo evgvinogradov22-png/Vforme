@@ -5,7 +5,6 @@ require('dotenv').config();
 
 const sequelize = require('./db');
 
-// models (init)
 require('./models/User');
 require('./models/Program');
 require('./models/Module');
@@ -18,6 +17,7 @@ require('./models/UserProgress');
 require('./models/UserProfile');
 require('./models/HabitLog');
 require('./models/Task');
+require('./models/Points');
 
 const app = express();
 
@@ -40,6 +40,7 @@ app.use('/api/supplements', require('./routes/supplements'));
 app.use('/api/tracker',     require('./routes/tracker'));
 app.use('/api/profile',     require('./routes/profile'));
 app.use('/api/admin',       require('./routes/admin'));
+app.use('/api/points',      require('./routes/points'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 

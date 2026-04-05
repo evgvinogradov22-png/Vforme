@@ -1,0 +1,135 @@
+import { useState, useEffect } from 'react';
+import { recipes as recipesApi } from '../api';
+import { C, Spinner, Card, Btn, Modal, Input, Textarea, Table } from '../components/UI';
+
+function RecipeModal({ recipe, onClose, onSave }) {
+  const [data, setData] = useState(recipe || { title: '', cat: 'Завтрак', time: '', kcal: '', protein: '', fat: '', carbs: '', fact: '' });
+  const [ingredientsText, setIngredientsText] = useState((recipe?.ingredients || []).join('\n'));
+  const [stepsText, setStepsText] = useState((recipe?.steps || []).join('\n'));
+  const [image, setImage] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        ...data,
+        ingredients: ingredientsText.split('\n').filter(Boolean),
+        steps: stepsText.split('\n').filter(Boolean),
+        kcal: data.kcal ? Number(data.kcal) : null,
+        protein: data.protein ? Number(data.protein) : null,
+        fat: data.fat ? Number(data.fat) : null,
+        carbs: data.carbs ? Number(data.carbs) : null,
+      };
+      if (recipe?.id) {
+        await recipesApi.update(recipe.id, payload);
+      } else {
+        const fd = new FormData();
+        fd.append('data', JSON.stringify(payload));
+        if (image) fd.append('image', image);
+        await recipesApi.create(fd);
+      }
+      onSave();
+      onClose();
+    } catch (e) { alert(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const cats = ['Завтрак', 'Обед', 'Ужин', 'Перекус', 'Напитки'];
+
+  return (
+    <Modal title={recipe ? 'Редактировать рецепт' : 'Новый рецепт'} onClose={onClose} width={600}>
+      <Input label="Название" value={data.title} onChange={v => setData(d => ({ ...d, title: v }))} placeholder="Шакшука" />
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>КАТЕГОРИЯ</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {cats.map(c => (
+            <button key={c} onClick={() => setData(d => ({ ...d, cat: c }))}
+              style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${data.cat === c ? C.green : C.border}`, background: data.cat === c ? C.green : C.white, color: data.cat === c ? '#fff' : C.ink2, cursor: 'pointer', fontSize: 13 }}>{c}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <Input label="Время" value={data.time || ''} onChange={v => setData(d => ({ ...d, time: v }))} placeholder="20 мин" style={{ flex: 1 }} />
+        <Input label="Ккал" value={data.kcal || ''} onChange={v => setData(d => ({ ...d, kcal: v }))} placeholder="300" type="number" style={{ flex: 1 }} />
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <Input label="Белки (г)" value={data.protein || ''} onChange={v => setData(d => ({ ...d, protein: v }))} type="number" style={{ flex: 1 }} />
+        <Input label="Жиры (г)" value={data.fat || ''} onChange={v => setData(d => ({ ...d, fat: v }))} type="number" style={{ flex: 1 }} />
+        <Input label="Углеводы (г)" value={data.carbs || ''} onChange={v => setData(d => ({ ...d, carbs: v }))} type="number" style={{ flex: 1 }} />
+      </div>
+      <Textarea label="Ингредиенты (каждый с новой строки)" value={ingredientsText} onChange={setIngredientsText} placeholder="Яйца — 4 шт.&#10;Томаты — 2 шт." rows={4} />
+      <Textarea label="Шаги приготовления" value={stepsText} onChange={setStepsText} placeholder="Обжарить лук.&#10;Добавить томаты." rows={4} />
+      <Textarea label="Интересный факт" value={data.fact || ''} onChange={v => setData(d => ({ ...d, fact: v }))} placeholder="Польза блюда..." rows={2} />
+      {!recipe && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ФОТО</div>
+          <input type="file" accept="image/*" onChange={e => setImage(e.target.files[0])} />
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+        <Btn onClick={onClose} variant="ghost" style={{ flex: 1 }}>Отмена</Btn>
+        <Btn onClick={save} disabled={!data.title || saving} variant="primary" style={{ flex: 2 }}>{saving ? 'Сохраняем...' : 'Сохранить'}</Btn>
+      </div>
+    </Modal>
+  );
+}
+
+export default function Recipes({ flash }) {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null);
+
+  const load = () => { recipesApi.getAll().then(setList).catch(() => {}).finally(() => setLoading(false)); };
+  useEffect(() => { load(); }, []);
+
+  const del = async (id) => {
+    if (!confirm('Удалить рецепт?')) return;
+    try { await recipesApi.delete(id); setList(p => p.filter(x => x.id !== id)); flash('Удалено'); }
+    catch (e) { flash('Ошибка', 'error'); }
+  };
+
+  if (loading) return <Spinner />;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: C.ink }}>Рецепты</div>
+          <div style={{ fontSize: 14, color: C.ink3, marginTop: 2 }}>{list.length} рецептов</div>
+        </div>
+        <Btn onClick={() => setModal({})} variant="primary">+ Рецепт</Btn>
+      </div>
+
+      <Card style={{ padding: 0 }}>
+        <Table
+          columns={[
+            { title: 'Название', key: 'title', render: (v, row) => (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {row.imageUrl && <img src={row.imageUrl} style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover' }} />}
+                <div>
+                  <div style={{ fontWeight: 600, color: C.ink }}>{v}</div>
+                  <div style={{ fontSize: 12, color: C.ink3 }}>{row.cat}{row.time ? ' · ' + row.time : ''}</div>
+                </div>
+              </div>
+            )},
+            { title: 'Ккал', key: 'kcal', render: v => v ? v + ' ккал' : '—' },
+            { title: 'Автор', key: 'authorName', render: v => v || '—' },
+            { title: 'Лайки', key: 'likes' },
+            { title: '', key: 'id', render: (v, row) => (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <Btn onClick={() => setModal(row)} variant="ghost" size="sm">Изменить</Btn>
+                <Btn onClick={() => del(v)} variant="danger" size="sm">✕</Btn>
+              </div>
+            )},
+          ]}
+          data={list}
+        />
+      </Card>
+
+      {modal !== null && (
+        <RecipeModal recipe={modal.id ? modal : null} onClose={() => setModal(null)} onSave={() => { load(); flash('Сохранено'); }} />
+      )}
+    </div>
+  );
+}

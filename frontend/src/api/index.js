@@ -66,3 +66,10 @@ export const profile = {
   getProgress: () => req('GET', '/profile/progress'),
   saveProgress: (data) => req('POST', '/profile/progress', data),
 };
+
+// ── POINTS ──────────────────────────────────────────────────
+export const points = {
+  get: () => req('GET', '/points'),
+  award: (amount, reason, refId, refType) =>
+    req('POST', '/points/award', { amount, reason, refId, refType }),
+};
