@@ -1,0 +1,15 @@
+export const G     = '#2D4A2D';
+export const GL    = '#3D6B3D';
+export const GLL   = '#EBF0EB';
+export const GOLD  = '#C4A26B';
+export const GOLDD = '#A8885A';
+export const BD    = '#E0DAD0';
+export const INK   = '#1A1A1A';
+export const INK2  = '#555';
+export const INK3  = '#999';
+export const OW    = '#F9F7F4';
+export const W     = '#FFFFFF';
+export const RED   = '#CC4444';
+export const REDBG = '#FFF0F0';
+export const sans  = "'Arial', sans-serif";
+export const serif = "'Georgia', serif";
