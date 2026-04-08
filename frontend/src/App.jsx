@@ -62,6 +62,13 @@ function AppShell() {
     if (user) log.sessionStart();
   }, [user?.id]);
 
+  // Слушаем запрос на открытие продукта из чата → переключаемся на вкладку Здоровье
+  useEffect(() => {
+    const handler = () => setTab('health');
+    window.addEventListener('vforme:open-health-product', handler);
+    return () => window.removeEventListener('vforme:open-health-product', handler);
+  }, []);
+
   // Live-обновления через WebSocket
   useWebSocket((msg) => {
     if (!msg || !msg.type) return;

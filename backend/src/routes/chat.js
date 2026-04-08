@@ -131,6 +131,33 @@ async function rollUpSummary(userId, prevSummary) {
   }
 }
 
+// Каталог продуктов для AI — чтобы умел ссылаться когда уместно
+async function buildCatalogContext() {
+  try {
+    const Program = require('../models/Program');
+    const Protocol = require('../models/Protocol');
+    const SupplementScheme = require('../models/SupplementScheme');
+    const [programs, protocols, schemes] = await Promise.all([
+      Program.findAll({ where: { available: true }, order: [['order', 'ASC']] }).catch(() => []),
+      Protocol.findAll({ where: { available: true }, order: [['order', 'ASC']] }).catch(() => []),
+      SupplementScheme.findAll({ where: { available: true } }).catch(() => []),
+    ]);
+    if (programs.length + protocols.length + schemes.length === 0) return '';
+
+    const fmt = (kind, p) => {
+      const price = Number(p.price) > 0 ? `${p.price} руб.` : 'бесплатно';
+      const desc = (p.desc || p.description || '').slice(0, 160).replace(/\s+/g, ' ');
+      return `- [[product:${kind}:${p.id}:${p.title}]] (${price})${desc ? ' — ' + desc : ''}`;
+    };
+    const lines = ['=== ДОСТУПНЫЕ ПРОДУКТЫ V ФОРМЕ ==='];
+    if (programs.length)  { lines.push('Программы:');  programs.forEach(p => lines.push(fmt('program', p))); }
+    if (protocols.length) { lines.push('Протоколы:');  protocols.forEach(p => lines.push(fmt('protocol', p))); }
+    if (schemes.length)   { lines.push('Схемы БАД:');  schemes.forEach(p => lines.push(fmt('scheme', p))); }
+    lines.push('=== КОНЕЦ КАТАЛОГА ===');
+    return lines.join('\n');
+  } catch { return ''; }
+}
+
 // Профиль клиента + последний Атлас → блок системного контекста
 async function buildClientContext(userId) {
   const user = await User.findByPk(userId);
@@ -211,14 +238,24 @@ router.post('/message', auth, async (req, res) => {
       limit: ACTIVE_WINDOW,
     });
 
-    // 3) Профиль клиента из БД и Атласа
-    const clientContext = await buildClientContext(req.user.id);
+    // 3) Профиль клиента из БД и Атласа + каталог продуктов
+    const [clientContext, catalogContext] = await Promise.all([
+      buildClientContext(req.user.id),
+      buildCatalogContext(),
+    ]);
 
-    const baseSystemPrompt = s.systemPrompt ||
-      `Ты — Кристина Виноградова, нутрициолог и эксперт по здоровью. Ты общаешься с клиентами своего приложения V Форме на "ты", тёпло и поддерживающе, но профессионально. У тебя ВСЕГДА есть профиль клиента и история переписки — ОБЯЗАТЕЛЬНО используй их в каждом ответе: обращайся по имени, ссылайся на конкретные ответы из его атласа здоровья, помни что вы уже обсуждали. Никогда не отвечай абстрактно — всегда привязывайся к фактам о клиенте.`;
+    const baseSystemPrompt = s.systemPrompt || `Ты — Кристина Виноградова, нутрициолог и эксперт по здоровью. Общаешься с клиентом своего приложения V Форме на "ты", тёпло и поддерживающе.
+
+ВАЖНЫЕ ПРАВИЛА:
+1. У тебя есть профиль клиента и история переписки — ВСЕГДА используй их. Обращайся по имени, ссылайся на конкретные ответы из его Атласа здоровья, помни что вы уже обсуждали. Никогда не отвечай абстрактно.
+2. НЕ продавай и НЕ навязывай продукты. Если клиент просто здоровается, просто рассказывает или задаёт общий вопрос — отвечай как обычный человек, без рекомендаций.
+3. Ссылайся на конкретный продукт ТОЛЬКО когда клиент описывает реальную проблему, для решения которой этот продукт прямо подходит. Максимум 1–2 продукта за сообщение, и только если это органично.
+4. Когда нужно сослаться на продукт из каталога — вставляй прямо в текст маркер ровно в формате [[product:KIND:ID:НАЗВАНИЕ]], где KIND это program/protocol/scheme. Пример: "Посмотри [[product:program:abc-123:Здоровье кишечника]] — там как раз про это." Маркер автоматически превратится в кликабельную карточку.
+5. НЕ выдумывай продукты которых нет в каталоге. Если в каталоге нет ничего подходящего — просто дай совет своими словами.`;
 
     const systemParts = [baseSystemPrompt];
     if (clientContext) systemParts.push(clientContext);
+    if (catalogContext) systemParts.push(catalogContext);
     if (summary) {
       systemParts.push(`=== РЕЗЮМЕ ПРЕДЫДУЩИХ РАЗГОВОРОВ С ЭТИМ КЛИЕНТОМ ===\n${summary}\n=== КОНЕЦ РЕЗЮМЕ ===`);
     }

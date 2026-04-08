@@ -102,7 +102,39 @@ export default function Chat() {
     setLoading(false);
   };
 
+  // Открытие продукта из чата → переключаем на вкладку Здоровье и просим её открыть
+  const openProductInHealth = (kind, id, title) => {
+    window.dispatchEvent(new CustomEvent('vforme:open-health-product', { detail: { kind, id, title } }));
+  };
+
+  const KIND_LABELS = { program: 'ПРОГРАММА', protocol: 'ПРОТОКОЛ', scheme: 'СХЕМА БАД' };
+  const KIND_ICONS  = { program: '📚', protocol: '📋', scheme: '💊' };
+
+  const ProductChip = ({ kind, id, title }) => (
+    <button
+      onClick={() => openProductInHealth(kind, id, title)}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        padding: '8px 12px', margin: '4px 4px 4px 0',
+        background: '#FFFFFF', border: `1px solid #D9D2C0`,
+        borderRadius: 14, cursor: 'pointer',
+        fontSize: 13, color: INK, fontFamily: sans, fontWeight: 600,
+        textAlign: 'left', maxWidth: '100%',
+      }}>
+      <span style={{ fontSize: 16 }}>{KIND_ICONS[kind] || '📦'}</span>
+      <span style={{ flex: 1 }}>
+        <span style={{ fontSize: 9, fontWeight: 700, color: '#5A4D34', letterSpacing: 0.6, display: 'block' }}>
+          {KIND_LABELS[kind] || 'ПРОДУКТ'}
+        </span>
+        <span style={{ fontSize: 13 }}>{title}</span>
+      </span>
+      <span style={{ color: INK3, fontSize: 14 }}>›</span>
+    </button>
+  );
+
+  // Парсим [[product:KIND:ID:NAME]] и заменяем на чипы
   const renderContent = (content) => {
+    if (!content) return null;
     if (content.startsWith('[img]')) {
       const url = content.slice(5);
       return <img src={url} alt="" style={{ maxWidth: '100%', borderRadius: 8, display: 'block' }} />;
@@ -111,7 +143,20 @@ export default function Chat() {
       const [name, url] = content.slice(6).split('|');
       return <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>📎 {name}</a>;
     }
-    return content;
+
+    const re = /\[\[product:(program|protocol|scheme):([a-zA-Z0-9-]+):([^\]]+)\]\]/g;
+    if (!re.test(content)) return content;
+    re.lastIndex = 0;
+
+    const out = [];
+    let last = 0; let m; let key = 0;
+    while ((m = re.exec(content)) !== null) {
+      if (m.index > last) out.push(content.slice(last, m.index));
+      out.push(<ProductChip key={`p${key++}`} kind={m[1]} id={m[2]} title={m[3]} />);
+      last = m.index + m[0].length;
+    }
+    if (last < content.length) out.push(content.slice(last));
+    return out;
   };
 
   const send = async () => {

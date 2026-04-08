@@ -727,6 +727,21 @@ export default function Health() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Запрос из чата на открытие конкретного продукта
+  useEffect(() => {
+    const handler = (e) => {
+      const { kind, id, title } = e.detail || {};
+      if (!id || !kind) return;
+      const found = items.find(it => it.kind === kind && it.id === id);
+      const fallback = found || { id, kind, title, price: 0, tags: [] };
+      if (kind === 'program')  setOpenProgram(fallback);
+      if (kind === 'protocol') setOpenProtocol(fallback);
+      if (kind === 'scheme')   setOpenScheme(fallback);
+    };
+    window.addEventListener('vforme:open-health-product', handler);
+    return () => window.removeEventListener('vforme:open-health-product', handler);
+  }, [items]);
+
   const filtered = useMemo(() => {
     return items.filter(it => {
       if (kindFilter.length > 0 && !kindFilter.includes(it.kind)) return false;
