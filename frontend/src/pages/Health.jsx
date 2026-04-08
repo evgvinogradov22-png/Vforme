@@ -4,8 +4,9 @@ import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '..
 import { Spinner } from '../components/UI';
 
 const TOKEN = () => localStorage.getItem('vforme_token');
+const authHeaders = () => ({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN() });
 
-// Бежевая палитра для фильтров
+// Бежевая палитра
 const F_BG     = '#F3EFE6';
 const F_BG_ACT = '#E8DDC0';
 const F_BD     = '#D9D2C0';
@@ -32,6 +33,65 @@ const KIND_LABELS = {
   scheme:   'СХЕМА БАД',
 };
 
+// ─── Шапка страницы (back + метки) ───────────────────────────
+function PageHeader({ onBack, kindLabel, statusLabel }) {
+  return (
+    <div style={{ padding: '14px 18px 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <button onClick={onBack} style={{
+        background: W, border: `1px solid ${BD}`, borderRadius: 12,
+        width: 40, height: 40, fontSize: 18, cursor: 'pointer', color: INK,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>‹</button>
+      {kindLabel && (
+        <div style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
+          color: F_TXT_ACT, background: F_BG, border: `1px solid ${F_BD}`,
+          padding: '6px 12px', borderRadius: 10,
+        }}>{kindLabel}</div>
+      )}
+      <div style={{ flex: 1 }} />
+      {statusLabel && (
+        <div style={{
+          fontSize: 14, fontWeight: 700, fontFamily: sans,
+          color: F_TXT_ACT, background: F_BG_ACT, border: `1px solid ${F_BD}`,
+          padding: '6px 14px', borderRadius: 10,
+        }}>{statusLabel}</div>
+      )}
+    </div>
+  );
+}
+
+// ─── Hero (заголовок + теги) ─────────────────────────────────
+function Hero({ title, subtitle, tags }) {
+  return (
+    <div style={{ padding: '14px 22px 8px' }}>
+      <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 700, color: INK, lineHeight: 1.2, marginBottom: 6 }}>
+        {title}
+      </div>
+      {subtitle && (
+        <div style={{ fontSize: 14, color: INK3, fontFamily: sans, marginBottom: 10 }}>{subtitle}</div>
+      )}
+      {tags && tags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+          {tags.map(t => {
+            const tag = TAG_OPTIONS.find(x => x.id === t);
+            if (!tag) return null;
+            return (
+              <div key={t} style={{
+                fontSize: 11, color: F_TXT, fontFamily: sans, fontWeight: 600,
+                background: F_BG, border: `1px solid ${F_BD}`,
+                padding: '4px 10px', borderRadius: 12,
+              }}>
+                {tag.icon} {tag.label}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Карточка ────────────────────────────────────────────────
 function FeedCard({ item, onClick }) {
   const free = Number(item.price) === 0;
@@ -43,26 +103,21 @@ function FeedCard({ item, onClick }) {
       padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10,
       boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
       cursor: 'pointer',
-      transition: 'transform .12s, box-shadow .12s',
+      transition: 'transform .12s',
     }}
       onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.99)'; }}
       onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
     >
-      {/* Тип слева, цена справа */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div style={{
           fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
-          color: F_TXT_ACT,
-          background: F_BG,
-          border: `1px solid ${F_BD}`,
+          color: F_TXT_ACT, background: F_BG, border: `1px solid ${F_BD}`,
           padding: '6px 12px', borderRadius: 10,
         }}>{kindLabel}</div>
         <div style={{
           fontSize: 14, fontWeight: 700, fontFamily: sans,
-          color: F_TXT_ACT,
-          background: F_BG_ACT,
-          border: `1px solid ${F_BD}`,
+          color: F_TXT_ACT, background: F_BG_ACT, border: `1px solid ${F_BD}`,
           padding: '6px 14px', borderRadius: 10,
         }}>
           {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
@@ -105,475 +160,8 @@ function FeedCard({ item, onClick }) {
   );
 }
 
-// ─── Полноэкранная страница программы ────────────────────────
-function ProgramPage({ program, user, onBack }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [openLecture, setOpenLecture] = useState(null);
-  const [payUrl, setPayUrl] = useState(null);
-  const [payLoading, setPayLoading] = useState(false);
-
-  const free = Number(program.price) === 0;
-  const owned = (user?.programAccess || []).includes(program.id);
-  const hasAccess = free || owned;
-
-  useEffect(() => {
-    fetch(`/api/programs/${program.id}`, { headers: { Authorization: 'Bearer ' + TOKEN() } })
-      .then(r => r.json())
-      .then(d => setData(d && !d.error ? d : program))
-      .catch(() => setData(program))
-      .finally(() => setLoading(false));
-  }, [program.id]);
-
-  const handlePay = async () => {
-    setPayLoading(true);
-    try {
-      const r = await fetch('/api/payment/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN() },
-        body: JSON.stringify({ programId: program.id }),
-      });
-      const d = await r.json();
-      if (d?.payUrl) setPayUrl(d.payUrl);
-      else alert('Не удалось получить ссылку на оплату');
-    } catch (e) {
-      alert('Ошибка: ' + e.message);
-    } finally {
-      setPayLoading(false);
-    }
-  };
-
-  return (
-    <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
-      {/* Шапка с back */}
-      <div style={{ padding: '14px 18px 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={onBack} style={{
-          background: W, border: `1px solid ${BD}`, borderRadius: 12,
-          width: 40, height: 40, fontSize: 18, cursor: 'pointer', color: INK,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>‹</button>
-        <div style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
-          color: F_TXT_ACT, background: F_BG, border: `1px solid ${F_BD}`,
-          padding: '6px 12px', borderRadius: 10,
-        }}>ПРОГРАММА</div>
-        <div style={{ flex: 1 }} />
-        <div style={{
-          fontSize: 14, fontWeight: 700, fontFamily: sans,
-          color: F_TXT_ACT, background: F_BG_ACT, border: `1px solid ${F_BD}`,
-          padding: '6px 14px', borderRadius: 10,
-        }}>
-          {free ? 'БЕСПЛАТНО' : owned ? 'ОТКРЫТА' : `${program.price} ₽`}
-        </div>
-      </div>
-
-      {/* Hero */}
-      <div style={{ padding: '14px 22px 8px' }}>
-        <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 700, color: INK, lineHeight: 1.2, marginBottom: 6 }}>
-          {program.title}
-        </div>
-        {program.subtitle && (
-          <div style={{ fontSize: 14, color: INK3, fontFamily: sans, marginBottom: 10 }}>{program.subtitle}</div>
-        )}
-        {program.tags && program.tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-            {program.tags.map(t => {
-              const tag = TAG_OPTIONS.find(x => x.id === t);
-              if (!tag) return null;
-              return (
-                <div key={t} style={{
-                  fontSize: 11, color: F_TXT, fontFamily: sans, fontWeight: 600,
-                  background: F_BG, border: `1px solid ${F_BD}`,
-                  padding: '4px 10px', borderRadius: 12,
-                }}>
-                  {tag.icon} {tag.label}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
-
-      {!loading && data && (
-        <div style={{ padding: '0 22px' }}>
-          {data.desc && (
-            <div style={{
-              background: W, border: `1px solid ${BD}`, borderRadius: 18,
-              padding: '16px 18px', marginBottom: 16,
-              fontSize: 14, color: INK2, lineHeight: 1.6, fontFamily: sans, whiteSpace: 'pre-wrap',
-            }}>
-              {data.desc}
-            </div>
-          )}
-
-          {/* Платная без доступа — оплата */}
-          {!hasAccess && (
-            <div style={{
-              background: W, border: `1px solid ${BD}`, borderRadius: 18, padding: '20px 18px',
-              marginBottom: 16,
-            }}>
-              {payUrl ? (
-                <div style={{ width: '100%', height: 540, borderRadius: 14, overflow: 'hidden', border: `1px solid ${BD}` }}>
-                  <iframe src={payUrl} style={{ width: '100%', height: '100%', border: 'none' }} allow="payment" />
-                </div>
-              ) : (
-                <>
-                  <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: INK, marginBottom: 6 }}>
-                    Открой полный курс
-                  </div>
-                  <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginBottom: 16 }}>
-                    Все модули, лекции и материалы — после оплаты
-                  </div>
-                  <button onClick={handlePay} disabled={payLoading} style={{
-                    width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 28,
-                    color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
-                  }}>
-                    {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${program.price} ₽`}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Модули доступны если бесплатно/куплено */}
-          {hasAccess && data.modules && data.modules.length > 0 && (
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 12, fontFamily: sans, padding: '0 4px' }}>
-                СОДЕРЖИМОЕ
-              </div>
-              {data.modules.map((m, i) => (
-                <div key={m.id || i} style={{
-                  background: W, border: `1px solid ${BD}`, borderRadius: 18,
-                  padding: '16px 18px', marginBottom: 12,
-                }}>
-                  <div style={{ fontFamily: serif, fontSize: 17, fontWeight: 700, color: INK, marginBottom: 10 }}>
-                    Модуль {i + 1}. {m.title}
-                  </div>
-                  {m.lectures && m.lectures.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {m.lectures.map((l, j) => (
-                        <button
-                          key={l.id || j}
-                          onClick={() => setOpenLecture(l)}
-                          style={{
-                            width: '100%', textAlign: 'left',
-                            background: '#F9F7F4', border: `1px solid ${BD}`, borderRadius: 12,
-                            padding: '12px 14px', cursor: 'pointer',
-                            fontSize: 14, color: INK, fontFamily: sans,
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          }}>
-                          <span>📖 {l.title}</span>
-                          <span style={{ color: INK3 }}>›</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Лекция в bottom-sheet */}
-      {openLecture && (
-        <div onClick={() => setOpenLecture(null)} style={{
-          position: 'fixed', inset: 0, background: 'rgba(26,26,26,0.7)',
-          zIndex: 600, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: W, width: '100%', maxWidth: 480,
-            borderRadius: '24px 24px 0 0', padding: '24px 22px max(40px, env(safe-area-inset-bottom))',
-            maxHeight: '92vh', overflowY: 'auto',
-          }}>
-            <div style={{ width: 40, height: 4, background: '#E5E1D8', borderRadius: 2, margin: '0 auto 18px' }} />
-            <div style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: INK, marginBottom: 14, lineHeight: 1.25 }}>
-              {openLecture.title}
-            </div>
-            {openLecture.videoUrl && (
-              <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', background: '#000' }}>
-                <video src={openLecture.videoUrl} controls style={{ width: '100%', display: 'block' }} />
-              </div>
-            )}
-            {openLecture.content && (
-              <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans }}
-                   dangerouslySetInnerHTML={{ __html: openLecture.content }} />
-            )}
-            <button onClick={() => setOpenLecture(null)} style={{
-              width: '100%', padding: '14px', marginTop: 22,
-              background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 22,
-              color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
-            }}>Закрыть</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Модалка с деталями продукта ─────────────────────────────
-function DetailModal({ item, user, onClose }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [openLecture, setOpenLecture] = useState(null);
-  const [payUrl, setPayUrl] = useState(null);
-  const [payLoading, setPayLoading] = useState(false);
-
-  // Проверка доступа: бесплатно ИЛИ программа уже куплена
-  const free = Number(item.price) === 0;
-  const programAccess = user?.programAccess || [];
-  const ownedProgram = item.kind === 'program' && programAccess.includes(item.id);
-  const ownedProtocol = item.kind === 'protocol' && data?.hasAccess;
-  const hasAccess = free || ownedProgram || ownedProtocol || item.kind === 'scheme';
-
-  useEffect(() => {
-    let url = '';
-    if (item.kind === 'program')  url = `/api/programs/${item.id}`;
-    if (item.kind === 'protocol') url = `/api/protocols/${item.id}`;
-    if (item.kind === 'scheme')   url = `/api/supplements/schemes/${item.id}`;
-    fetch(url, { headers: { Authorization: 'Bearer ' + TOKEN() } })
-      .then(r => r.json())
-      .then(d => setData(d && !d.error ? d : item))
-      .catch(() => setData(item))
-      .finally(() => setLoading(false));
-  }, [item]);
-
-  const handlePay = async () => {
-    setPayLoading(true);
-    try {
-      const endpoint = item.kind === 'protocol' ? '/api/payment/create-protocol' : '/api/payment/create';
-      const body = item.kind === 'protocol' ? { protocolId: item.id } : { programId: item.id };
-      const r = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN() },
-        body: JSON.stringify(body),
-      });
-      const d = await r.json();
-      if (d?.payUrl) setPayUrl(d.payUrl);
-      else alert('Не удалось получить ссылку на оплату');
-    } catch (e) {
-      alert('Ошибка: ' + e.message);
-    } finally {
-      setPayLoading(false);
-    }
-  };
-
-  return (
-    <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, background: 'rgba(26,26,26,0.6)',
-      zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-      animation: 'fadein .2s ease',
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: W, width: '100%', maxWidth: 480,
-        borderRadius: '24px 24px 0 0', padding: '24px 22px max(40px, env(safe-area-inset-bottom))',
-        maxHeight: '90vh', overflowY: 'auto',
-        animation: 'slideup .25s ease',
-      }}>
-        <div style={{ width: 40, height: 4, background: '#E5E1D8', borderRadius: 2, margin: '0 auto 18px' }} />
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
-            color: F_TXT_ACT, background: F_BG, border: `1px solid ${F_BD}`,
-            padding: '6px 12px', borderRadius: 10, alignSelf: 'flex-start',
-          }}>{KIND_LABELS[item.kind]}</div>
-          <div style={{
-            fontSize: 14, fontWeight: 700, fontFamily: sans,
-            color: F_TXT_ACT, background: F_BG_ACT, border: `1px solid ${F_BD}`,
-            padding: '6px 14px', borderRadius: 10, alignSelf: 'flex-start',
-          }}>
-            {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
-          </div>
-        </div>
-
-        <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 700, color: INK, lineHeight: 1.25, marginBottom: 8 }}>
-          {item.title}
-        </div>
-        {item.subtitle && (
-          <div style={{ fontSize: 14, color: INK3, fontFamily: sans, marginBottom: 14 }}>{item.subtitle}</div>
-        )}
-
-        {item.tags && item.tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
-            {item.tags.map(t => {
-              const tag = TAG_OPTIONS.find(x => x.id === t);
-              if (!tag) return null;
-              return (
-                <div key={t} style={{
-                  fontSize: 11, color: F_TXT, fontFamily: sans, fontWeight: 600,
-                  background: F_BG, border: `1px solid ${F_BD}`,
-                  padding: '4px 10px', borderRadius: 12,
-                }}>
-                  {tag.icon} {tag.label}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {loading && <div style={{ padding: 30, textAlign: 'center' }}><Spinner /></div>}
-
-        {/* Платный продукт без доступа — Paywall */}
-        {!loading && data && !hasAccess && (
-          <div>
-            {(data.desc || data.description || item.desc) && (
-              <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 18, whiteSpace: 'pre-wrap' }}>
-                {data.desc || data.description || item.desc}
-              </div>
-            )}
-
-            {payUrl ? (
-              <div style={{ width: '100%', height: 540, borderRadius: 16, overflow: 'hidden', border: `1px solid ${BD}` }}>
-                <iframe src={payUrl} style={{ width: '100%', height: '100%', border: 'none' }} allow="payment" />
-              </div>
-            ) : (
-              <button onClick={handlePay} disabled={payLoading} style={{
-                width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 28,
-                color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
-                marginTop: 8,
-              }}>
-                {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${item.price} ₽`}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Бесплатный или купленный — открываем контент */}
-        {!loading && data && hasAccess && item.kind === 'program' && (
-          <div>
-            {data.desc && (
-              <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 18, whiteSpace: 'pre-wrap' }}>
-                {data.desc}
-              </div>
-            )}
-            {data.modules && data.modules.length > 0 && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 10, fontFamily: sans }}>
-                  СОДЕРЖИМОЕ
-                </div>
-                {data.modules.map((m, i) => (
-                  <div key={m.id || i} style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: serif, fontSize: 16, fontWeight: 700, color: INK, marginBottom: 6 }}>
-                      {i + 1}. {m.title}
-                    </div>
-                    {m.lectures && m.lectures.length > 0 && (
-                      <div style={{ paddingLeft: 0 }}>
-                        {m.lectures.map((l, j) => (
-                          <button
-                            key={l.id || j}
-                            onClick={() => setOpenLecture(l)}
-                            style={{
-                              width: '100%', textAlign: 'left',
-                              background: '#F9F7F4', border: `1px solid ${BD}`, borderRadius: 12,
-                              padding: '12px 14px', marginBottom: 6, cursor: 'pointer',
-                              fontSize: 13, color: INK, fontFamily: sans,
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            }}>
-                            <span>📖 {l.title}</span>
-                            <span style={{ color: INK3 }}>›</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {!loading && data && hasAccess && item.kind === 'protocol' && (
-          <div>
-            {data.description && (
-              <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 14, whiteSpace: 'pre-wrap' }}>
-                {data.description}
-              </div>
-            )}
-            {data.content?.html && (
-              <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans }}
-                   dangerouslySetInnerHTML={{ __html: data.content.html }} />
-            )}
-          </div>
-        )}
-
-        {!loading && data && hasAccess && item.kind === 'scheme' && (
-          <div>
-            {data.desc && (
-              <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 14 }}>
-                {data.desc}
-              </div>
-            )}
-            {data.items && data.items.length > 0 && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 10, fontFamily: sans }}>
-                  СОСТАВ
-                </div>
-                {data.items.map((s, i) => (
-                  <div key={s.id || i} style={{
-                    background: '#F9F7F4', borderRadius: 12, padding: '12px 14px', marginBottom: 8,
-                  }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: INK, fontFamily: sans }}>{s.name}</div>
-                    {s.desc && <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>{s.desc}</div>}
-                    {s.link && <a href={s.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: G, fontFamily: sans, marginTop: 4, display: 'inline-block' }}>Купить ↗</a>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <button onClick={onClose} style={{
-          width: '100%', padding: '14px', marginTop: 22,
-          background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 22,
-          color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
-        }}>Закрыть</button>
-
-        {/* Подмодалка лекции */}
-        {openLecture && (
-          <div onClick={() => setOpenLecture(null)} style={{
-            position: 'fixed', inset: 0, background: 'rgba(26,26,26,0.7)',
-            zIndex: 600, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          }}>
-            <div onClick={e => e.stopPropagation()} style={{
-              background: W, width: '100%', maxWidth: 480,
-              borderRadius: '24px 24px 0 0', padding: '24px 22px max(40px, env(safe-area-inset-bottom))',
-              maxHeight: '92vh', overflowY: 'auto',
-            }}>
-              <div style={{ width: 40, height: 4, background: '#E5E1D8', borderRadius: 2, margin: '0 auto 18px' }} />
-              <div style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: INK, marginBottom: 14, lineHeight: 1.25 }}>
-                {openLecture.title}
-              </div>
-              {openLecture.videoUrl && (
-                <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', background: '#000' }}>
-                  <video src={openLecture.videoUrl} controls style={{ width: '100%', display: 'block' }} />
-                </div>
-              )}
-              {openLecture.content && (
-                <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans }}
-                     dangerouslySetInnerHTML={{ __html: openLecture.content }} />
-              )}
-              <button onClick={() => setOpenLecture(null)} style={{
-                width: '100%', padding: '14px', marginTop: 22,
-                background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 22,
-                color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
-              }}>Закрыть</button>
-            </div>
-          </div>
-        )}
-      </div>
-      <style>{`
-        @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideup { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-      `}</style>
-    </div>
-  );
-}
-
 // ─── Дропдаун-фильтр с галочками ─────────────────────────────
-function FilterDropdown({ label, options, selected, multi, onChange, anchor }) {
+function FilterDropdown({ label, options, selected, multi, onChange }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -621,8 +209,7 @@ function FilterDropdown({ label, options, selected, multi, onChange, anchor }) {
 
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)',
-          [anchor === 'right' ? 'right' : 'left']: 0,
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0,
           background: W, border: `1px solid ${F_BD}`, borderRadius: 14,
           padding: 6, minWidth: 180,
           boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
@@ -658,19 +245,318 @@ function FilterDropdown({ label, options, selected, multi, onChange, anchor }) {
   );
 }
 
-// ─── Главная страница ────────────────────────────────────────
+// ─── Paywall карточка с iframe ───────────────────────────────
+function PaywallCard({ price, payUrl, payLoading, onPay, ctaTitle = 'Открой полный курс', ctaHint = 'После оплаты материалы откроются автоматически' }) {
+  return (
+    <div style={{
+      background: W, border: `1px solid ${BD}`, borderRadius: 18, padding: '20px 18px', marginBottom: 16,
+    }}>
+      {payUrl ? (
+        <div style={{ width: '100%', height: 540, borderRadius: 14, overflow: 'hidden', border: `1px solid ${BD}` }}>
+          <iframe src={payUrl} style={{ width: '100%', height: '100%', border: 'none' }} allow="payment" />
+        </div>
+      ) : (
+        <>
+          <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: INK, marginBottom: 6 }}>
+            {ctaTitle}
+          </div>
+          <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginBottom: 16 }}>
+            {ctaHint}
+          </div>
+          <button onClick={onPay} disabled={payLoading} style={{
+            width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 28,
+            color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
+          }}>
+            {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${price} ₽`}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Лекция (отдельная страница) ─────────────────────────────
+function LecturePage({ lecture, onBack }) {
+  return (
+    <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
+      <PageHeader onBack={onBack} kindLabel="ЛЕКЦИЯ" />
+      <div style={{ padding: '14px 22px 8px' }}>
+        <div style={{ fontFamily: serif, fontSize: 26, fontWeight: 700, color: INK, lineHeight: 1.2 }}>
+          {lecture.title}
+        </div>
+      </div>
+      <div style={{ padding: '12px 22px' }}>
+        {lecture.videoUrl && (
+          <div style={{ marginBottom: 16, borderRadius: 16, overflow: 'hidden', background: '#000' }}>
+            <video src={lecture.videoUrl} controls style={{ width: '100%', display: 'block' }} />
+          </div>
+        )}
+        {lecture.content && (
+          <div style={{
+            background: W, border: `1px solid ${BD}`, borderRadius: 18, padding: '18px 20px',
+            fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans,
+          }} dangerouslySetInnerHTML={{ __html: lecture.content }} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Программа (отдельная страница) ──────────────────────────
+function ProgramPage({ program, user, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [openLecture, setOpenLecture] = useState(null);
+  const [payUrl, setPayUrl] = useState(null);
+  const [payLoading, setPayLoading] = useState(false);
+
+  const free = Number(program.price) === 0;
+  const owned = (user?.programAccess || []).includes(program.id);
+  const hasAccess = free || owned;
+
+  useEffect(() => {
+    fetch(`/api/programs/${program.id}`, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(d => setData(d && !d.error ? d : program))
+      .catch(() => setData(program))
+      .finally(() => setLoading(false));
+  }, [program.id]);
+
+  const handlePay = async () => {
+    setPayLoading(true);
+    try {
+      const r = await fetch('/api/payment/create', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ programId: program.id }),
+      });
+      const d = await r.json();
+      if (d?.payUrl) setPayUrl(d.payUrl);
+      else alert('Не удалось получить ссылку на оплату');
+    } catch (e) { alert('Ошибка: ' + e.message); }
+    finally { setPayLoading(false); }
+  };
+
+  if (openLecture) {
+    return <LecturePage lecture={openLecture} onBack={() => setOpenLecture(null)} />;
+  }
+
+  const status = free ? 'БЕСПЛАТНО' : owned ? 'ОТКРЫТА' : `${program.price} ₽`;
+
+  return (
+    <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
+      <PageHeader onBack={onBack} kindLabel="ПРОГРАММА" statusLabel={status} />
+      <Hero title={program.title} subtitle={program.subtitle} tags={program.tags} />
+
+      {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
+
+      {!loading && data && (
+        <div style={{ padding: '0 22px' }}>
+          {data.desc && (
+            <div style={{
+              background: W, border: `1px solid ${BD}`, borderRadius: 18,
+              padding: '16px 18px', marginBottom: 16,
+              fontSize: 14, color: INK2, lineHeight: 1.6, fontFamily: sans, whiteSpace: 'pre-wrap',
+            }}>
+              {data.desc}
+            </div>
+          )}
+
+          {!hasAccess && (
+            <PaywallCard price={program.price} payUrl={payUrl} payLoading={payLoading} onPay={handlePay} />
+          )}
+
+          {hasAccess && data.modules && data.modules.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 12, fontFamily: sans, padding: '0 4px' }}>
+                СОДЕРЖИМОЕ
+              </div>
+              {data.modules.map((m, i) => (
+                <div key={m.id || i} style={{
+                  background: W, border: `1px solid ${BD}`, borderRadius: 18,
+                  padding: '16px 18px', marginBottom: 12,
+                }}>
+                  <div style={{ fontFamily: serif, fontSize: 17, fontWeight: 700, color: INK, marginBottom: 10 }}>
+                    Модуль {i + 1}. {m.title}
+                  </div>
+                  {m.lectures && m.lectures.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {m.lectures.map((l, j) => (
+                        <button
+                          key={l.id || j}
+                          onClick={() => setOpenLecture(l)}
+                          style={{
+                            width: '100%', textAlign: 'left',
+                            background: '#F9F7F4', border: `1px solid ${BD}`, borderRadius: 12,
+                            padding: '12px 14px', cursor: 'pointer',
+                            fontSize: 14, color: INK, fontFamily: sans,
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          }}>
+                          <span>📖 {l.title}</span>
+                          <span style={{ color: INK3 }}>›</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Протокол (отдельная страница) ───────────────────────────
+function ProtocolPage({ protocol, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [payUrl, setPayUrl] = useState(null);
+  const [payLoading, setPayLoading] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/protocols/${protocol.id}`, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(d => setData(d && !d.error ? d : protocol))
+      .catch(() => setData(protocol))
+      .finally(() => setLoading(false));
+  }, [protocol.id]);
+
+  const free = Number(protocol.price) === 0;
+  const hasAccess = free || data?.hasAccess;
+
+  const handlePay = async () => {
+    setPayLoading(true);
+    try {
+      const r = await fetch('/api/payment/create-protocol', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ protocolId: protocol.id }),
+      });
+      const d = await r.json();
+      if (d?.payUrl) setPayUrl(d.payUrl);
+      else alert('Не удалось получить ссылку на оплату');
+    } catch (e) { alert('Ошибка: ' + e.message); }
+    finally { setPayLoading(false); }
+  };
+
+  const status = free ? 'БЕСПЛАТНО' : (data?.hasAccess ? 'ОТКРЫТ' : `${protocol.price} ₽`);
+
+  return (
+    <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
+      <PageHeader onBack={onBack} kindLabel="ПРОТОКОЛ" statusLabel={status} />
+      <Hero title={protocol.title} subtitle={protocol.subtitle} tags={protocol.tags} />
+
+      {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
+
+      {!loading && data && (
+        <div style={{ padding: '0 22px' }}>
+          {data.description && (
+            <div style={{
+              background: W, border: `1px solid ${BD}`, borderRadius: 18,
+              padding: '16px 18px', marginBottom: 16,
+              fontSize: 14, color: INK2, lineHeight: 1.6, fontFamily: sans, whiteSpace: 'pre-wrap',
+            }}>
+              {data.description}
+            </div>
+          )}
+
+          {!hasAccess && (
+            <PaywallCard
+              price={protocol.price} payUrl={payUrl} payLoading={payLoading} onPay={handlePay}
+              ctaTitle="Получи доступ к протоколу"
+              ctaHint="После оплаты материалы откроются автоматически"
+            />
+          )}
+
+          {hasAccess && data.content?.html && (
+            <div style={{
+              background: W, border: `1px solid ${BD}`, borderRadius: 18, padding: '18px 20px',
+              fontSize: 14, color: INK, lineHeight: 1.65, fontFamily: sans,
+            }} dangerouslySetInnerHTML={{ __html: data.content.html }} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Схема БАД (отдельная страница) ──────────────────────────
+function SchemePage({ scheme, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/supplements/schemes/${scheme.id}`, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(d => setData(d && !d.error ? d : scheme))
+      .catch(() => setData(scheme))
+      .finally(() => setLoading(false));
+  }, [scheme.id]);
+
+  const free = Number(scheme.price) === 0;
+  const status = free ? 'БЕСПЛАТНО' : `${scheme.price} ₽`;
+
+  return (
+    <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
+      <PageHeader onBack={onBack} kindLabel="СХЕМА БАД" statusLabel={status} />
+      <Hero title={scheme.title} tags={scheme.tags} />
+
+      {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
+
+      {!loading && data && (
+        <div style={{ padding: '0 22px' }}>
+          {data.desc && (
+            <div style={{
+              background: W, border: `1px solid ${BD}`, borderRadius: 18,
+              padding: '16px 18px', marginBottom: 16,
+              fontSize: 14, color: INK2, lineHeight: 1.6, fontFamily: sans, whiteSpace: 'pre-wrap',
+            }}>
+              {data.desc}
+            </div>
+          )}
+
+          {data.items && data.items.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 12, fontFamily: sans, padding: '0 4px' }}>
+                СОСТАВ
+              </div>
+              {data.items.map((s, i) => (
+                <div key={s.id || i} style={{
+                  background: W, border: `1px solid ${BD}`, borderRadius: 16,
+                  padding: '14px 16px', marginBottom: 8,
+                }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: INK, fontFamily: sans }}>{s.name}</div>
+                  {s.desc && <div style={{ fontSize: 13, color: INK3, marginTop: 4, fontFamily: sans }}>{s.desc}</div>}
+                  {s.link && (
+                    <a href={s.link} target="_blank" rel="noopener noreferrer" style={{
+                      display: 'inline-block', marginTop: 8,
+                      fontSize: 13, color: G, fontFamily: sans, fontWeight: 600,
+                    }}>Купить ↗</a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Главная страница Здоровье ───────────────────────────────
 export default function Health() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [kindFilter, setKindFilter] = useState([]); // multi
-  const [onlyFree, setOnlyFree] = useState(false);  // checkbox
-  const [tagFilter, setTagFilter] = useState([]);   // multi
-  const [openItem, setOpenItem] = useState(null);          // модалка для protocol/scheme
-  const [openProgram, setOpenProgram] = useState(null);    // полноэкранная страница для program
+  const [kindFilter, setKindFilter] = useState([]);
+  const [onlyFree, setOnlyFree] = useState(false);
+  const [tagFilter, setTagFilter] = useState([]);
+  const [openProgram, setOpenProgram] = useState(null);
+  const [openProtocol, setOpenProtocol] = useState(null);
+  const [openScheme, setOpenScheme] = useState(null);
 
   useEffect(() => {
-    fetch('/api/health/feed', { headers: { Authorization: 'Bearer ' + TOKEN() } })
+    fetch('/api/health/feed', { headers: authHeaders() })
       .then(r => r.json())
       .then(data => setItems(Array.isArray(data) ? data : []))
       .catch(() => {})
@@ -686,10 +572,16 @@ export default function Health() {
     });
   }, [items, kindFilter, onlyFree, tagFilter]);
 
-  // Программа открывается на отдельной странице
-  if (openProgram) {
-    return <ProgramPage program={openProgram} user={user} onBack={() => setOpenProgram(null)} />;
-  }
+  // Полноэкранные страницы
+  if (openProgram) return <ProgramPage program={openProgram} user={user} onBack={() => setOpenProgram(null)} />;
+  if (openProtocol) return <ProtocolPage protocol={openProtocol} onBack={() => setOpenProtocol(null)} />;
+  if (openScheme) return <SchemePage scheme={openScheme} onBack={() => setOpenScheme(null)} />;
+
+  const handleOpen = (item) => {
+    if (item.kind === 'program')  setOpenProgram(item);
+    if (item.kind === 'protocol') setOpenProtocol(item);
+    if (item.kind === 'scheme')   setOpenScheme(item);
+  };
 
   return (
     <div style={{
@@ -697,7 +589,6 @@ export default function Health() {
       minHeight: 'calc(100dvh - 60px)',
       paddingBottom: 100,
     }}>
-      {/* Заголовок */}
       <div style={{ padding: '18px 20px 10px' }}>
         <div style={{ fontFamily: serif, fontSize: 26, fontWeight: 700, color: INK }}>Здоровье</div>
         <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginTop: 2 }}>
@@ -705,20 +596,9 @@ export default function Health() {
         </div>
       </div>
 
-      {/* Фильтры */}
       <div style={{ padding: '8px 20px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <FilterDropdown
-          label="Тип" options={KIND_OPTIONS}
-          selected={kindFilter} multi={true}
-          onChange={setKindFilter}
-        />
-        <FilterDropdown
-          label="Зоны" options={TAG_OPTIONS}
-          selected={tagFilter} multi={true}
-          onChange={setTagFilter}
-        />
-
-        {/* Чекбокс «Бесплатно» */}
+        <FilterDropdown label="Тип" options={KIND_OPTIONS} selected={kindFilter} multi={true} onChange={setKindFilter} />
+        <FilterDropdown label="Зоны" options={TAG_OPTIONS} selected={tagFilter} multi={true} onChange={setTagFilter} />
         <button onClick={() => setOnlyFree(v => !v)} style={{
           padding: '9px 16px', borderRadius: 22,
           background: onlyFree ? F_BG_ACT : F_BG,
@@ -740,7 +620,6 @@ export default function Health() {
         </button>
       </div>
 
-      {/* Лента */}
       <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
         {!loading && filtered.length === 0 && (
@@ -749,18 +628,9 @@ export default function Health() {
           </div>
         )}
         {!loading && filtered.map(item => (
-          <FeedCard
-            key={`${item.kind}-${item.id}`}
-            item={item}
-            onClick={() => {
-              if (item.kind === 'program') setOpenProgram(item);
-              else setOpenItem(item);
-            }}
-          />
+          <FeedCard key={`${item.kind}-${item.id}`} item={item} onClick={() => handleOpen(item)} />
         ))}
       </div>
-
-      {openItem && <DetailModal item={openItem} user={user} onClose={() => setOpenItem(null)} />}
     </div>
   );
 }
