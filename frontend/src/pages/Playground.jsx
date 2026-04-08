@@ -328,7 +328,7 @@ function Onboarding({ onDone }) {
   const answer = (q, val) => {
     const next = { ...answers, [q.id]: val };
     setAnswers(next);
-    if (step < QUESTIONS.length) setStep(step + 1);
+    setStep(step + 1);
   };
 
   // Welcome
