@@ -93,6 +93,7 @@ router.post('/webhook', async (req, res) => {
 router.post('/unlink', auth, async (req, res) => {
   try {
     await User.update({ telegramId: null, telegramUsername: null, linkToken: null }, { where: { id: req.user.id } });
+    sendToUser(req.user.id, { type: 'telegram_unlinked' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

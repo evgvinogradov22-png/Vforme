@@ -67,6 +67,11 @@ function AppShell() {
       flash(msg.bonusGiven ? '✈️ Telegram подключён! +100 баллов' : '✈️ Telegram подключён');
       return;
     }
+    if (msg.type === 'telegram_unlinked') {
+      authApi.me().then(u => { if (u) setUser(u); }).catch(() => {});
+      flash('✈️ Telegram отключён');
+      return;
+    }
     if (msg.type === 'data_updated') {
       window.dispatchEvent(new CustomEvent('vforme:data_updated', { detail: msg }));
       return;
