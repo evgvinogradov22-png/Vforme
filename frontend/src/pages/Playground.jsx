@@ -242,7 +242,7 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
         {Math.round(Object.values(animated).reduce((s, v) => s + v, 0) / N)}%
       </text>
 
-      {/* Метки зон — компактные плашки, плотно прижатые к колесу */}
+      {/* Метки зон — белые плашки по центру, на радиусе R+28 */}
       {ZONES.map((z, i) => {
         const level = Math.round(animated[z.id] ?? 0);
         const a = -Math.PI / 2 + (i + 0.5) * SLICE;
@@ -250,37 +250,31 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
         const active = z.id === focusId;
         const c = zoneColor(level);
 
-        // Компактнее: 92..110 по ширине, 48 по высоте
-        const w = Math.max(92, z.label.length * 8.5 + 44);
-        const h = 48;
-
-        // Для боковых плашек сдвигаем X так, чтобы внутренний край прилегал к колесу
-        const cosA = Math.cos(a);
-        const offsetX = cosA * (w / 2 - 18); // чем дальше от оси, тем больше сдвиг внутрь
-        const cxLabel = lx + offsetX * 0.6;
+        const w = Math.max(96, z.label.length * 8.5 + 46);
+        const h = 50;
 
         return (
           <g key={z.id + '-lbl'} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
             <rect
-              x={cxLabel - w / 2} y={ly - h / 2} width={w} height={h} rx={h / 2} ry={h / 2}
+              x={lx - w / 2} y={ly - h / 2} width={w} height={h} rx={h / 2} ry={h / 2}
               fill="#FFFFFF"
               stroke={active ? c : '#E5E0D0'}
               strokeWidth={active ? 2.2 : 1}
               style={{ filter: 'drop-shadow(0 2px 6px rgba(45,74,45,0.10))' }}
             />
             <text
-              x={cxLabel - w / 2 + 22} y={ly + 7}
+              x={lx - w / 2 + 22} y={ly + 7}
               textAnchor="middle" fontSize="20"
               style={{ pointerEvents: 'none' }}
             >{z.icon}</text>
             <text
-              x={cxLabel - w / 2 + 40} y={ly - 2}
+              x={lx - w / 2 + 40} y={ly - 2}
               textAnchor="start" fontSize="14"
               fontWeight={700} fill={INK}
               style={{ pointerEvents: 'none', fontFamily: sans }}
             >{z.label}</text>
             <text
-              x={cxLabel - w / 2 + 40} y={ly + 14}
+              x={lx - w / 2 + 40} y={ly + 14}
               textAnchor="start" fontSize="12"
               fontWeight={700} fill={c}
               style={{ pointerEvents: 'none', fontFamily: sans }}
