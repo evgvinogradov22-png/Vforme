@@ -393,6 +393,36 @@ export function ContentCard({ item }) {
   );
 }
 
+// Отдельный компонент ВНЕ Onboarding — иначе React пересоздаёт его
+// на каждом наборе символа и textarea теряет фокус.
+function OnboardingShell({ step, onBack, stepLabel, footer, children }) {
+  return (
+    <div style={{
+      background: '#F9F7F4',
+      minHeight: 'calc(100dvh - 148px)', // 68px header + 80px bottom nav
+      maxHeight: 'calc(100dvh - 148px)',
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+    }}>
+      <div style={{ padding: '12px 20px 6px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <button onClick={onBack} disabled={step === 1} style={{ background: 'none', border: 'none', fontSize: 22, color: step === 1 ? '#E0DACC' : INK3, cursor: step === 1 ? 'default' : 'pointer', padding: 0 }}>‹</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${(step / (QUESTIONS.length + 1)) * 100}%`, background: G, borderRadius: 2, transition: 'width .4s ease' }} />
+          </div>
+          <div style={{ fontSize: 11, color: INK3, fontFamily: sans, marginTop: 5 }}>{stepLabel}</div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 22px', minHeight: 0, overflow: 'auto' }}>
+        {children}
+      </div>
+
+      {footer && <div style={{ padding: '10px 22px 14px', flexShrink: 0 }}>{footer}</div>}
+    </div>
+  );
+}
+
 // ─── Онбординг ───────────────────────────────────────────────
 export function Onboarding({ onDone }) {
   // step 1..QUESTIONS.length = вопросы, N+1 = complaints textarea
@@ -403,33 +433,6 @@ export function Onboarding({ onDone }) {
   const answer = (q, val) => setAnswers(prev => ({ ...prev, [q.id]: val }));
   const next = () => setStep(s => s + 1);
   const back = () => setStep(s => Math.max(1, s - 1));
-
-  // Универсальный контейнер: фиксируется высотой экрана минус навбар,
-  // шапка + контент + подвал — без скролла.
-  const Shell = ({ children, footer, stepLabel }) => (
-    <div style={{
-      background: '#F9F7F4',
-      height: 'calc(100vh - 80px)',  // 80px — место под нижний навбар приложения
-      display: 'flex', flexDirection: 'column',
-      overflow: 'hidden',
-    }}>
-      <div style={{ padding: '12px 20px 6px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <button onClick={back} disabled={step === 1} style={{ background: 'none', border: 'none', fontSize: 22, color: step === 1 ? '#E0DACC' : INK3, cursor: step === 1 ? 'default' : 'pointer', padding: 0 }}>‹</button>
-        <div style={{ flex: 1 }}>
-          <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${(step / (QUESTIONS.length + 1)) * 100}%`, background: G, borderRadius: 2, transition: 'width .4s ease' }} />
-          </div>
-          <div style={{ fontSize: 11, color: INK3, fontFamily: sans, marginTop: 5 }}>{stepLabel}</div>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 22px', minHeight: 0 }}>
-        {children}
-      </div>
-
-      {footer && <div style={{ padding: '12px 22px 16px', flexShrink: 0 }}>{footer}</div>}
-    </div>
-  );
 
   // Вопросы
   if (step >= 1 && step <= QUESTIONS.length) {
@@ -501,7 +504,9 @@ export function Onboarding({ onDone }) {
     );
 
     return (
-      <Shell
+      <OnboardingShell
+        step={step}
+        onBack={back}
         stepLabel={`Шаг ${step} из ${QUESTIONS.length + 1}`}
         footer={isScale ? (
           <button onClick={() => { if (current == null) answer(q, 5); next(); }} style={{
@@ -511,14 +516,16 @@ export function Onboarding({ onDone }) {
         ) : null}
       >
         {body}
-      </Shell>
+      </OnboardingShell>
     );
   }
 
   // Последний шаг — жалобы
   if (step === QUESTIONS.length + 1) {
     return (
-      <Shell
+      <OnboardingShell
+        step={step}
+        onBack={back}
         stepLabel="Последний шаг"
         footer={
           <button onClick={() => onDone(answers, complaints)} style={{
@@ -544,7 +551,7 @@ export function Onboarding({ onDone }) {
             outline: 'none', resize: 'none', background: W,
           }}
         />
-      </Shell>
+      </OnboardingShell>
     );
   }
   return null;
