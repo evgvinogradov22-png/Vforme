@@ -3,6 +3,30 @@
 // короткое сообщение от имени Кристины + рекомендации.
 const router = require('express').Router();
 const https = require('https');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+// Дисковый кеш ответов LLM — сбережёт токены, переживёт pm2 restart
+const CACHE_DIR = path.join(__dirname, '../../.cache/playground');
+try { fs.mkdirSync(CACHE_DIR, { recursive: true }); } catch {}
+
+function cacheKey(payload) {
+  const stable = JSON.stringify(payload, Object.keys(payload).sort());
+  return crypto.createHash('sha256').update(stable).digest('hex');
+}
+function cacheGet(key) {
+  try {
+    const file = path.join(CACHE_DIR, `${key}.json`);
+    if (!fs.existsSync(file)) return null;
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch { return null; }
+}
+function cacheSet(key, value) {
+  try {
+    fs.writeFileSync(path.join(CACHE_DIR, `${key}.json`), JSON.stringify(value));
+  } catch {}
+}
 
 function openrouter(payload) {
   return new Promise((resolve, reject) => {
@@ -110,6 +134,13 @@ router.post('/analyze', async (req, res) => {
   try {
     const { answers = {}, complaints = '', levels = {} } = req.body || {};
 
+    // Кеш: тот же набор ответов → тот же ответ LLM, не жжём токены
+    const key = cacheKey({ answers, complaints: (complaints || '').trim(), levels });
+    const cached = cacheGet(key);
+    if (cached) {
+      return res.json({ ...cached, cached: true });
+    }
+
     // Топ-3 самые слабые зоны
     const weakest = Object.entries(levels)
       .map(([id, level]) => ({ id, level }))
@@ -185,12 +216,14 @@ router.post('/analyze', async (req, res) => {
       parsed = { message: raw, focusZoneIds: [weakest[0]?.id].filter(Boolean), recommendedTitles: [] };
     }
 
-    res.json({
+    const result = {
       message: parsed.message || '',
       focusZoneIds: Array.isArray(parsed.focusZoneIds) ? parsed.focusZoneIds : [weakest[0]?.id].filter(Boolean),
       recommendedTitles: Array.isArray(parsed.recommendedTitles) ? parsed.recommendedTitles : [],
       weakest,
-    });
+    };
+    cacheSet(key, result);
+    res.json(result);
   } catch (e) {
     console.error('Playground analyze error:', e.message);
     res.status(500).json({ error: e.message });
