@@ -21,6 +21,7 @@ export const QUESTIONS = [
     ]},
   { id: 'sleep',    type: 'scale', direction: 'higher-better',
     label: 'Насколько ты довольна своим сном?',
+    label_m: 'Насколько ты доволен своим сном?',
     hint: '0 — совсем плохо, 10 — высыпаюсь отлично',
     low: '😣', high: '😴',
     weights: { brain: 35, thyroid: 12, hormones: 10 } },
@@ -41,6 +42,7 @@ export const QUESTIONS = [
     weights: { composition: 40, thyroid: 10 } },
   { id: 'skin',     type: 'scale', direction: 'higher-better',
     label: 'Как бы ты оценила состояние кожи?',
+    label_m: 'Как бы ты оценил состояние кожи?',
     hint: '0 — высыпания и сухость, 10 — всё отлично',
     low: '😔', high: '✨',
     weights: { hormones: 22, gut: 18 } },
@@ -444,10 +446,11 @@ export function Onboarding({ onDone }) {
     const current = answers[q.id];
     const isScale = q.type === 'scale';
 
+    const qLabel = (answers.gender === 'male' && q.label_m) ? q.label_m : q.label;
     const body = (
       <>
         <div style={{ fontFamily: serif, fontSize: 21, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 6, lineHeight: 1.25 }}>
-          {q.label}
+          {qLabel}
         </div>
         {q.hint && (
           <div style={{ fontFamily: sans, fontSize: 12, color: INK3, textAlign: 'center', marginBottom: 16, lineHeight: 1.45 }}>{q.hint}</div>
