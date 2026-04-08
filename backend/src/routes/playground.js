@@ -33,11 +33,8 @@ function openrouter(payload) {
 const ZONE_LABELS = {
   brain: 'Сон и нервная система',
   thyroid: 'Энергия и щитовидка',
-  heart: 'Сердце и сосуды',
-  lungs: 'Дыхание',
-  liver: 'Печень и детокс',
-  gut: 'ЖКТ',
-  hormones: 'Гормоны',
+  gut: 'ЖКТ и пищеварение',
+  hormones: 'Гормоны и цикл',
   composition: 'Композиция тела',
 };
 
@@ -53,7 +50,6 @@ function buildUserPrompt(answers, complaints, levels, weakest) {
 - Энергия в течение дня: ${fmtScale(answers.energy)}
 - Физическая активность: ${fmtScale(answers.activity)}
 - Состояние кожи: ${fmtScale(answers.skin)}
-- Отёчность по утрам: ${fmtChoice(answers.swelling)}
 - Головные боли/мигрени: ${fmtChoice(answers.headaches)}
 - Проблемы с ЖКТ (вздутие, тяжесть): ${fmtChoice(answers.gut)}
 
@@ -65,7 +61,7 @@ function buildUserPrompt(answers, complaints, levels, weakest) {
 Напиши тёплое личное сообщение как будто ты пишешь ей в личку в мессенджер. Коротко, 3–4 небольших абзаца. Начни с обращения "Привет!". Структура:
 1. Мягко отметь основные точки роста (без диагнозов и медицинских терминов).
 2. Скажи с какой зоны имеет смысл начать в первую очередь и почему.
-3. Дай 1–2 простых превентивных шага, которые можно начать уже сегодня.
+3. Дай 1–2 простых превентивных шага через питание/режим/образ жизни, которые можно начать уже сегодня.
 4. В конце — тёплая поддерживающая фраза.
 
 Верни строго JSON без markdown-обёрток в формате:
@@ -75,7 +71,7 @@ function buildUserPrompt(answers, complaints, levels, weakest) {
   "recommendedTitles": ["Протокол спокойного сна", "ЖКТ от А до Я"]
 }
 
-Доступные зоны: brain, thyroid, heart, lungs, liver, gut, hormones, composition.`;
+Доступные зоны: brain (сон/нервная), thyroid (энергия/щитовидка), gut (ЖКТ/пищеварение), hormones (гормоны/цикл/кожа), composition (тело/активность/вес). Оставайся в рамках нутрициологии — питание, режим, сон, активность, образ жизни.`;
 }
 
 router.post('/analyze', async (req, res) => {

@@ -3,14 +3,11 @@ import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '..
 
 // ─── Зоны ────────────────────────────────────────────────────
 const ZONES = [
-  { id: 'brain',       label: 'Сон и нервы', icon: '🧠', hint: 'Голова, сон, стресс' },
+  { id: 'brain',       label: 'Сон и нервы', icon: '🧠', hint: 'Сон, стресс, восстановление' },
   { id: 'thyroid',     label: 'Энергия',     icon: '⚡', hint: 'Щитовидка, митохондрии' },
-  { id: 'heart',       label: 'Сердце',      icon: '❤️', hint: 'Сердце, сосуды' },
-  { id: 'lungs',       label: 'Дыхание',     icon: '🫁', hint: 'Лёгкие, кислород' },
-  { id: 'gut',         label: 'ЖКТ',         icon: '🍽️', hint: 'Желудок, кишечник' },
-  { id: 'liver',       label: 'Детокс',      icon: '🌿', hint: 'Печень, очищение' },
-  { id: 'hormones',    label: 'Гормоны',     icon: '🌸', hint: 'Репродукция, цикл' },
-  { id: 'composition', label: 'Тело',        icon: '💪', hint: 'Мышцы, активность' },
+  { id: 'gut',         label: 'ЖКТ',         icon: '🍽️', hint: 'Желудок, кишечник, пищеварение' },
+  { id: 'hormones',    label: 'Гормоны',     icon: '🌸', hint: 'Репродукция, цикл, кожа' },
+  { id: 'composition', label: 'Тело',        icon: '💪', hint: 'Мышцы, активность, вес' },
 ];
 
 // ─── Вопросы (анкета Кристины) ───────────────────────────────
@@ -19,38 +16,30 @@ const QUESTIONS = [
     label: 'Насколько ты довольна своим сном?',
     hint: '0 — совсем плохо, 10 — высыпаюсь отлично',
     low: '😣', high: '😴',
-    weights: { brain: 35, thyroid: 10, hormones: 8 } },
+    weights: { brain: 35, thyroid: 12, hormones: 10 } },
   { id: 'stress',   type: 'scale', direction: 'higher-worse',
     label: 'Уровень стресса в последнее время?',
     hint: '0 — спокойно, 10 — сильный ежедневный стресс',
     low: '🧘', high: '😵',
-    weights: { brain: 25, hormones: 15, heart: 10, gut: 8 } },
+    weights: { brain: 28, hormones: 18, gut: 12 } },
   { id: 'energy',   type: 'scale', direction: 'higher-better',
     label: 'Сколько у тебя энергии в течение дня?',
     hint: '0 — совсем нет сил, 10 — энергия через край',
     low: '🪫', high: '⚡',
-    weights: { thyroid: 35, heart: 10, composition: 10 } },
+    weights: { thyroid: 38, composition: 14 } },
   { id: 'activity', type: 'scale', direction: 'higher-better',
     label: 'Уровень физической активности?',
     hint: '0 — почти не двигаюсь, 10 — тренировки 3–5 раз в неделю',
     low: '🛋️', high: '🏃‍♀️',
-    weights: { composition: 30, lungs: 20, heart: 15 } },
+    weights: { composition: 40, thyroid: 10 } },
   { id: 'skin',     type: 'scale', direction: 'higher-better',
     label: 'Как бы ты оценила состояние кожи?',
     hint: '0 — высыпания и сухость, 10 — всё отлично',
     low: '😔', high: '✨',
-    weights: { liver: 20, hormones: 15, gut: 10 } },
-  { id: 'swelling', type: 'choice',
-    label: 'Замечаешь отёчность утром?',
-    weights: { liver: 20, heart: 8 },
-    options: [
-      { v: 'often', label: 'Часто',  emoji: '💧', impact: 1 },
-      { v: 'some',  label: 'Иногда', emoji: '🌤', impact: 0.5 },
-      { v: 'never', label: 'Нет',    emoji: '☀️', impact: 0 },
-    ]},
+    weights: { hormones: 22, gut: 18 } },
   { id: 'headaches', type: 'choice',
     label: 'Бывают головные боли или мигрени?',
-    weights: { brain: 18, liver: 6 },
+    weights: { brain: 20 },
     options: [
       { v: 'often', label: 'Часто',  emoji: '🤕', impact: 1 },
       { v: 'some',  label: 'Иногда', emoji: '😐', impact: 0.5 },
@@ -58,7 +47,7 @@ const QUESTIONS = [
     ]},
   { id: 'gut', type: 'choice',
     label: 'Есть ли проблемы с ЖКТ — вздутие, тяжесть?',
-    weights: { gut: 30, liver: 10 },
+    weights: { gut: 35 },
     options: [
       { v: 'often', label: 'Часто',  emoji: '😖', impact: 1 },
       { v: 'some',  label: 'Иногда', emoji: '🤔', impact: 0.5 },
@@ -351,33 +340,34 @@ function ContentCard({ item }) {
   return (
     <div style={{
       background: W, border: `1px solid ${BD}`, borderRadius: 16, padding: '14px 16px',
-      display: 'flex', alignItems: 'center', gap: 12, minWidth: 220,
+      display: 'flex', alignItems: 'center', gap: 14,
     }}>
       <div style={{
-        width: 44, height: 44, borderRadius: 12, background: GLL,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0,
+        width: 48, height: 48, borderRadius: 14, background: GLL,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0,
       }}>{item.icon || '📚'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: G, letterSpacing: 1, fontFamily: sans }}>{tag}</div>
           <div style={{
             fontSize: 9, fontWeight: 700, letterSpacing: 0.5, fontFamily: sans,
             background: free ? '#E7F0E7' : '#FBF2DB',
             color: free ? G : GOLDD,
-            padding: '2px 6px', borderRadius: 6,
+            padding: '2px 7px', borderRadius: 6,
           }}>
             {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
           </div>
         </div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: INK, fontFamily: sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: INK, fontFamily: sans, lineHeight: 1.3 }}>
           {item.title}
         </div>
         {item.desc && (
-          <div style={{ fontSize: 11, color: INK3, fontFamily: sans, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 3, lineHeight: 1.4 }}>
             {item.desc}
           </div>
         )}
       </div>
+      <div style={{ color: INK3, fontSize: 20, flexShrink: 0 }}>›</div>
     </div>
   );
 }
@@ -632,10 +622,22 @@ function MainScreen({ state, onZoneClick, onReset }) {
           border: `1px solid ${BD}`, boxShadow: '0 2px 14px rgba(0,0,0,0.04)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <div style={{ width: 42, height: 42, borderRadius: '50%', background: G, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🌿</div>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%', overflow: 'hidden',
+              background: G, border: `2px solid ${G}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+              flexShrink: 0,
+            }}>
+              <img
+                src="/playground/kristina.jpg"
+                alt="Кристина"
+                onError={e => { e.currentTarget.style.display = 'none'; }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
             <div>
-              <div style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, color: INK }}>Кристина</div>
-              <div style={{ fontSize: 11, color: INK3, fontFamily: sans }}>нутрициолог · сообщение</div>
+              <div style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, color: INK }}>Кристина Виноградова</div>
+              <div style={{ fontSize: 11, color: INK3, fontFamily: sans }}>нутрициолог · персональный ответ</div>
             </div>
           </div>
 
@@ -680,20 +682,16 @@ function MainScreen({ state, onZoneClick, onReset }) {
           </div>
 
           <div style={{
-            display: 'flex', gap: 12, overflowX: 'auto',
+            display: 'flex', flexDirection: 'column', gap: 10,
             padding: '4px 20px 20px',
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
           }}>
             {filtered.length === 0 && (
-              <div style={{ fontSize: 13, color: INK3, fontFamily: sans, padding: '12px 0' }}>
+              <div style={{ fontSize: 13, color: INK3, fontFamily: sans, padding: '12px 0', textAlign: 'center' }}>
                 В этом фильтре пока ничего нет
               </div>
             )}
             {filtered.map(item => (
-              <div key={item.id} style={{ minWidth: 260, scrollSnapAlign: 'start' }}>
-                <ContentCard item={item} />
-              </div>
+              <ContentCard key={item.id} item={item} />
             ))}
           </div>
         </div>
@@ -728,14 +726,11 @@ export default function Playground() {
         // Распределяем контент по зонам через простую эвристику по названию/описанию,
         // чтобы карточки появлялись в ZoneSheet без AI-маппинга.
         const KEYWORDS = {
-          brain: ['сон', 'нерв', 'стресс', 'успоко', 'медит'],
+          brain: ['сон', 'нерв', 'стресс', 'успоко', 'медит', 'голов'],
           thyroid: ['энерги', 'щитовидк', 'митохон', 'усталост'],
-          heart: ['сердц', 'сосуд', 'давлен'],
-          lungs: ['дыхан', 'лёгк', 'кислород', 'воздух'],
-          gut: ['жкт', 'кишеч', 'желуд', 'вздут', 'пищеварен'],
-          liver: ['печен', 'детокс', 'очищен', 'жёлч'],
-          hormones: ['гормон', 'цикл', 'менстр', 'репродук', 'женск'],
-          composition: ['тело', 'компози', 'мышц', 'вес', 'стройн', 'жир'],
+          gut: ['жкт', 'кишеч', 'желуд', 'вздут', 'пищеварен', 'детокс', 'печен'],
+          hormones: ['гормон', 'цикл', 'менстр', 'репродук', 'женск', 'кож'],
+          composition: ['тело', 'компози', 'мышц', 'вес', 'стройн', 'жир', 'активн'],
         };
         const tagged = items.map(it => {
           const t = `${it.title || ''} ${it.desc || ''}`.toLowerCase();
