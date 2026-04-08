@@ -10,7 +10,7 @@ const CACHE_DIR = path.join(__dirname, '../../.cache/atlas');
 try { fs.mkdirSync(CACHE_DIR, { recursive: true }); } catch {}
 
 // Поднимаем версию при смене модели или промпта — автоматически инвалидирует кеш
-const AI_VERSION = 'claude-35-sonnet-v2';
+const AI_VERSION = 'claude-sonnet-4-6-v1';
 
 const ZONE_LABELS = {
   brain:       'Сон и нервная система',
@@ -176,7 +176,7 @@ async function analyzeAnswers({ answers = {}, complaints = '', levels = {} }) {
   const userPrompt = buildUserPrompt(answers, complaints, levels, weakest, catalog);
 
   const response = await openrouter({
-    model: 'anthropic/claude-3.5-sonnet',
+    model: 'anthropic/claude-sonnet-4.6',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user',   content: userPrompt },
