@@ -61,7 +61,7 @@ function AtlasMain({ result, onRetake, onGoChat }) {
   return (
     <div style={{ background: '#F9F7F4', paddingBottom: 30 }}>
       {/* Колесо */}
-      <div style={{ padding: '10px 4px 0', maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ padding: '0 4px', margin: '-20px auto 0', maxWidth: 560 }}>
         <BalanceWheel levels={result.levels || {}} focusId={focusZoneId} onZoneClick={z => setZoneOpen(z)} />
       </div>
 

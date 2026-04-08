@@ -151,8 +151,8 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
   const SIZE = 480;   // совпадает с max-width приложения — текст 1:1 к CSS px
   const CX = SIZE / 2;
   const CY = SIZE / 2;
-  const R = 128;
-  const INNER = 22;
+  const R = 136;
+  const INNER = 24;
   const N = ZONES.length;
   const SLICE = (Math.PI * 2) / N;
   const GAP = 0.018; // небольшой зазор между секторами
@@ -242,44 +242,46 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
         {Math.round(Object.values(animated).reduce((s, v) => s + v, 0) / N)}%
       </text>
 
-      {/* Метки зон — с белой плашкой-подложкой */}
+      {/* Метки зон — компактные плашки, плотно прижатые к колесу */}
       {ZONES.map((z, i) => {
         const level = Math.round(animated[z.id] ?? 0);
         const a = -Math.PI / 2 + (i + 0.5) * SLICE;
-        const [lx, ly] = pt(R + 44, a);
+        const [lx, ly] = pt(R + 28, a);
         const active = z.id === focusId;
         const c = zoneColor(level);
 
-        const w = Math.max(108, z.label.length * 10 + 48);
-        const h = 54;
+        // Компактнее: 92..110 по ширине, 48 по высоте
+        const w = Math.max(92, z.label.length * 8.5 + 44);
+        const h = 48;
+
+        // Для боковых плашек сдвигаем X так, чтобы внутренний край прилегал к колесу
+        const cosA = Math.cos(a);
+        const offsetX = cosA * (w / 2 - 18); // чем дальше от оси, тем больше сдвиг внутрь
+        const cxLabel = lx + offsetX * 0.6;
 
         return (
           <g key={z.id + '-lbl'} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
-            {/* Подложка */}
             <rect
-              x={lx - w / 2} y={ly - h / 2} width={w} height={h} rx={h / 2} ry={h / 2}
+              x={cxLabel - w / 2} y={ly - h / 2} width={w} height={h} rx={h / 2} ry={h / 2}
               fill="#FFFFFF"
               stroke={active ? c : '#E5E0D0'}
               strokeWidth={active ? 2.2 : 1}
               style={{ filter: 'drop-shadow(0 2px 6px rgba(45,74,45,0.10))' }}
             />
-            {/* Иконка */}
             <text
-              x={lx - w / 2 + 24} y={ly + 8}
-              textAnchor="middle" fontSize="22"
+              x={cxLabel - w / 2 + 22} y={ly + 7}
+              textAnchor="middle" fontSize="20"
               style={{ pointerEvents: 'none' }}
             >{z.icon}</text>
-            {/* Название */}
             <text
-              x={lx - w / 2 + 44} y={ly - 1}
-              textAnchor="start" fontSize="15"
+              x={cxLabel - w / 2 + 40} y={ly - 2}
+              textAnchor="start" fontSize="14"
               fontWeight={700} fill={INK}
               style={{ pointerEvents: 'none', fontFamily: sans }}
             >{z.label}</text>
-            {/* % */}
             <text
-              x={lx - w / 2 + 44} y={ly + 16}
-              textAnchor="start" fontSize="13"
+              x={cxLabel - w / 2 + 40} y={ly + 14}
+              textAnchor="start" fontSize="12"
               fontWeight={700} fill={c}
               style={{ pointerEvents: 'none', fontFamily: sans }}
             >{level}%</text>
