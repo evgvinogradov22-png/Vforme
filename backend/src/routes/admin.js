@@ -177,6 +177,43 @@ router.post('/users/:id/access', SA, async (req, res) => {
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
+// Atlas results — Кристина видит прохождения анкеты клиентами
+const AtlasResult = require('../models/AtlasResult');
+router.get('/atlas', A, async (req, res) => {
+  try {
+    const rows = await AtlasResult.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 200,
+      attributes: ['id', 'userId', 'createdAt', 'levels', 'focusZoneIds', 'complaints', 'gender'],
+    });
+    const userIds = [...new Set(rows.map(r => r.userId))];
+    const users = await User.findAll({
+      where: { id: userIds },
+      attributes: ['id', 'name', 'email'],
+    });
+    const uMap = Object.fromEntries(users.map(u => [u.id, u]));
+    res.json(rows.map(r => ({
+      id: r.id,
+      userId: r.userId,
+      user: uMap[r.userId] || null,
+      createdAt: r.createdAt,
+      levels: r.levels,
+      focusZoneIds: r.focusZoneIds,
+      complaints: r.complaints,
+      gender: r.gender,
+    })));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/atlas/:id', A, async (req, res) => {
+  try {
+    const row = await AtlasResult.findByPk(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Не найдено' });
+    const user = await User.findByPk(row.userId, { attributes: ['id', 'name', 'email'] });
+    res.json({ ...row.toJSON(), user });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
 
 // Баллы пользователей

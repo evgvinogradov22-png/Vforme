@@ -28,6 +28,7 @@ require('./models/ProtocolAccess');
 require('./models/ChatSettings');
 require('./models/ChatMessage');
 require('./models/UserEvent');
+const AtlasResult = require('./models/AtlasResult');
 
 const app = express();
 const ALLOWED_ORIGINS = [
@@ -67,6 +68,7 @@ app.use('/api/chat',        require('./routes/chat'));
 app.use('/api/events',      require('./routes/events'));
 app.use('/api/admin/deploy', require('./routes/deploy'));
 app.use('/api/playground',   require('./routes/playground'));
+app.use('/api/atlas',        require('./routes/atlas'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Централизованный error handler — ДОЛЖЕН быть последним
@@ -76,6 +78,9 @@ app.use(errorHandler);
 async function start() {
   try {
     await sequelize.authenticate();
+    // Безопасно создаём только новые таблицы (CREATE IF NOT EXISTS),
+    // не трогаем существующие.
+    await AtlasResult.sync();
     console.log('✅ База данных подключена');
     const PORT = process.env.PORT || 3001;
     const server = http.createServer(app);
