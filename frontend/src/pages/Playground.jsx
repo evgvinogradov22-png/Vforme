@@ -12,6 +12,13 @@ const ZONES = [
 
 // ─── Вопросы (анкета Кристины) ───────────────────────────────
 const QUESTIONS = [
+  { id: 'gender', type: 'choice',
+    label: 'Как к тебе обращаться?',
+    weights: {},
+    options: [
+      { v: 'female', label: 'Девушка', emoji: '👩', impact: 0 },
+      { v: 'male',   label: 'Парень',  emoji: '👨', impact: 0 },
+    ]},
   { id: 'sleep',    type: 'scale', direction: 'higher-better',
     label: 'Насколько ты довольна своим сном?',
     hint: '0 — совсем плохо, 10 — высыпаюсь отлично',
