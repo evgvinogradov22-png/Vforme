@@ -144,25 +144,23 @@ export default function Chat() {
     }
   };
 
-  // Аватар Кристины — фото (с fallback на 🌿 при ошибке)
-  const KristinaAvatar = ({ size = 32 }) => (
+  // Аватар Кристины — фото в рамке, без фона
+  const KristinaAvatar = ({ size = 32, onDark = false }) => (
     <div style={{
       width: size, height: size, borderRadius: '50%',
       overflow: 'hidden', flexShrink: 0,
-      background: G,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.5,
+      border: onDark ? '1.5px solid rgba(255,255,255,0.7)' : `1.5px solid ${BD}`,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
     }}>
       <img src="/img/kristina.jpg" alt="Кристина"
-           onError={e => { e.currentTarget.style.display = 'none'; }}
-           style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
     </div>
   );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)', background: '#F9F7F4' }}>
       <div style={{ background: G, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <KristinaAvatar size={44} />
+        <KristinaAvatar size={44} onDark />
         <div>
           <div style={{ color: W, fontFamily: serif, fontSize: 17, fontWeight: 600 }}>Кристина</div>
           <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontFamily: sans }}>Нутрициолог · Онлайн</div>
