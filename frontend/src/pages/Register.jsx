@@ -48,15 +48,19 @@ const QUESTIONNAIRE = [
   ]},
 ];
 
-export default function Register({ onBack, onSwitchToLogin }) {
+export default function Register({ onBack, onSwitchToLogin, onRegistered }) {
   const { register } = useAuth();
-  const [step, setStep] = useState('form'); // 'form' | 'questionnaire'
+  const [step, setStep] = useState('form'); // 'form' | 'verify' | 'questionnaire'
   const [qStep, setQStep] = useState(0);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  const validateName = (n) => n.trim().length >= 2 && /^[a-zA-Zа-яёА-ЯЁ\s\-]+$/.test(n.trim());
 
   const updateAnswer = (id, val) => setAnswers(a => ({ ...a, [id]: val }));
   const toggleMulti = (id, opt) => {
@@ -66,11 +70,14 @@ export default function Register({ onBack, onSwitchToLogin }) {
 
   const handleRegister = async () => {
     if (!email || !password) return;
+    if (name && !validateName(name)) return setError('Имя должно содержать минимум 2 буквы и только буквы');
+    if (!validateEmail(email)) return setError('Введи корректный email');
     setError('');
     setLoading(true);
     try {
-      await register(email, password);
-      setStep('questionnaire');
+      await register(email, password, name);
+      if (onRegistered) onRegistered();
+      setStep('verify');
     } catch (e) {
       setError(e.message);
     } finally {
@@ -101,8 +108,12 @@ export default function Register({ onBack, onSwitchToLogin }) {
       </div>
       <div style={{ padding: '32px 24px' }}>
         <div style={{ fontFamily: serif, fontSize: 30, fontWeight: 600, color: G, marginBottom: 6 }}>Создай аккаунт</div>
-        <div style={{ fontSize: 15, color: INK2, marginBottom: 32, lineHeight: 1.5 }}>После регистрации заполним анкету — это займёт 3–4 минуты</div>
+        <div style={{ fontSize: 15, color: INK2, marginBottom: 32, lineHeight: 1.5 }}></div>
 
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: INK2, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>ИМЯ</div>
+          <input type="text" placeholder="Как тебя зовут?" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
+        </div>
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 12, color: INK2, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>EMAIL</div>
           <input type="email" placeholder="example@mail.ru" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
@@ -119,13 +130,44 @@ export default function Register({ onBack, onSwitchToLogin }) {
 
         <button onClick={handleRegister} disabled={!email || !password || loading}
           style={{ width: '100%', padding: '18px', background: email && password && !loading ? GOLD : '#EDE8E0', border: 'none', borderRadius: 30, color: email && password && !loading ? W : INK3, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: email && password && !loading ? 'pointer' : 'not-allowed', marginTop: 8 }}>
-          {loading ? 'СОЗДАЁМ АККАУНТ...' : 'ДАЛЕЕ — ЗАПОЛНИТЬ АНКЕТУ'}
+          {loading ? 'СОЗДАЁМ АККАУНТ...' : 'ЗАРЕГИСТРИРОВАТЬСЯ'}
         </button>
 
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: INK3 }}>
           Уже есть аккаунт?{' '}
           <span onClick={onSwitchToLogin} style={{ color: G, fontWeight: 700, cursor: 'pointer' }}>Войти</span>
         </div>
+      </div>
+    </div>
+  );
+
+
+  if (step === 'verify') return (
+    <div style={{ fontFamily: sans, background: W, minHeight: '100vh', color: INK, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
+      <div style={{ fontSize: 64, marginBottom: 24 }}>📬</div>
+      <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 600, color: G, marginBottom: 12 }}>Проверь почту</div>
+      <div style={{ fontSize: 16, color: INK2, lineHeight: 1.7, marginBottom: 32, maxWidth: 320 }}>
+        Мы отправили письмо на <strong>{email}</strong>.<br/>
+        Перейди по ссылке в письме чтобы активировать аккаунт.
+      </div>
+      <div style={{ background: GLL, borderRadius: 16, padding: '20px 24px', marginBottom: 32, maxWidth: 320, width: '100%' }}>
+        <div style={{ fontSize: 14, color: G, lineHeight: 1.6 }}>
+          ✉️ Письмо может прийти в течение 2–3 минут.<br/>
+          Проверь папку «Спам» если не видишь письма.
+        </div>
+      </div>
+      <button onClick={() => setStep('questionnaire')}
+        style={{ width: '100%', maxWidth: 320, padding: '16px', background: GOLD, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>
+        УЖЕ ПОДТВЕРДИЛ — ПРОДОЛЖИТЬ
+      </button>
+      <div style={{ fontSize: 13, color: INK3 }}>
+        Не получили письмо?{' '}
+        <span onClick={async () => {
+          try {
+            await fetch('/api/auth/resend-verify', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
+            alert('Письмо отправлено повторно');
+          } catch(e) {}
+        }} style={{ color: G, fontWeight: 700, cursor: 'pointer' }}>Отправить ещё раз</span>
       </div>
     </div>
   );

@@ -3,7 +3,22 @@ import { schemes as schemesApi, supplements as supplementsApi, programs as progr
 import { C, Spinner, Card, Btn, Modal, Input, Textarea } from '../components/UI';
 
 function SupplementModal({ supplement, schemeId, onClose, onSave }) {
-  const [data, setData] = useState(supplement || { schemeId, name: '', dose: '', time: '', note: '', buyUrl: '', order: 0 });
+  const [data, setData] = useState(supplement || { schemeId, name: '', brand: '', dose: '', time: '', note: '', buyUrl: '', image: '', order: 0 });
+  const [uploading, setUploading] = useState(false);
+
+  const getToken = () => localStorage.getItem('vforme_admin_token');
+
+  const uploadImage = async (file) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('/api/upload/image', { method: 'POST', headers: { 'Authorization': `Bearer ${getToken()}` }, body: formData });
+      const result = await res.json();
+      if (result.url) setData(d => ({ ...d, image: result.url }));
+    } catch(e) {}
+    setUploading(false);
+  };
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -21,7 +36,18 @@ function SupplementModal({ supplement, schemeId, onClose, onSave }) {
       <Input label="Дозировка" value={data.dose || ''} onChange={v => setData(d => ({ ...d, dose: v }))} placeholder="400 мг" />
       <Input label="Время приёма" value={data.time || ''} onChange={v => setData(d => ({ ...d, time: v }))} placeholder="Вечером перед сном" />
       <Textarea label="Примечание" value={data.note || ''} onChange={v => setData(d => ({ ...d, note: v }))} placeholder="Расслабляет, улучшает сон..." rows={2} />
+      <Input label="Бренд" value={data.brand || ''} onChange={v => setData(d => ({ ...d, brand: v }))} placeholder="Nature's Way, Solgar..." />
       <Input label="Ссылка где купить" value={data.buyUrl || ''} onChange={v => setData(d => ({ ...d, buyUrl: v }))} placeholder="https://..." />
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ФОТО ПРОДУКТА</div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {data.image && <img src={data.image} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />}
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', border: `1px dashed ${C.border}`, borderRadius: 10, cursor: 'pointer', fontSize: 14, color: C.ink2 }}>
+            {uploading ? 'Загружаем...' : '📁 Загрузить фото'}
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files[0]) uploadImage(e.target.files[0]); }} />
+          </label>
+        </div>
+      </div>
       <Input label="Порядок" value={String(data.order)} onChange={v => setData(d => ({ ...d, order: Number(v) }))} type="number" />
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <Btn onClick={onClose} variant="ghost" style={{ flex: 1 }}>Отмена</Btn>

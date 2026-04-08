@@ -4,8 +4,18 @@ const Module = require('../models/Module');
 const Lecture = require('../models/Lecture');
 
 router.get('/', async (req, res) => {
-  try { res.json(await Program.findAll({ order: [['order','ASC']] })); }
-  catch (e) { res.status(500).json({ error: e.message }); }
+  try {
+    const programs = await Program.findAll({ order: [['order','ASC']] });
+    const result = await Promise.all(programs.map(async prog => {
+      const modules = await Module.findAll({ where: { programId: prog.id }, order: [['order','ASC']] });
+      const modulesWithLectures = await Promise.all(modules.map(async m => ({
+        ...m.toJSON(),
+        lectures: await Lecture.findAll({ where: { moduleId: m.id }, order: [['order','ASC']] })
+      })));
+      return { ...prog.toJSON(), modules: modulesWithLectures };
+    }));
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 router.get('/:id', async (req, res) => {

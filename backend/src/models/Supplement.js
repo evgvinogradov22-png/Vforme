@@ -8,6 +8,8 @@ const Supplement = sequelize.define('Supplement', {
   time:     { type: DataTypes.STRING },
   note:     { type: DataTypes.TEXT },
   buyUrl:   { type: DataTypes.STRING },
+  brand:    { type: DataTypes.STRING },
+  image:    { type: DataTypes.STRING },
   order:    { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { timestamps: true });
 module.exports = Supplement;

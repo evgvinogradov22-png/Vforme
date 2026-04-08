@@ -10,6 +10,7 @@ const Supplement = require('../models/Supplement');
 const User = require('../models/User');
 const UserProfile = require('../models/UserProfile');
 const bcrypt = require('bcryptjs');
+const Order = require('../models/Order');
 const multer = require('multer');
 const path = require('path');
 const sharp = require('sharp');
@@ -19,16 +20,60 @@ const A = [auth, role('admin','superadmin')];
 const SA = [auth, role('superadmin')];
 const upload = multer({ dest: '/tmp/' });
 
+// Whitelist полей для каждой модели
+const ALLOWED_FIELDS = {
+  Program:  ['title', 'desc', 'icon', 'price', 'available', 'order', 'image', 'features', 'tags'],
+  Module:   ['title', 'desc', 'order', 'programId', 'icon'],
+  Lecture:  ['title', 'content', 'order', 'moduleId', 'type', 'videoUrl', 'duration'],
+  Recipe:   ['title', 'desc', 'content', 'image', 'tags', 'calories', 'available'],
+  Supplement: ['name', 'desc', 'image', 'link', 'tags', 'available'],
+  SupplementScheme: ['title', 'desc', 'content', 'available', 'order'],
+};
+
+function pick(obj, fields) {
+  if (!fields) return obj;
+  return fields.reduce((acc, key) => {
+    if (obj[key] !== undefined) acc[key] = obj[key];
+    return acc;
+  }, {});
+}
+
 const crud = (Model, extra) => ({
   getAll: async (req, res) => { try { res.json(await Model.findAll(extra || {})); } catch(e) { res.status(500).json({error:e.message}); } },
-  create: async (req, res) => { try { res.json(await Model.create(req.body)); } catch(e) { res.status(500).json({error:e.message}); } },
-  update: async (req, res) => { try { await Model.update(req.body,{where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } },
+  create: async (req, res) => {
+    try {
+      const fields = ALLOWED_FIELDS[Model.name];
+      const data = pick(req.body, fields);
+      res.json(await Model.create(data));
+    } catch(e) { res.status(500).json({error:e.message}); }
+  },
+  update: async (req, res) => {
+    try {
+      const fields = ALLOWED_FIELDS[Model.name];
+      const data = pick(req.body, fields);
+      await Model.update(data, { where: { id: req.params.id } });
+      res.json({ ok: true });
+    } catch(e) { res.status(500).json({error:e.message}); }
+  },
   remove: async (req, res) => { try { await Model.destroy({where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } },
 });
 
 // Programs
 const p = crud(Program, { order: [['order','ASC']] });
-router.get('/programs', A, p.getAll);
+router.get('/programs', A, async (req, res) => {
+  try {
+    const progs = await Program.findAll({ order: [['order','ASC']] });
+    const result = await Promise.all(progs.map(async prog => {
+      const modules = await Module.findAll({ where: { programId: prog.id }, order: [['order','ASC']] });
+      const modulesWithLectures = await Promise.all(modules.map(async mod => ({
+        ...mod.toJSON(),
+        lectures: await Lecture.findAll({ where: { moduleId: mod.id }, order: [['order','ASC']] })
+      })));
+      return { ...prog.toJSON(), modules: modulesWithLectures };
+    }));
+    res.json(result);
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
 router.post('/programs', A, p.create);
 router.put('/programs/:id', A, p.update);
 router.delete('/programs/:id', A, p.remove);
@@ -76,6 +121,7 @@ router.put('/schemes/:id', A, sc.update);
 router.delete('/schemes/:id', A, sc.remove);
 
 const sp = crud(Supplement);
+router.get('/supplements', A, sp.getAll);
 router.post('/supplements', A, sp.create);
 router.put('/supplements/:id', A, sp.update);
 router.delete('/supplements/:id', A, sp.remove);
@@ -131,5 +177,116 @@ router.post('/users/:id/points', A, async (req, res) => {
     const { amount, reason } = req.body;
     const point = await Points.create({ userId: req.params.id, amount, reason, refType: 'manual' });
     res.json({ ok: true, point });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Промокоды
+const Promo = require('../models/Promo');
+router.get('/promos', A, async (req, res) => { res.json(await Promo.findAll({ order: [['createdAt','DESC']] })); });
+router.post('/promos', A, async (req, res) => {
+  try {
+    const data = { ...req.body, code: req.body.code.toUpperCase() };
+    res.json(await Promo.create(data));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+router.put('/promos/:id', A, async (req, res) => { try { await Promo.update(req.body, { where: { id: req.params.id } }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.delete('/promos/:id', A, async (req, res) => { try { await Promo.destroy({ where: { id: req.params.id } }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+
+// Протоколы
+const Protocol = require('../models/Protocol');
+const ProtocolAccess = require('../models/ProtocolAccess');
+
+router.get('/protocols', A, async (req, res) => { res.json(await Protocol.findAll({ order: [['order','ASC']] })); });
+router.post('/protocols', A, async (req, res) => { try { res.json(await Protocol.create(req.body)); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.put('/protocols/:id', A, async (req, res) => { try { await Protocol.update(req.body, { where: { id: req.params.id } }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.delete('/protocols/:id', A, async (req, res) => { try { await Protocol.destroy({ where: { id: req.params.id } }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+
+// Открыть доступ к протоколу вручную
+router.post('/protocols/:id/access/:userId', A, async (req, res) => {
+  try {
+    await ProtocolAccess.findOrCreate({ where: { userId: req.params.userId, protocolId: req.params.id } });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Настройки чата
+const ChatSettings = require('../models/ChatSettings');
+router.get('/chat-settings', A, async (req, res) => {
+  try {
+    let s = await ChatSettings.findOne();
+    if (!s) s = await ChatSettings.create({});
+    res.json(s);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+router.put('/chat-settings', A, async (req, res) => {
+  try {
+    let s = await ChatSettings.findOne();
+    if (!s) s = await ChatSettings.create({});
+    await s.update(req.body);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Деплой
+const { execSync } = require('child_process');
+const VERSIONS_FILE = '/var/www/vforme_versions.json';
+
+router.get('/deploy/versions', A, (req, res) => {
+  try {
+    const fs = require('fs');
+    if (!fs.existsSync(VERSIONS_FILE)) return res.json([]);
+    res.json(JSON.parse(fs.readFileSync(VERSIONS_FILE, 'utf8')));
+  } catch(e) { res.json([]); }
+});
+
+router.post('/deploy/test', A, (req, res) => {
+  try {
+    const { changelog } = req.body;
+    const log = execSync(`bash /var/www/deploy.sh test "${changelog}"`, { timeout: 300000 }).toString();
+    const fs = require('fs');
+    const versions = JSON.parse(fs.readFileSync(VERSIONS_FILE, 'utf8'));
+    res.json({ ok: true, log, version: versions[0] });
+  } catch(e) { res.status(500).json({ ok: false, error: e.message, log: e.stdout?.toString() || '' }); }
+});
+
+router.post('/deploy/promote', A, (req, res) => {
+  try {
+    const log = execSync(`bash /var/www/deploy.sh promote`, { timeout: 300000 }).toString();
+    res.json({ ok: true, log });
+  } catch(e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+router.post('/deploy/rollback', A, (req, res) => {
+  try {
+    const { num } = req.body;
+    const log = execSync(`bash /var/www/deploy.sh rollback ${num || 1}`, { timeout: 60000 }).toString();
+    res.json({ ok: true, log });
+  } catch(e) { res.status(500).json({ ok: false, error: e.message }); }
+});
+
+// Список всех заказов
+router.get('/orders', A, async (req, res) => {
+  try {
+    const orders = await Order.findAll({ order: [['createdAt', 'DESC']], limit: 200 });
+    const userIds = [...new Set(orders.map(o => o.userId))];
+    const itemIds = [...new Set(orders.map(o => o.programId))];
+    const users = await User.findAll({ where: { id: userIds }, attributes: ['id', 'name', 'email'] });
+    const programs = await Program.findAll({ where: { id: itemIds }, attributes: ['id', 'title'] });
+    const Protocol = require('../models/Protocol');
+    const protocols = await Protocol.findAll({ where: { id: itemIds }, attributes: ['id', 'title'] });
+    const result = orders.map(o => ({
+      ...o.toJSON(),
+      user: users.find(u => u.id === o.userId),
+      program: programs.find(p => p.id === o.programId) || protocols.find(p => p.id === o.programId),
+    }));
+    res.json(result);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Удалить заказ
+router.delete('/orders/:id', SA, async (req, res) => {
+  try {
+    await Order.destroy({ where: { id: req.params.id } });
+    res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

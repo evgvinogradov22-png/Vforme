@@ -52,8 +52,37 @@ function ClientModal({ client, programs, onClose, onUpdate, flash }) {
           <div style={{ fontSize: 14, color: C.ink3 }}>{client.email}</div>
           {a.city && <div style={{ fontSize: 13, color: C.ink3 }}>📍 {a.city}</div>}
         </div>
-        <Badge color={ROLE_COLORS[client.role]}>{ROLE_LABELS[client.role]}</Badge>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+          <Badge color={ROLE_COLORS[client.role]}>{ROLE_LABELS[client.role]}</Badge>
+          <Badge color={client.emailVerified ? 'green' : 'red'}>{client.emailVerified ? '✓ Email' : '✗ Email'}</Badge>
+        </div>
       </div>
+
+      {/* СТАТИСТИКА */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
+        <div style={{ background: C.greenLL, borderRadius: 12, padding: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.green }}>{client.totalPoints || 0}</div>
+          <div style={{ fontSize: 11, color: C.greenL, marginTop: 2 }}>баллов</div>
+        </div>
+        <div style={{ background: '#FBF5EB', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.gold }}>{client.totalOrders || 0}</div>
+          <div style={{ fontSize: 11, color: C.gold, marginTop: 2 }}>оплат</div>
+        </div>
+        <div style={{ background: '#FBF5EB', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.gold }}>{(client.totalRevenue || 0).toLocaleString()} ₽</div>
+          <div style={{ fontSize: 11, color: C.gold, marginTop: 2 }}>сумма</div>
+        </div>
+      </div>
+
+      {/* TELEGRAM */}
+      {client.telegramId && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: C.greenLL, border: `1px solid ${C.green}44`, borderRadius: 12, marginBottom: 20 }}>
+          <span style={{ fontSize: 18 }}>✈️</span>
+          <div style={{ fontSize: 14, color: C.green, fontWeight: 600 }}>
+            Telegram: {client.telegramUsername ? `@${client.telegramUsername}` : 'подключён'}
+          </div>
+        </div>
+      )}
 
       {/* ПАРАМЕТРЫ */}
       {(a.weight || a.height || a.goal_weight) && (
@@ -168,6 +197,7 @@ export default function Clients({ flash }) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt_desc');
 
   useEffect(() => {
     Promise.all([usersApi.getAll(), programsApi.getAll()])
@@ -176,10 +206,21 @@ export default function Clients({ flash }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = clientList.filter(u =>
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
-    (u.name || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = clientList
+    .filter(u => u.email.toLowerCase().includes(search.toLowerCase()) || (u.name || '').toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (sortBy === 'createdAt_desc') return new Date(b.createdAt) - new Date(a.createdAt);
+      if (sortBy === 'createdAt_asc') return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sortBy === 'name') return (a.name || a.email).localeCompare(b.name || b.email);
+      return 0;
+    });
+
+  const deleteUser = async (id, email) => {
+    if (!confirm('Удалить ' + email + '? Нельзя отменить.')) return;
+    await usersApi.delete(id);
+    setClientList(list => list.filter(u => u.id !== id));
+    flash('Пользователь удалён');
+  };
 
   if (loading) return <Spinner />;
 
@@ -213,6 +254,17 @@ export default function Clients({ flash }) {
           style={{ width: '100%', border: 'none', outline: 'none', fontSize: 15, color: C.ink, background: 'transparent', fontFamily: 'Arial, sans-serif' }} />
       </Card>
 
+      {/* SORT */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 13, color: C.ink3, alignSelf: 'center' }}>Сортировка:</span>
+        {[['createdAt_desc','Новые сначала'],['createdAt_asc','Старые сначала'],['name','По имени']].map(([val, label]) => (
+          <button key={val} onClick={() => setSortBy(val)}
+            style={{ padding: '5px 12px', borderRadius: 16, border: `1px solid ${sortBy === val ? C.green : C.border}`, background: sortBy === val ? C.green : '#fff', color: sortBy === val ? '#fff' : C.ink2, fontSize: 12, cursor: 'pointer' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* TABLE */}
       <Card style={{ padding: 0 }}>
         <Table
@@ -230,11 +282,24 @@ export default function Clients({ flash }) {
               </div>
             )},
             { title: 'Роль', key: 'role', render: v => <Badge color={ROLE_COLORS[v]}>{ROLE_LABELS[v]}</Badge> },
-            { title: 'Зарегистрирован', key: 'createdAt', render: v => v ? new Date(v).toLocaleDateString('ru') : '—' },
+            { title: 'Email', key: 'emailVerified', render: v => (
+              <span style={{ fontSize: 12, fontWeight: 600, color: v ? '#22C55E' : '#EF4444' }}>
+                {v ? '✓ Верифицирован' : '✗ Нет'}
+              </span>
+            )},
+            { title: 'Дата регистрации', key: 'createdAt', render: v => v ? new Date(v).toLocaleString('ru', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—' },
             { title: 'Программы', key: 'programAccess', render: (v, row) => (
               <div style={{ fontSize: 13, color: C.ink3 }}>{(v || []).length} доступно</div>
             )},
-            { title: '', key: 'id', render: () => <span style={{ color: C.ink3, fontSize: 18 }}>›</span> },
+            { title: '', key: 'id', render: (v, row) => (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ color: C.ink3, fontSize: 18, cursor: 'pointer' }}>›</span>
+                <button onClick={e => { e.stopPropagation(); deleteUser(v, row.email); }}
+                  style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, padding: '4px 8px', color: C.red, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                  ✕
+                </button>
+              </div>
+            ) },
           ]}
           data={filtered}
         />

@@ -17,7 +17,7 @@ function formHeaders() {
 }
 
 async function req(method, path, body) {
-  const opts = { method, headers: headers() };
+  const opts = { method, headers: headers(), cache: 'no-store' };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(BASE + path, opts);
   const data = await res.json();

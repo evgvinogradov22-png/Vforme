@@ -16,15 +16,23 @@ require('./models/Task');
 const User = require('./models/User');
 
 async function seed() {
-  await sequelize.sync({ alter: true });
+  // Берём данные из .env — никаких захардкоженных паролей
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+  const name = process.env.ADMIN_NAME || 'Кристина';
+
+  if (!email || !password) {
+    console.error('❌ Укажи ADMIN_EMAIL и ADMIN_PASSWORD в .env');
+    process.exit(1);
+  }
+
+  await sequelize.sync();
   const exists = await User.findOne({ where: { role: 'superadmin' } });
   if (exists) { console.log('Суперадмин уже существует:', exists.email); process.exit(0); }
-  const hash = await bcrypt.hash('Admin123!', 10);
-  const user = await User.create({ email: 'admin@nutrikris.ru', password: hash, name: 'Кристина', role: 'superadmin' });
-  console.log('✅ Суперадмин создан!');
-  console.log('   Email:', user.email);
-  console.log('   Пароль: Admin123!');
-  console.log('⚠️  ОБЯЗАТЕЛЬНО СМЕНИТЕ ПАРОЛЬ ПОСЛЕ ПЕРВОГО ВХОДА!');
+
+  const hash = await bcrypt.hash(password, 12);
+  const user = await User.create({ email, password: hash, name, role: 'superadmin', emailVerified: true });
+  console.log('✅ Суперадмин создан:', user.email);
   process.exit(0);
 }
 seed().catch(e => { console.error(e); process.exit(1); });

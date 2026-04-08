@@ -5,6 +5,13 @@ import Clients from './pages/Clients';
 import Programs from './pages/Programs';
 import Recipes from './pages/Recipes';
 import Supplements from './pages/Supplements';
+import Promos from './pages/Promos';
+import Stats from './pages/Stats';
+import Protocols from './pages/Protocols';
+import Broadcast from './pages/Broadcast';
+import ChatAdmin from './pages/ChatAdmin';
+import Deploy from './pages/Deploy';
+import Payments from './pages/Payments';
 import { C, Toast } from './components/UI';
 
 const NAV = [
@@ -12,6 +19,13 @@ const NAV = [
   { id: 'programs',    icon: '📚', label: 'Программы' },
   { id: 'recipes',     icon: '🥗', label: 'Рецепты' },
   { id: 'supplements', icon: '💊', label: 'БАДы' },
+  { id: 'promos', icon: '🎟', label: 'Промокоды' },
+  { id: 'protocols', icon: '📋', label: 'Протоколы' },
+  { id: 'broadcast', icon: '📤', label: 'Рассылка' },
+  { id: 'chat', icon: '💬', label: 'Чат' },
+  { id: 'payments', icon: '💳', label: 'Платежи' },
+  { id: 'deploy', icon: '🚀', label: 'Деплой' },
+  { id: 'stats', icon: '📊', label: 'Статистика' },
 ];
 
 export default function App() {
@@ -90,6 +104,13 @@ export default function App() {
         {tab === 'programs'    && <Programs flash={flash} />}
         {tab === 'recipes'     && <Recipes flash={flash} />}
         {tab === 'supplements' && <Supplements flash={flash} />}
+        {tab === 'promos'        && <Promos flash={flash} />}
+        {tab === 'protocols'     && <Protocols flash={flash} />}
+        {tab === 'broadcast'     && <Broadcast flash={flash} />}
+        {tab === 'chat'           && <ChatAdmin flash={flash} />}
+        {tab === 'payments'      && <Payments />}
+        {tab === 'deploy'         && <Deploy flash={flash} />}
+        {tab === 'stats'         && <Stats />}
       </div>
 
       {toast && <Toast message={toast.msg} type={toast.type} />}

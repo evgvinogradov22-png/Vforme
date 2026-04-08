@@ -9,5 +9,11 @@ const User = sequelize.define('User', {
   phone:         { type: DataTypes.STRING },
   avatar:        { type: DataTypes.STRING },
   programAccess: { type: DataTypes.JSONB, defaultValue: [] },
+  emailVerified:  { type: DataTypes.BOOLEAN, defaultValue: false },
+  telegramId:       { type: DataTypes.STRING },
+  telegramBonusGiven: { type: DataTypes.BOOLEAN, defaultValue: false },
+  telegramUsername:  { type: DataTypes.STRING },
+  linkToken:         { type: DataTypes.STRING },
+  linkTokenAt:       { type: DataTypes.DATE },
 }, { timestamps: true });
 module.exports = User;

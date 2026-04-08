@@ -1,8 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config();
-
 const sequelize = require('./db');
 
 require('./models/User');
@@ -18,16 +17,30 @@ require('./models/UserProfile');
 require('./models/HabitLog');
 require('./models/Task');
 require('./models/Points');
+require('./models/Promo');
+require('./models/Order');
+require('./models/EmailToken');
+require('./models/EmailLog');
+require('./models/Protocol');
+require('./models/ProtocolAccess');
+require('./models/ChatSettings');
+require('./models/ChatMessage');
+require('./models/UserEvent');
 
 const app = express();
+const ALLOWED_ORIGINS = [
+  'https://app.nutrikris.ru',
+  'https://test.nutrikris.ru',
+  process.env.NODE_ENV !== 'production' && 'http://localhost:5173',
+  process.env.NODE_ENV !== 'production' && 'http://localhost:5174',
+].filter(Boolean);
 
 app.use(cors({
-  origin: [
-    'https://app.nutrikris.ru',
-    'http://localhost:5173',
-    'http://localhost:5174'
-  ],
-  credentials: true
+  origin: (origin, cb) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) cb(null, true);
+    else cb(new Error('CORS: origin не разрешён'));
+  },
+  credentials: false,
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -41,20 +54,28 @@ app.use('/api/tracker',     require('./routes/tracker'));
 app.use('/api/profile',     require('./routes/profile'));
 app.use('/api/admin',       require('./routes/admin'));
 app.use('/api/points',      require('./routes/points'));
+app.use('/api/payment',     require('./routes/payment'));
+app.use('/api/promo',       require('./routes/promo'));
+app.use('/api/stats',       require('./routes/stats'));
+app.use('/api/protocols',   require('./routes/protocols'));
+app.use('/api/upload',      require('./routes/upload'));
+app.use('/api/telegram',    require('./routes/telegram'));
+app.use('/api/broadcast',   require('./routes/broadcast'));
+app.use('/api/chat',        require('./routes/chat'));
+app.use('/api/events',      require('./routes/events'));
+app.use('/api/admin/deploy', require('./routes/deploy'));
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
+// Централизованный error handler — ДОЛЖЕН быть последним
+const { errorHandler } = require('./middleware/errorHandler');
+app.use(errorHandler);
 
 async function start() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
     console.log('✅ База данных подключена');
     const PORT = process.env.PORT || 3001;
-    app.listen(PORT, () => console.log(`✅ API запущен на порту ${PORT}`));
-  } catch (e) {
-    console.error('❌ Ошибка запуска:', e);
-    process.exit(1);
-  }
+    app.listen(PORT, () => console.log('✅ API запущен на порту ' + PORT));
+  } catch (e) { console.error('❌ Ошибка:', e); process.exit(1); }
 }
-
 start();

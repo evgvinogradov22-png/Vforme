@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { programs as programsApi, modules as modulesApi, lectures as lecturesApi } from '../api';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea } from '../components/UI';
+import RichEditor from '../components/RichEditor';
 
-// ── КОНСТРУКТОР БЛОКОВ ЛЕКЦИИ ────────────────────────────────
 const BLOCK_TYPES = [
   { type: 'intro',     label: '💬 Вступление' },
   { type: 'heading',   label: '📌 Заголовок' },
@@ -12,17 +12,19 @@ const BLOCK_TYPES = [
   { type: 'rules',     label: '📏 Правила' },
 ];
 
-function BlockEditor({ block, onChange, onDelete }) {
-  const base = { border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 10, background: C.white };
-
+function BlockEditor({ block, onChange, onDelete, onMoveUp, onMoveDown }) {
   return (
-    <div style={base}>
+    <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 10, background: C.white }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: C.ink3 }}>{BLOCK_TYPES.find(b => b.type === block.type)?.label || block.type}</span>
-        <button onClick={onDelete} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 16 }}>✕</button>
+        <span style={{ fontSize: 12, fontWeight: 700, color: C.ink3 }}>{BLOCK_TYPES.find(b => b.type === block.type)?.label}</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button onClick={onMoveUp} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: '2px 6px', cursor: 'pointer', fontSize: 11 }}>↑</button>
+          <button onClick={onMoveDown} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: '2px 6px', cursor: 'pointer', fontSize: 11 }}>↓</button>
+          <button onClick={onDelete} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 16, marginLeft: 4 }}>✕</button>
+        </div>
       </div>
 
-      {(block.type === 'intro' || block.type === 'heading' || block.type === 'text' || block.type === 'highlight') && (
+      {['intro', 'heading', 'text', 'highlight'].includes(block.type) && (
         <textarea value={block.text || ''} onChange={e => onChange({ ...block, text: e.target.value })}
           placeholder="Введи текст..." rows={block.type === 'text' ? 4 : 2}
           style={{ width: '100%', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', fontSize: 14, fontFamily: 'Arial', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
@@ -50,7 +52,7 @@ function BlockEditor({ block, onChange, onDelete }) {
           <textarea
             value={(block.items || []).map(r => `${r.num} | ${r.text}`).join('\n')}
             onChange={e => onChange({ ...block, items: e.target.value.split('\n').filter(Boolean).map(line => { const [num, ...rest] = line.split(' | '); return { num: num?.trim(), text: rest.join(' | ')?.trim() }; }) })}
-            placeholder={'01 | Завтракай в течение часа после пробуждения\n02 | Не пей воду во время еды'} rows={5}
+            placeholder={'01 | Завтракай в течение часа\n02 | Не пей воду во время еды'} rows={5}
             style={{ width: '100%', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', fontSize: 14, fontFamily: 'Arial', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
         </div>
       )}
@@ -62,26 +64,11 @@ function LectureModal({ lecture, moduleId, onClose, onSave }) {
   const [title, setTitle] = useState(lecture?.title || '');
   const [duration, setDuration] = useState(lecture?.duration || '');
   const [videoUrl, setVideoUrl] = useState(lecture?.videoUrl || '');
-  const [points, setPoints] = useState(String(lecture?.points || 10));
+  const [pts, setPts] = useState(String(lecture?.points || 10));
   const [tasksText, setTasksText] = useState((lecture?.tasks || []).join('\n'));
   const [checklistText, setChecklistText] = useState((lecture?.content?.checklist || []).join('\n'));
-  const [blocks, setBlocks] = useState(lecture?.content?.sections || []);
+  const [html, setHtml] = useState(lecture?.content?.html || '');
   const [saving, setSaving] = useState(false);
-
-  const addBlock = (type) => {
-    const defaults = { intro: { text: '' }, heading: { text: '' }, text: { text: '' }, highlight: { text: '' }, list: { style: 'check', items: [] }, rules: { items: [] } };
-    setBlocks(b => [...b, { type, ...defaults[type] }]);
-  };
-
-  const updateBlock = (i, updated) => setBlocks(b => b.map((x, idx) => idx === i ? updated : x));
-  const deleteBlock = (i) => setBlocks(b => b.filter((_, idx) => idx !== i));
-  const moveBlock = (i, dir) => {
-    const nb = [...blocks];
-    const j = i + dir;
-    if (j < 0 || j >= nb.length) return;
-    [nb[i], nb[j]] = [nb[j], nb[i]];
-    setBlocks(nb);
-  };
 
   const save = async () => {
     setSaving(true);
@@ -91,10 +78,10 @@ function LectureModal({ lecture, moduleId, onClose, onSave }) {
         title,
         duration,
         videoUrl,
-        points: Number(points) || 10,
+        points: Number(pts) || 10,
         tasks: tasksText.split('\n').filter(Boolean),
         content: {
-          sections: blocks,
+          html,
           checklist: checklistText.split('\n').filter(Boolean),
         },
       };
@@ -106,38 +93,18 @@ function LectureModal({ lecture, moduleId, onClose, onSave }) {
   };
 
   return (
-    <Modal title={lecture ? 'Редактировать урок' : 'Новый урок'} onClose={onClose} width={680}>
+    <Modal title={lecture ? 'Редактировать урок' : 'Новый урок'} onClose={onClose} width={780}>
       <div style={{ display: 'flex', gap: 12 }}>
         <Input label="Название урока" value={title} onChange={setTitle} placeholder="Базовые правила питания" style={{ flex: 3 }} />
-        <Input label="Длительность" value={duration} onChange={setDuration} placeholder="28 мин" style={{ flex: 1 }} />
-        <Input label="Баллы" value={points} onChange={setPoints} placeholder="10" type="number" style={{ flex: 1 }} />
+        <Input label="Длит." value={duration} onChange={setDuration} placeholder="28 мин" style={{ flex: 1 }} />
+        <Input label="Баллы" value={pts} onChange={setPts} type="number" style={{ flex: 1 }} />
       </div>
       <Input label="Ссылка на видео" value={videoUrl} onChange={setVideoUrl} placeholder="https://..." />
       <Textarea label="Задачи в трекер (каждая с новой строки)" value={tasksText} onChange={setTasksText} placeholder="Заполнить анкету&#10;Изучить гайд" rows={2} />
 
-      {/* КОНСТРУКТОР БЛОКОВ */}
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 10, letterSpacing: 0.5 }}>КОНСПЕКТ — БЛОКИ</div>
-        {blocks.map((block, i) => (
-          <div key={i} style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', right: 44, top: 14, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 1 }}>
-              <button onClick={() => moveBlock(i, -1)} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, width: 20, height: 18, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</button>
-              <button onClick={() => moveBlock(i, 1)} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, width: 20, height: 18, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↓</button>
-            </div>
-            <BlockEditor block={block} onChange={updated => updateBlock(i, updated)} onDelete={() => deleteBlock(i)} />
-          </div>
-        ))}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-          {BLOCK_TYPES.map(bt => (
-            <button key={bt.type} onClick={() => addBlock(bt.type)}
-              style={{ padding: '6px 12px', borderRadius: 20, border: `1px solid ${C.border}`, background: C.bg, color: C.ink2, cursor: 'pointer', fontSize: 12, fontFamily: 'Arial' }}>
-              + {bt.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <RichEditor value={html} onChange={setHtml} placeholder="Начни писать конспект урока..." />
 
-      <Textarea label="Чеклист — что должна сделать участница (каждый пункт с новой строки)" value={checklistText} onChange={setChecklistText} placeholder="Познакомилась с программой&#10;Изучила правила" rows={3} />
+      <Textarea label="Чеклист (каждый пункт с новой строки)" value={checklistText} onChange={setChecklistText} placeholder="Познакомилась с программой&#10;Изучила правила" rows={3} />
 
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <Btn onClick={onClose} variant="ghost" style={{ flex: 1 }}>Отмена</Btn>
@@ -148,15 +115,17 @@ function LectureModal({ lecture, moduleId, onClose, onSave }) {
 }
 
 function ModuleModal({ mod, programId, onClose, onSave }) {
-  const [data, setData] = useState(mod || { programId, title: '', subtitle: '', num: '', color: '#5A7A5A', order: 0 });
+  const [data, setData] = useState(mod || { title: '', subtitle: '', num: '', color: '#5A7A5A', order: 0 });
   const [saving, setSaving] = useState(false);
   const colors = ['#5A7A5A', '#7A9E5A', '#8B7355', '#6B7EA8', '#7B6EA8', '#A86B6B', '#6B8EC4', '#C4A26B'];
 
   const save = async () => {
     setSaving(true);
     try {
-      mod?.id ? await modulesApi.update(mod.id, { ...data, programId }) : await modulesApi.create({ ...data, programId });
-      onSave(); onClose();
+      const payload = { ...data, programId };
+      mod?.id ? await modulesApi.update(mod.id, payload) : await modulesApi.create(payload);
+      onSave();
+      onClose();
     } catch (e) { alert(e.message); }
     finally { setSaving(false); }
   };
@@ -187,14 +156,15 @@ function ModuleModal({ mod, programId, onClose, onSave }) {
 }
 
 function ProgramModal({ prog, onClose, onSave }) {
-  const [data, setData] = useState(prog || { title: '', subtitle: '', desc: '', icon: '🌿', color: '#2D4A2D', available: false, order: 0 });
+  const [data, setData] = useState(prog || { title: '', subtitle: '', desc: '', icon: '🌿', color: '#2D4A2D', available: false, price: 0, order: 0 });
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
     setSaving(true);
     try {
       prog?.id ? await programsApi.update(prog.id, data) : await programsApi.create(data);
-      onSave(); onClose();
+      onSave();
+      onClose();
     } catch (e) { alert(e.message); }
     finally { setSaving(false); }
   };
@@ -207,6 +177,7 @@ function ProgramModal({ prog, onClose, onSave }) {
       <div style={{ display: 'flex', gap: 12 }}>
         <Input label="Иконка" value={data.icon || ''} onChange={v => setData(d => ({ ...d, icon: v }))} placeholder="🌿" style={{ flex: 1 }} />
         <Input label="Цвет" value={data.color || ''} onChange={v => setData(d => ({ ...d, color: v }))} placeholder="#2D4A2D" style={{ flex: 1 }} />
+        <Input label="Цена (₽)" value={String(data.price || 0)} onChange={v => setData(d => ({ ...d, price: Number(v) }))} type="number" style={{ flex: 1 }} />
         <Input label="Порядок" value={String(data.order)} onChange={v => setData(d => ({ ...d, order: Number(v) }))} type="number" style={{ flex: 1 }} />
       </div>
       <div style={{ marginBottom: 16 }}>
@@ -231,16 +202,20 @@ export default function Programs({ flash }) {
   const [modModal, setModModal] = useState(null);
   const [lecModal, setLecModal] = useState(null);
 
-  const load = () => { programsApi.getAll().then(setList).catch(() => {}).finally(() => setLoading(false)); };
+  const load = () => {
+    setLoading(true);
+    programsApi.getAll().then(setList).catch(() => {}).finally(() => setLoading(false));
+  };
+
   useEffect(() => { load(); }, []);
 
   const deleteProg = async (id) => {
     if (!confirm('Удалить программу?')) return;
-    try { await programsApi.delete(id); setList(p => p.filter(x => x.id !== id)); flash('Удалено'); }
+    try { await programsApi.delete(id); load(); flash('Удалено'); }
     catch (e) { flash('Ошибка', 'error'); }
   };
 
-  const deleteMod = async (id, progId) => {
+  const deleteMod = async (id) => {
     if (!confirm('Удалить модуль?')) return;
     try { await modulesApi.delete(id); load(); flash('Удалено'); }
     catch (e) { flash('Ошибка', 'error'); }
@@ -270,8 +245,8 @@ export default function Programs({ flash }) {
             <div style={{ fontSize: 28 }}>{prog.icon || '🌿'}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{prog.title}</div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-                {(prog.modules || []).length} модулей · {prog.available ? '✓ Активна' : '⏸ Скрыта'}
+              <div style={{ fontSize: 13, color: '#fff', marginTop: 2 }}>
+                {(prog.modules || []).length} модулей · {prog.available ? '✓ Активна' : '⏸ Скрыта'} {prog.price > 0 ? `· ${prog.price} ₽` : '· Бесплатно'}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -294,9 +269,9 @@ export default function Programs({ flash }) {
                       {mod.subtitle && <div style={{ fontSize: 12, color: C.ink3 }}>{mod.subtitle}</div>}
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <Btn onClick={() => setLecModal({ moduleId: mod.id, progId: prog.id })} variant="outline" size="sm">+ Урок</Btn>
+                      <Btn onClick={() => setLecModal({ moduleId: mod.id })} variant="outline" size="sm">+ Урок</Btn>
                       <Btn onClick={() => setModModal({ ...mod, progId: prog.id })} variant="ghost" size="sm">Изменить</Btn>
-                      <Btn onClick={() => deleteMod(mod.id, prog.id)} variant="danger" size="sm">✕</Btn>
+                      <Btn onClick={() => deleteMod(mod.id)} variant="danger" size="sm">✕</Btn>
                     </div>
                   </div>
                   <div style={{ padding: '8px 16px 12px' }}>
@@ -308,7 +283,7 @@ export default function Programs({ flash }) {
                           <div style={{ fontSize: 12, color: C.ink3 }}>{lec.duration || '—'} · {lec.points || 10} баллов · {(lec.content?.sections || []).length} блоков</div>
                         </div>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <Btn onClick={() => setLecModal({ ...lec, moduleId: mod.id, progId: prog.id })} variant="ghost" size="sm">Изменить</Btn>
+                          <Btn onClick={() => setLecModal({ ...lec, moduleId: mod.id })} variant="ghost" size="sm">Изменить</Btn>
                           <Btn onClick={() => deleteLec(lec.id)} variant="danger" size="sm">✕</Btn>
                         </div>
                       </div>
@@ -331,9 +306,15 @@ export default function Programs({ flash }) {
         </Card>
       )}
 
-      {progModal !== null && <ProgramModal prog={progModal.id ? progModal : null} onClose={() => setProgModal(null)} onSave={() => { load(); flash('Сохранено'); }} />}
-      {modModal !== null && <ModuleModal mod={modModal.id ? modModal : null} programId={modModal.progId} onClose={() => setModModal(null)} onSave={() => { load(); flash('Сохранено'); }} />}
-      {lecModal !== null && <LectureModal lecture={lecModal.id ? lecModal : null} moduleId={lecModal.moduleId} onClose={() => setLecModal(null)} onSave={() => { load(); flash('Сохранено'); }} />}
+      {progModal !== null && (
+        <ProgramModal prog={progModal.id ? progModal : null} onClose={() => setProgModal(null)} onSave={() => { load(); flash('Сохранено'); setProgModal(null); }} />
+      )}
+      {modModal !== null && (
+        <ModuleModal mod={modModal.id ? modModal : null} programId={modModal.progId} onClose={() => setModModal(null)} onSave={() => { load(); flash('Сохранено'); setModModal(null); }} />
+      )}
+      {lecModal !== null && (
+        <LectureModal lecture={lecModal.id ? lecModal : null} moduleId={lecModal.moduleId} onClose={() => setLecModal(null)} onSave={() => { load(); flash('Сохранено'); setLecModal(null); }} />
+      )}
     </div>
   );
 }

@@ -33,13 +33,20 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  const refreshUser = async () => {
+    try {
+      const data = await auth.me();
+      if (data) setUser(data);
+    } catch(e) {}
+  };
+
   const logout = () => {
     localStorage.removeItem('vforme_token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, setUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

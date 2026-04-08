@@ -22,11 +22,30 @@ function ScoreBadge({ label, value }) {
 }
 
 export default function Cabinet() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const [answers, setAnswers] = useState({});
   const [totalPoints, setTotalPoints] = useState(0);
   const [pointsHistory, setPointsHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tgLoading, setTgLoading] = useState(false);
+
+  const unlinkTelegram = async () => {
+    if (!confirm('Отключить Telegram от аккаунта?')) return;
+    try {
+      await fetch('/api/telegram/unlink', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
+      if (refreshUser) await refreshUser(); else window.location.reload();
+    } catch(e) {}
+  };
+
+  const connectTelegram = async () => {
+    setTgLoading(true);
+    try {
+      const res = await fetch('/api/telegram/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
+      const data = await res.json();
+      if (data.url) window.open(data.url, '_blank');
+    } catch(e) {}
+    setTgLoading(false);
+  };
 
   useEffect(() => {
     Promise.all([profileApi.get(), pointsApi.get()])
@@ -66,12 +85,48 @@ export default function Cabinet() {
       <div style={{ padding: '24px 20px' }}>
 
         {/* ИСТОРИЯ БАЛЛОВ */}
-        {pointsHistory.length > 0 && (
+        {/* TELEGRAM */}
+      <div style={{ margin: '0 20px 20px', background: user?.telegramId ? '#EBF0EB' : '#F9F7F4', border: `1px solid ${user?.telegramId ? G : BD}`, borderRadius: 20, padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ fontSize: 32 }}>✈️</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: INK }}>
+              {user?.telegramId ? 'Telegram подключён' : 'Подключи Telegram'}
+            </div>
+            <div style={{ fontSize: 13, color: INK2, marginTop: 3, lineHeight: 1.4 }}>
+              {user?.telegramId
+                ? `@${user.telegramUsername || 'подключён'} — получай уведомления`
+                : user?.telegramBonusGiven ? 'Подключи для получения уведомлений' : 'Получи +100 баллов и уведомления'}
+            </div>
+          </div>
+          {user?.telegramId ? (
+            <button onClick={unlinkTelegram}
+              style={{ padding: '8px 14px', background: 'none', border: '1px solid ' + BD, borderRadius: 20, color: INK3, fontFamily: sans, fontSize: 12, cursor: 'pointer' }}>
+              Отключить
+            </button>
+          ) : (
+            <button onClick={connectTelegram} disabled={tgLoading}
+              style={{ padding: '10px 18px', background: GOLD, border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {tgLoading ? '...' : user?.telegramBonusGiven ? 'Подключить' : '+100 💎'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {pointsHistory.length > 0 && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12, fontFamily: sans }}>ИСТОРИЯ БАЛЛОВ</div>
             {pointsHistory.slice(0, 5).map((p, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid ' + BD }}>
-                <div style={{ fontSize: 14, color: INK, fontFamily: sans }}>{p.reason === 'lecture_complete' ? '✓ Урок завершён' : p.reason === 'module_complete' ? '🏆 Модуль завершён' : p.reason || 'Начисление'}</div>
+                <div style={{ fontSize: 14, color: INK, fontFamily: sans }}>{
+                  p.reason === 'lecture_complete' ? '✓ Урок завершён' :
+                  p.reason === 'module_complete' ? '🏆 Модуль завершён' :
+                  p.reason === 'program_purchase' ? '💳 Покупка программы' :
+                  p.reason === 'telegram_link' ? '✈️ Подключение Telegram' :
+                  p.reason === 'free_program' ? '🎁 Бесплатная программа' :
+                  p.reason === 'protocol_purchase' ? '📋 Покупка протокола' :
+                  p.reason || 'Начисление'
+                }</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: GOLD, fontFamily: sans }}>+{p.amount}</div>
               </div>
             ))}

@@ -4,14 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     <title>V Форме</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2D4A2D" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="V Форме" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { background: #2D4A2D; font-family: 'Arial', sans-serif; }
       #root { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #fff; box-shadow: 0 0 60px rgba(0,0,0,0.4); }
     </style>
+    <script>
+      window.prodamusDomain = 'nutrikris.payform.ru';
+      window.prodamusCurrency = 'rub';
+      window.successPaymentAddress = 'https://app.nutrikris.ru/?payment=success';
+      window.errorPaymentAddress = 'https://app.nutrikris.ru/?payment=fail';
+    </script>
+    <script src="https://widget.prodamus.ru/src/init.js" async></script>
+    <link rel="stylesheet" href="https://widget.prodamus.ru/src/init.css">
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Unregister old service workers to prevent caching issues
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(r => r.unregister());
+        });
+      }
+    </script>
   </body>
 </html>

@@ -8,6 +8,7 @@ const Program = sequelize.define('Program', {
   icon:      { type: DataTypes.STRING },
   color:     { type: DataTypes.STRING },
   available: { type: DataTypes.BOOLEAN, defaultValue: false },
+  price:     { type: DataTypes.INTEGER, defaultValue: 0 },
   order:     { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { timestamps: true });
 module.exports = Program;
