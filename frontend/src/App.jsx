@@ -160,7 +160,7 @@ function AppShell() {
   if (!user.emailVerified && justRegistered) return <VerifyCode user={user} setUser={u => { sessionStorage.removeItem('justRegistered'); setUser(u); }} logout={logout} />;
 
   return (
-    <div style={{ fontFamily: serif, background: W, width: '100%', minHeight: '100vh', paddingBottom: 80, color: '#1A1A1A' }}>
+    <div style={{ fontFamily: serif, background: W, width: '100%', minHeight: '100vh', paddingBottom: 'calc(78px + env(safe-area-inset-bottom))', color: '#1A1A1A' }}>
       {/* ХЕДЕР */}
       <div style={{ background: G, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ color: W, fontSize: 20, fontWeight: 600, letterSpacing: 3, fontFamily: serif }}>V ФОРМЕ</div>
@@ -207,22 +207,37 @@ function AppShell() {
       {tab === 'tracker' && <Tracker flash={flash} />}
       {tab === 'cabinet' && <Cabinet />}
 
-      {/* НАВБАР */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: W, borderTop: '1px solid ' + BD, display: 'flex', zIndex: 100, maxWidth: 480, margin: '0 auto' }}>
+      {/* НАВБАР — стиль iOS Tab Bar */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+        borderTop: '0.5px solid rgba(60,60,67,0.18)',
+        display: 'flex',
+        justifyContent: 'space-around',
+        zIndex: 100,
+        maxWidth: 480, margin: '0 auto',
+        padding: '8px 12px max(8px, env(safe-area-inset-bottom)) 12px',
+      }}>
         {TABS.map(t => {
           const active = tab === t.id;
           return (
             <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
               style={{
-                flex: 1, padding: '8px 0 6px', background: 'none', border: 'none',
-                color: active ? G : '#9A958A',
-                cursor: 'pointer', fontSize: 9, fontFamily: sans,
-                fontWeight: active ? 700 : 500, letterSpacing: 0.2,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                transition: 'color .15s',
+                flex: 1, padding: '6px 4px',
+                background: 'none', border: 'none',
+                color: active ? G : '#8E8E93',
+                cursor: 'pointer',
+                fontSize: 10, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+                fontWeight: active ? 600 : 500,
+                letterSpacing: -0.1,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                transition: 'color .18s ease',
+                minWidth: 0,
               }}>
-              <TabIcon name={t.icon} size={20} />
-              {t.label}
+              <TabIcon name={t.icon} size={26} />
+              <span style={{ lineHeight: 1 }}>{t.label}</span>
             </button>
           );
         })}
