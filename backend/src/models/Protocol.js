@@ -11,6 +11,7 @@ const Protocol = sequelize.define('Protocol', {
   available:   { type: DataTypes.BOOLEAN, defaultValue: true },
   order:       { type: DataTypes.INTEGER, defaultValue: 0 },
   tags:        { type: DataTypes.JSONB, defaultValue: [] },
+  coverImage:  { type: DataTypes.STRING },
 }, { timestamps: true });
 
 module.exports = Protocol;

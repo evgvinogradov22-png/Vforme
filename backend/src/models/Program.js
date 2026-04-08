@@ -11,5 +11,6 @@ const Program = sequelize.define('Program', {
   price:     { type: DataTypes.INTEGER, defaultValue: 0 },
   order:     { type: DataTypes.INTEGER, defaultValue: 0 },
   tags:      { type: DataTypes.JSONB, defaultValue: [] },
+  coverImage: { type: DataTypes.STRING },
 }, { timestamps: true });
 module.exports = Program;

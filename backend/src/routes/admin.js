@@ -23,12 +23,12 @@ const upload = multer({ dest: '/tmp/' });
 
 // Whitelist полей для каждой модели
 const ALLOWED_FIELDS = {
-  Program:  ['title', 'desc', 'icon', 'price', 'available', 'order', 'image', 'features', 'tags'],
+  Program:  ['title', 'subtitle', 'desc', 'icon', 'color', 'price', 'available', 'order', 'image', 'features', 'tags', 'coverImage'],
   Module:   ['title', 'desc', 'order', 'programId', 'icon'],
   Lecture:  ['title', 'content', 'order', 'moduleId', 'type', 'videoUrl', 'duration'],
   Recipe:   ['title', 'desc', 'content', 'image', 'tags', 'calories', 'available'],
   Supplement: ['name', 'desc', 'image', 'link', 'tags', 'available'],
-  SupplementScheme: ['title', 'desc', 'content', 'available', 'order', 'tags', 'price'],
+  SupplementScheme: ['title', 'desc', 'content', 'available', 'order', 'tags', 'price', 'coverImage'],
 };
 
 function pick(obj, fields) {

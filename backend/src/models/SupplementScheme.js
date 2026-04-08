@@ -8,5 +8,6 @@ const SupplementScheme = sequelize.define('SupplementScheme', {
   price:     { type: DataTypes.INTEGER, defaultValue: 0 },
   available: { type: DataTypes.BOOLEAN, defaultValue: true },
   tags:      { type: DataTypes.JSONB, defaultValue: [] },
+  coverImage: { type: DataTypes.STRING },
 }, { timestamps: true });
 module.exports = SupplementScheme;

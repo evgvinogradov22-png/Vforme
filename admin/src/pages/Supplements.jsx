@@ -73,6 +73,7 @@ function SchemeModal({ scheme, programs, onClose, onSave }) {
   return (
     <Modal title={scheme ? 'Редактировать схему' : 'Новая схема'} onClose={onClose}>
       <Input label="Название" value={data.title} onChange={v => setData(d => ({ ...d, title: v }))} placeholder="Базовая схема — кишечник" />
+      <Input label="Обложка (URL картинки)" value={data.coverImage || ''} onChange={v => setData(d => ({ ...d, coverImage: v }))} placeholder="https://..." />
       <Textarea label="Описание" value={data.desc || ''} onChange={v => setData(d => ({ ...d, desc: v }))} placeholder="Описание схемы..." rows={2} />
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ПРОГРАММА</div>

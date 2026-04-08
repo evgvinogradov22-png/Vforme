@@ -18,6 +18,7 @@ function ProtocolModal({ protocol, supplements, onClose, onSave }) {
   const [images, setImages] = useState(protocol?.content?.images || []);
   const [price, setPrice] = useState(String(protocol?.price ?? 0));
   const [available, setAvailable] = useState(protocol?.available ?? true);
+  const [coverImage, setCoverImage] = useState(protocol?.coverImage || '');
   const [suppLinks, setSuppLinks] = useState(protocol?.supplements || []);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [saving, setSaving] = useState(false);
@@ -51,7 +52,7 @@ function ProtocolModal({ protocol, supplements, onClose, onSave }) {
     setSaving(true);
     try {
       const payload = {
-        title, description, price: Number(price) || 0, available,
+        title, description, price: Number(price) || 0, available, coverImage,
         content: { html, images },
         supplements: suppLinks.filter(s => s.link || s.supplementId),
       };
@@ -70,6 +71,7 @@ function ProtocolModal({ protocol, supplements, onClose, onSave }) {
         <Input label="Название" value={title} onChange={setTitle} placeholder="Протокол здоровья кишечника" style={{ flex: 3 }} />
         <Input label="Цена (0 = бесплатно)" value={price} onChange={setPrice} type="number" style={{ flex: 1 }} />
       </div>
+      <Input label="Обложка (URL картинки)" value={coverImage} onChange={setCoverImage} placeholder="https://..." />
       <Textarea label="Краткое описание" value={description} onChange={setDescription} placeholder="Что включает протокол..." rows={2} />
 
       <RichEditor value={html} onChange={setHtml} placeholder="Подробное описание протокола..." />

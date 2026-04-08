@@ -61,6 +61,20 @@ function PageHeader({ onBack, kindLabel, statusLabel }) {
   );
 }
 
+// ─── Cover image (опционально) ───────────────────────────────
+function Cover({ src }) {
+  if (!src) return null;
+  return (
+    <div style={{
+      width: '100%',
+      height: 160,
+      backgroundImage: `url(${src})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }} />
+  );
+}
+
 // ─── Hero (заголовок + теги) ─────────────────────────────────
 function Hero({ title, subtitle, tags }) {
   return (
@@ -89,6 +103,30 @@ function Hero({ title, subtitle, tags }) {
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Описание без рамки ──────────────────────────────────────
+function PlainDesc({ children }) {
+  if (!children) return null;
+  return (
+    <div style={{
+      padding: '4px 22px 18px',
+      fontSize: 15, color: INK2, lineHeight: 1.65, fontFamily: sans, whiteSpace: 'pre-wrap',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ─── HTML-контент без рамки (для протоколов и лекций) ────────
+function PlainHtml({ html }) {
+  if (!html) return null;
+  return (
+    <div style={{
+      padding: '4px 22px 18px',
+      fontSize: 15, color: INK, lineHeight: 1.65, fontFamily: sans,
+    }} dangerouslySetInnerHTML={{ __html: html }} />
   );
 }
 
@@ -285,19 +323,14 @@ function LecturePage({ lecture, onBack }) {
           {lecture.title}
         </div>
       </div>
-      <div style={{ padding: '12px 22px' }}>
-        {lecture.videoUrl && (
-          <div style={{ marginBottom: 16, borderRadius: 16, overflow: 'hidden', background: '#000' }}>
+      {lecture.videoUrl && (
+        <div style={{ padding: '12px 22px 0' }}>
+          <div style={{ borderRadius: 16, overflow: 'hidden', background: '#000' }}>
             <video src={lecture.videoUrl} controls style={{ width: '100%', display: 'block' }} />
           </div>
-        )}
-        {lecture.content && (
-          <div style={{
-            background: W, border: `1px solid ${BD}`, borderRadius: 18, padding: '18px 20px',
-            fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans,
-          }} dangerouslySetInnerHTML={{ __html: lecture.content }} />
-        )}
-      </div>
+        </div>
+      )}
+      <PlainHtml html={lecture.content} />
     </div>
   );
 }
@@ -345,22 +378,14 @@ function ProgramPage({ program, user, onBack }) {
   return (
     <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
       <PageHeader onBack={onBack} kindLabel="ПРОГРАММА" statusLabel={status} />
+      <Cover src={data?.coverImage || program.coverImage} />
       <Hero title={program.title} subtitle={program.subtitle} tags={program.tags} />
+      <PlainDesc>{data?.desc}</PlainDesc>
 
       {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
 
       {!loading && data && (
         <div style={{ padding: '0 22px' }}>
-          {data.desc && (
-            <div style={{
-              background: W, border: `1px solid ${BD}`, borderRadius: 18,
-              padding: '16px 18px', marginBottom: 16,
-              fontSize: 14, color: INK2, lineHeight: 1.6, fontFamily: sans, whiteSpace: 'pre-wrap',
-            }}>
-              {data.desc}
-            </div>
-          )}
-
           {!hasAccess && (
             <PaywallCard price={program.price} payUrl={payUrl} payLoading={payLoading} onPay={handlePay} />
           )}
@@ -444,37 +469,73 @@ function ProtocolPage({ protocol, onBack }) {
   return (
     <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
       <PageHeader onBack={onBack} kindLabel="ПРОТОКОЛ" statusLabel={status} />
+      <Cover src={data?.coverImage || protocol.coverImage} />
       <Hero title={protocol.title} subtitle={protocol.subtitle} tags={protocol.tags} />
+      <PlainDesc>{data?.description}</PlainDesc>
 
       {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
 
       {!loading && data && (
-        <div style={{ padding: '0 22px' }}>
-          {data.description && (
-            <div style={{
-              background: W, border: `1px solid ${BD}`, borderRadius: 18,
-              padding: '16px 18px', marginBottom: 16,
-              fontSize: 14, color: INK2, lineHeight: 1.6, fontFamily: sans, whiteSpace: 'pre-wrap',
-            }}>
-              {data.description}
+        <>
+          {!hasAccess && (
+            <div style={{ padding: '0 22px' }}>
+              <PaywallCard
+                price={protocol.price} payUrl={payUrl} payLoading={payLoading} onPay={handlePay}
+                ctaTitle="Получи доступ к протоколу"
+                ctaHint="После оплаты материалы откроются автоматически"
+              />
             </div>
           )}
 
-          {!hasAccess && (
-            <PaywallCard
-              price={protocol.price} payUrl={payUrl} payLoading={payLoading} onPay={handlePay}
-              ctaTitle="Получи доступ к протоколу"
-              ctaHint="После оплаты материалы откроются автоматически"
-            />
-          )}
+          {hasAccess && (
+            <>
+              <PlainHtml html={data.content?.html} />
 
-          {hasAccess && data.content?.html && (
-            <div style={{
-              background: W, border: `1px solid ${BD}`, borderRadius: 18, padding: '18px 20px',
-              fontSize: 14, color: INK, lineHeight: 1.65, fontFamily: sans,
-            }} dangerouslySetInnerHTML={{ __html: data.content.html }} />
+              {/* БАДы протокола */}
+              {Array.isArray(data.supplements) && data.supplements.length > 0 && (
+                <div style={{ padding: '0 22px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 12, fontFamily: sans, padding: '0 4px' }}>
+                    БАДы В ПРОТОКОЛЕ
+                  </div>
+                  {data.supplements.map((s, i) => {
+                    const sup = s.supplement || {};
+                    return (
+                      <div key={i} style={{
+                        background: W, border: `1px solid ${BD}`, borderRadius: 16,
+                        padding: '14px 16px', marginBottom: 8,
+                      }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: INK, fontFamily: sans }}>
+                          💊 {sup.name || 'БАД'}
+                        </div>
+                        {sup.desc && (
+                          <div style={{ fontSize: 13, color: INK3, marginTop: 4, fontFamily: sans }}>{sup.desc}</div>
+                        )}
+                        {s.note && (
+                          <div style={{ fontSize: 13, color: INK2, marginTop: 6, fontFamily: sans, fontStyle: 'italic' }}>
+                            {s.note}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+                          {(s.link || sup.link) && (
+                            <a href={s.link || sup.link} target="_blank" rel="noopener noreferrer" style={{
+                              fontSize: 13, color: G, fontFamily: sans, fontWeight: 600,
+                            }}>Купить ↗</a>
+                          )}
+                          {s.promo && (
+                            <span style={{
+                              fontSize: 12, color: GOLDD, fontFamily: sans, fontWeight: 600,
+                              background: '#FBF2DB', padding: '2px 8px', borderRadius: 6,
+                            }}>Промо: {s.promo}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
-        </div>
+        </>
       )}
     </div>
   );
@@ -499,22 +560,14 @@ function SchemePage({ scheme, onBack }) {
   return (
     <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
       <PageHeader onBack={onBack} kindLabel="СХЕМА БАД" statusLabel={status} />
+      <Cover src={data?.coverImage || scheme.coverImage} />
       <Hero title={scheme.title} tags={scheme.tags} />
+      <PlainDesc>{data?.desc}</PlainDesc>
 
       {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
 
       {!loading && data && (
         <div style={{ padding: '0 22px' }}>
-          {data.desc && (
-            <div style={{
-              background: W, border: `1px solid ${BD}`, borderRadius: 18,
-              padding: '16px 18px', marginBottom: 16,
-              fontSize: 14, color: INK2, lineHeight: 1.6, fontFamily: sans, whiteSpace: 'pre-wrap',
-            }}>
-              {data.desc}
-            </div>
-          )}
-
           {data.items && data.items.length > 0 && (
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 12, fontFamily: sans, padding: '0 4px' }}>
