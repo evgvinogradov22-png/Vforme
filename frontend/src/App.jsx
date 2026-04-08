@@ -24,12 +24,38 @@ import { log } from './utils/log';
 import { Toast, Spinner } from './components/UI';
 import { G, GOLD, BD, INK3, W, sans, serif } from './utils/theme';
 
+// Минималистичные line-иконки. stroke берётся из currentColor — цвет
+// меняется при активном табе через свойство color у родительского button.
+const TabIcon = ({ name, size = 22 }) => {
+  const props = {
+    width: size, height: size, viewBox: '0 0 24 24',
+    fill: 'none', stroke: 'currentColor',
+    strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round',
+  };
+  switch (name) {
+    case 'atlas': // лист
+      return <svg {...props}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19.5 2c0 7-1.07 12.7-7 16.45-2.4 1.5-5 1.55-5 1.55Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>;
+    case 'health': // плюс в круге
+      return <svg {...props}><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>;
+    case 'recipes': // тарелка с приборами
+      return <svg {...props}><path d="M3 11h18"/><path d="M12 11v10"/><path d="M5 11a7 7 0 0 1 14 0"/></svg>;
+    case 'chat': // пузырь
+      return <svg {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
+    case 'tracker': // галочка в круге
+      return <svg {...props}><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>;
+    case 'cabinet': // человек
+      return <svg {...props}><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>;
+    default: return null;
+  }
+};
+
 const TABS = [
-  { id: 'atlas',   icon: '🌿', label: 'Атлас' },
-  { id: 'health',  icon: '🌱', label: 'Здоровье' },
-  { id: 'recipes', icon: '🥗', label: 'Рецепты' },
-  { id: 'chat',    icon: '💬', label: 'Чат' },
-  { id: 'cabinet', icon: '◎',  label: 'Кабинет' },
+  { id: 'atlas',   icon: 'atlas',   label: 'Атлас' },
+  { id: 'health',  icon: 'health',  label: 'Здоровье' },
+  { id: 'recipes', icon: 'recipes', label: 'Рецепты' },
+  { id: 'chat',    icon: 'chat',    label: 'Чат' },
+  { id: 'tracker', icon: 'tracker', label: 'Трекер' },
+  { id: 'cabinet', icon: 'cabinet', label: 'Кабинет' },
 ];
 
 function AppShell() {
@@ -178,17 +204,28 @@ function AppShell() {
       {tab === 'health'  && <Health />}
       {tab === 'recipes' && <Recipes flash={flash} user={user} />}
       {tab === 'chat'    && <Chat />}
+      {tab === 'tracker' && <Tracker flash={flash} />}
       {tab === 'cabinet' && <Cabinet />}
 
       {/* НАВБАР */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: W, borderTop: '1px solid ' + BD, display: 'flex', zIndex: 100, maxWidth: 480, margin: '0 auto' }}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
-            style={{ flex: 1, padding: '10px 0 8px', background: 'none', border: 'none', color: tab === t.id ? G : INK3, cursor: 'pointer', fontSize: 11, fontFamily: sans, fontWeight: tab === t.id ? 700 : 400, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-            <span style={{ fontSize: 20 }}>{t.icon}</span>
-            {t.label}
-          </button>
-        ))}
+        {TABS.map(t => {
+          const active = tab === t.id;
+          return (
+            <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
+              style={{
+                flex: 1, padding: '8px 0 6px', background: 'none', border: 'none',
+                color: active ? G : '#9A958A',
+                cursor: 'pointer', fontSize: 9, fontFamily: sans,
+                fontWeight: active ? 700 : 500, letterSpacing: 0.2,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                transition: 'color .15s',
+              }}>
+              <TabIcon name={t.icon} size={20} />
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
       <Toast message={toast} />
