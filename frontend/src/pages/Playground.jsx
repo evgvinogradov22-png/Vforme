@@ -151,8 +151,8 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
   const SIZE = 480;   // совпадает с max-width приложения — текст 1:1 к CSS px
   const CX = SIZE / 2;
   const CY = SIZE / 2;
-  const R = 136;
-  const INNER = 24;
+  const R = 124;
+  const INNER = 22;
   const N = ZONES.length;
   const SLICE = (Math.PI * 2) / N;
   const GAP = 0.018; // небольшой зазор между секторами
@@ -242,16 +242,17 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
         {Math.round(Object.values(animated).reduce((s, v) => s + v, 0) / N)}%
       </text>
 
-      {/* Метки зон — белые плашки по центру, на радиусе R+28 */}
+      {/* Метки зон — белые плашки снаружи кольца, полностью за окружностью */}
       {ZONES.map((z, i) => {
         const level = Math.round(animated[z.id] ?? 0);
         const a = -Math.PI / 2 + (i + 0.5) * SLICE;
-        const [lx, ly] = pt(R + 28, a);
+        // R + 50 — ровно за светлым кольцом фона (R + 6), с запасом
+        const [lx, ly] = pt(R + 50, a);
         const active = z.id === focusId;
         const c = zoneColor(level);
 
         const w = Math.max(96, z.label.length * 8.5 + 46);
-        const h = 50;
+        const h = 48;
 
         return (
           <g key={z.id + '-lbl'} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
