@@ -132,7 +132,56 @@ export default function Chat() {
     </button>
   );
 
-  // Парсим [[product:KIND:ID:NAME]] и заменяем на чипы
+  // Inline markdown: **bold**, *italic*, `code`
+  const renderInline = (text, baseKey = 'i') => {
+    if (!text) return null;
+    // **bold**
+    const parts = text.split(/(\*\*[^*\n]+?\*\*|`[^`\n]+?`)/g);
+    return parts.map((p, i) => {
+      if (p.startsWith('**') && p.endsWith('**')) {
+        return <strong key={`${baseKey}-${i}`}>{p.slice(2, -2)}</strong>;
+      }
+      if (p.startsWith('`') && p.endsWith('`')) {
+        return <code key={`${baseKey}-${i}`} style={{ background: '#F0EBE0', padding: '1px 5px', borderRadius: 4, fontSize: '0.92em' }}>{p.slice(1, -1)}</code>;
+      }
+      return p;
+    });
+  };
+
+  // Block-level markdown: параграфы, списки
+  const renderText = (text, baseKey) => {
+    if (!text) return null;
+    const blocks = text.split(/\n{2,}/);
+    return blocks.map((block, bi) => {
+      const lines = block.split('\n');
+      const allBullets = lines.length > 0 && lines.every(l => /^\s*[-*•]\s+/.test(l));
+      if (allBullets) {
+        return (
+          <ul key={`${baseKey}-b${bi}`} style={{ margin: bi === 0 ? '0 0 0 18px' : '8px 0 0 18px', padding: 0 }}>
+            {lines.map((l, li) => (
+              <li key={`${baseKey}-b${bi}-${li}`} style={{ marginBottom: 4 }}>
+                {renderInline(l.replace(/^\s*[-*•]\s+/, ''), `${baseKey}-b${bi}-${li}`)}
+              </li>
+            ))}
+          </ul>
+        );
+      }
+      // обычный параграф (с переносами по \n внутри)
+      const innerLines = lines.map((l, li) => (
+        <span key={`${baseKey}-p${bi}-${li}`}>
+          {renderInline(l, `${baseKey}-p${bi}-${li}`)}
+          {li < lines.length - 1 && <br />}
+        </span>
+      ));
+      return (
+        <div key={`${baseKey}-p${bi}`} style={{ marginTop: bi === 0 ? 0 : 8 }}>
+          {innerLines}
+        </div>
+      );
+    });
+  };
+
+  // Парсим [[product:KIND:ID:NAME]] + markdown
   const renderContent = (content) => {
     if (!content) return null;
     if (content.startsWith('[img]')) {
@@ -145,17 +194,19 @@ export default function Chat() {
     }
 
     const re = /\[\[product:(program|protocol|scheme):([a-zA-Z0-9-]+):([^\]]+)\]\]/g;
-    if (!re.test(content)) return content;
-    re.lastIndex = 0;
-
     const out = [];
     let last = 0; let m; let key = 0;
     while ((m = re.exec(content)) !== null) {
-      if (m.index > last) out.push(content.slice(last, m.index));
+      if (m.index > last) {
+        out.push(<span key={`t${key}`}>{renderText(content.slice(last, m.index), `t${key}`)}</span>);
+        key++;
+      }
       out.push(<ProductChip key={`p${key++}`} kind={m[1]} id={m[2]} title={m[3]} />);
       last = m.index + m[0].length;
     }
-    if (last < content.length) out.push(content.slice(last));
+    if (last < content.length) {
+      out.push(<span key={`t${key}`}>{renderText(content.slice(last), `t${key}`)}</span>);
+    }
     return out;
   };
 
