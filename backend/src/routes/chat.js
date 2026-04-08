@@ -131,6 +131,58 @@ async function rollUpSummary(userId, prevSummary) {
   }
 }
 
+// Профиль клиента + последний Атлас → блок системного контекста
+async function buildClientContext(userId) {
+  const user = await User.findByPk(userId);
+  if (!user) return '';
+
+  const lines = [];
+  lines.push('=== ПРОФИЛЬ КЛИЕНТА (используй каждый раз) ===');
+  if (user.name) lines.push(`Имя: ${user.name}`);
+  if (user.email) lines.push(`Email: ${user.email}`);
+
+  // Последний результат Атласа
+  try {
+    const AtlasResult = require('../models/AtlasResult');
+    const atlas = await AtlasResult.findOne({
+      where: { userId },
+      order: [['createdAt', 'DESC']],
+    });
+    if (atlas) {
+      const a = atlas.answers || {};
+      const gender = a.gender === 'male' ? 'мужской' : a.gender === 'female' ? 'женский' : '—';
+      lines.push(`Пол: ${gender}`);
+      lines.push(`\nПоследний Атлас здоровья (${new Date(atlas.createdAt).toLocaleDateString('ru-RU')}):`);
+      const scale = (v) => v == null ? '—' : `${v}/10`;
+      const choice = (v) => ({ often: 'часто', some: 'иногда', never: 'нет' }[v] || '—');
+      lines.push(`- Сон: ${scale(a.sleep)}`);
+      lines.push(`- Стресс: ${scale(a.stress)}`);
+      lines.push(`- Энергия: ${scale(a.energy)}`);
+      lines.push(`- Активность: ${scale(a.activity)}`);
+      lines.push(`- Кожа: ${scale(a.skin)}`);
+      lines.push(`- Головные боли: ${choice(a.headaches)}`);
+      lines.push(`- ЖКТ: ${choice(a.gut)}`);
+      if (atlas.complaints) lines.push(`- Своими словами: "${atlas.complaints}"`);
+
+      const lvl = atlas.levels || {};
+      const zones = Object.entries(lvl).map(([k, v]) => `${k} ${v}%`).join(', ');
+      if (zones) lines.push(`Уровни зон: ${zones}`);
+
+      if (atlas.aiMessage) {
+        lines.push(`\nТвой первый ответ на этот атлас (продолжай эту линию):\n"${atlas.aiMessage.slice(0, 600)}"`);
+      }
+    }
+  } catch {}
+
+  if (user.telegramId) lines.push(`\nTelegram подключён.`);
+  if (Array.isArray(user.programAccess) && user.programAccess.length > 0) {
+    lines.push(`Купленные программы: ${user.programAccess.length} шт.`);
+  }
+
+  lines.push('=== КОНЕЦ ПРОФИЛЯ ===');
+  return lines.join('\n');
+}
+
 router.post('/message', auth, async (req, res) => {
   try {
     const { message } = req.body;
@@ -152,19 +204,25 @@ router.post('/message', auth, async (req, res) => {
       try { await user.update({ chatSummary: summary }); } catch {}
     }
 
-    // 2) Берём только активное окно (не-summarized последние N)
+    // 2) Активное окно (не-summarized последние N)
     const history = await ChatMessage.findAll({
       where: { userId: req.user.id, summarized: false },
       order: [['createdAt', 'ASC']],
       limit: ACTIVE_WINDOW,
     });
 
-    const baseSystemPrompt = s.systemPrompt ||
-      `Ты — Кристина Виноградова, нутрициолог и эксперт по здоровью. Ты общаешься с клиентами своего онлайн-приложения V Форме. Отвечай тепло, по-дружески, но профессионально. Отвечай на русском языке.`;
+    // 3) Профиль клиента из БД и Атласа
+    const clientContext = await buildClientContext(req.user.id);
 
-    const systemPrompt = summary
-      ? `${baseSystemPrompt}\n\n=== ИСТОРИЯ ПЕРЕПИСКИ С ЭТИМ КЛИЕНТОМ (краткое резюме предыдущих разговоров — обязательно учитывай) ===\n${summary}\n=== КОНЕЦ ИСТОРИИ ===`
-      : baseSystemPrompt;
+    const baseSystemPrompt = s.systemPrompt ||
+      `Ты — Кристина Виноградова, нутрициолог и эксперт по здоровью. Ты общаешься с клиентами своего приложения V Форме на "ты", тёпло и поддерживающе, но профессионально. У тебя ВСЕГДА есть профиль клиента и история переписки — ОБЯЗАТЕЛЬНО используй их в каждом ответе: обращайся по имени, ссылайся на конкретные ответы из его атласа здоровья, помни что вы уже обсуждали. Никогда не отвечай абстрактно — всегда привязывайся к фактам о клиенте.`;
+
+    const systemParts = [baseSystemPrompt];
+    if (clientContext) systemParts.push(clientContext);
+    if (summary) {
+      systemParts.push(`=== РЕЗЮМЕ ПРЕДЫДУЩИХ РАЗГОВОРОВ С ЭТИМ КЛИЕНТОМ ===\n${summary}\n=== КОНЕЦ РЕЗЮМЕ ===`);
+    }
+    const systemPrompt = systemParts.join('\n\n');
 
     const aiMessages = history.map(m => {
       const role = m.role === 'admin' ? 'assistant' : m.role;
@@ -181,13 +239,13 @@ router.post('/message', auth, async (req, res) => {
     });
 
     const response = await openrouterRequest({
-      model: 'openai/gpt-4o-mini',
+      model: 'anthropic/claude-sonnet-4.6',
       messages: [
         { role: 'system', content: systemPrompt },
         ...aiMessages,
       ],
       max_tokens: 1500,
-      temperature: 0.7,
+      temperature: 0.6,
     });
 
     const reply = response.choices?.[0]?.message?.content;
