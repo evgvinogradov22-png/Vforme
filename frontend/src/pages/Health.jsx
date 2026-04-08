@@ -26,40 +26,49 @@ const KIND_OPTIONS = [
 ];
 
 const KIND_LABELS = {
-  program:  { label: 'ПРОГРАММА', color: G },
-  protocol: { label: 'ПРОТОКОЛ',  color: GOLDD },
-  scheme:   { label: 'СХЕМА БАД', color: '#7E4EB8' },
+  program:  'ПРОГРАММА',
+  protocol: 'ПРОТОКОЛ',
+  scheme:   'СХЕМА БАД',
 };
 
 // ─── Карточка ────────────────────────────────────────────────
-function FeedCard({ item }) {
+function FeedCard({ item, onClick }) {
   const free = Number(item.price) === 0;
-  const kind = KIND_LABELS[item.kind] || { label: 'ПРОДУКТ', color: INK2 };
+  const kindLabel = KIND_LABELS[item.kind] || 'ПРОДУКТ';
 
   return (
-    <div style={{
+    <div onClick={onClick} style={{
       background: W, border: `1px solid ${BD}`, borderRadius: 20,
-      padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8,
+      padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10,
       boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      cursor: 'pointer',
+      transition: 'transform .12s, box-shadow .12s',
+    }}
+      onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.99)'; }}
+      onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+    >
+      {/* Тип слева, цена справа */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <div style={{
           fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
-          color: kind.color,
-          background: kind.color + '15',
-          padding: '5px 11px', borderRadius: 8,
-        }}>{kind.label}</div>
+          color: F_TXT_ACT,
+          background: F_BG,
+          border: `1px solid ${F_BD}`,
+          padding: '6px 12px', borderRadius: 10,
+        }}>{kindLabel}</div>
         <div style={{
-          fontSize: 13, fontWeight: 700, fontFamily: sans,
-          background: free ? '#E7F0E7' : '#FBF2DB',
-          color: free ? G : GOLDD,
-          padding: '5px 12px', borderRadius: 8,
+          fontSize: 14, fontWeight: 700, fontFamily: sans,
+          color: F_TXT_ACT,
+          background: F_BG_ACT,
+          border: `1px solid ${F_BD}`,
+          padding: '6px 14px', borderRadius: 10,
         }}>
           {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
         </div>
       </div>
 
-      <div style={{ fontSize: 18, fontWeight: 700, color: INK, fontFamily: serif, lineHeight: 1.3 }}>
+      <div style={{ fontSize: 19, fontWeight: 700, color: INK, fontFamily: serif, lineHeight: 1.3 }}>
         {item.title}
       </div>
 
@@ -75,7 +84,7 @@ function FeedCard({ item }) {
       )}
 
       {item.tags && item.tags.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
           {item.tags.map(t => {
             const tag = TAG_OPTIONS.find(x => x.id === t);
             if (!tag) return null;
@@ -91,6 +100,167 @@ function FeedCard({ item }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Модалка с деталями продукта ─────────────────────────────
+function DetailModal({ item, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let url = '';
+    if (item.kind === 'program')  url = `/api/programs/${item.id}`;
+    if (item.kind === 'protocol') url = `/api/protocols/${item.id}`;
+    if (item.kind === 'scheme')   url = `/api/supplements/schemes/${item.id}`;
+    fetch(url, { headers: { Authorization: 'Bearer ' + TOKEN() } })
+      .then(r => r.json())
+      .then(d => setData(d && !d.error ? d : item))
+      .catch(() => setData(item))
+      .finally(() => setLoading(false));
+  }, [item]);
+
+  const free = Number(item.price) === 0;
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, background: 'rgba(26,26,26,0.6)',
+      zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      animation: 'fadein .2s ease',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: W, width: '100%', maxWidth: 480,
+        borderRadius: '24px 24px 0 0', padding: '24px 22px max(40px, env(safe-area-inset-bottom))',
+        maxHeight: '90vh', overflowY: 'auto',
+        animation: 'slideup .25s ease',
+      }}>
+        <div style={{ width: 40, height: 4, background: '#E5E1D8', borderRadius: 2, margin: '0 auto 18px' }} />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
+            color: F_TXT_ACT, background: F_BG, border: `1px solid ${F_BD}`,
+            padding: '6px 12px', borderRadius: 10, alignSelf: 'flex-start',
+          }}>{KIND_LABELS[item.kind]}</div>
+          <div style={{
+            fontSize: 14, fontWeight: 700, fontFamily: sans,
+            color: F_TXT_ACT, background: F_BG_ACT, border: `1px solid ${F_BD}`,
+            padding: '6px 14px', borderRadius: 10, alignSelf: 'flex-start',
+          }}>
+            {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
+          </div>
+        </div>
+
+        <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 700, color: INK, lineHeight: 1.25, marginBottom: 8 }}>
+          {item.title}
+        </div>
+        {item.subtitle && (
+          <div style={{ fontSize: 14, color: INK3, fontFamily: sans, marginBottom: 14 }}>{item.subtitle}</div>
+        )}
+
+        {item.tags && item.tags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
+            {item.tags.map(t => {
+              const tag = TAG_OPTIONS.find(x => x.id === t);
+              if (!tag) return null;
+              return (
+                <div key={t} style={{
+                  fontSize: 11, color: F_TXT, fontFamily: sans, fontWeight: 600,
+                  background: F_BG, border: `1px solid ${F_BD}`,
+                  padding: '4px 10px', borderRadius: 12,
+                }}>
+                  {tag.icon} {tag.label}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {loading && <div style={{ padding: 30, textAlign: 'center' }}><Spinner /></div>}
+
+        {!loading && data && item.kind === 'program' && (
+          <div>
+            {data.desc && (
+              <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 18, whiteSpace: 'pre-wrap' }}>
+                {data.desc}
+              </div>
+            )}
+            {data.modules && data.modules.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 10, fontFamily: sans }}>
+                  СОДЕРЖИМОЕ
+                </div>
+                {data.modules.map((m, i) => (
+                  <div key={m.id || i} style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: serif, fontSize: 16, fontWeight: 700, color: INK, marginBottom: 6 }}>
+                      {i + 1}. {m.title}
+                    </div>
+                    {m.lectures && m.lectures.length > 0 && (
+                      <div style={{ paddingLeft: 14 }}>
+                        {m.lectures.map((l, j) => (
+                          <div key={l.id || j} style={{ fontSize: 13, color: INK2, fontFamily: sans, padding: '4px 0' }}>
+                            · {l.title}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!loading && data && item.kind === 'protocol' && (
+          <div>
+            {data.description && (
+              <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 14, whiteSpace: 'pre-wrap' }}>
+                {data.description}
+              </div>
+            )}
+            {data.content?.html && (
+              <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans }}
+                   dangerouslySetInnerHTML={{ __html: data.content.html }} />
+            )}
+          </div>
+        )}
+
+        {!loading && data && item.kind === 'scheme' && (
+          <div>
+            {data.desc && (
+              <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 14 }}>
+                {data.desc}
+              </div>
+            )}
+            {data.items && data.items.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 10, fontFamily: sans }}>
+                  СОСТАВ
+                </div>
+                {data.items.map((s, i) => (
+                  <div key={s.id || i} style={{
+                    background: '#F9F7F4', borderRadius: 12, padding: '12px 14px', marginBottom: 8,
+                  }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: INK, fontFamily: sans }}>{s.name}</div>
+                    {s.desc && <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>{s.desc}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <button onClick={onClose} style={{
+          width: '100%', padding: '14px', marginTop: 22,
+          background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 22,
+          color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
+        }}>Закрыть</button>
+      </div>
+      <style>{`
+        @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideup { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      `}</style>
     </div>
   );
 }
@@ -188,6 +358,7 @@ export default function Health() {
   const [kindFilter, setKindFilter] = useState([]); // multi
   const [onlyFree, setOnlyFree] = useState(false);  // checkbox
   const [tagFilter, setTagFilter] = useState([]);   // multi
+  const [openItem, setOpenItem] = useState(null);   // модалка
 
   useEffect(() => {
     fetch('/api/health/feed', { headers: { Authorization: 'Bearer ' + TOKEN() } })
@@ -263,8 +434,16 @@ export default function Health() {
             В этом фильтре пока ничего нет
           </div>
         )}
-        {!loading && filtered.map(item => <FeedCard key={`${item.kind}-${item.id}`} item={item} />)}
+        {!loading && filtered.map(item => (
+          <FeedCard
+            key={`${item.kind}-${item.id}`}
+            item={item}
+            onClick={() => setOpenItem(item)}
+          />
+        ))}
       </div>
+
+      {openItem && <DetailModal item={openItem} onClose={() => setOpenItem(null)} />}
     </div>
   );
 }
