@@ -1,8 +1,10 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const AtlasResult = require('../models/AtlasResult');
+const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
 const { analyzeAnswers, loadCatalog } = require('../utils/atlasAnalyze');
+const { sendToUser, broadcast } = require('../ws');
 
 // Прохождение анкеты: считаем AI-анализ и сохраняем в БД.
 router.post('/submit', auth, async (req, res) => {
@@ -21,6 +23,21 @@ router.post('/submit', auth, async (req, res) => {
       recommendedTitles: ai.recommendedTitles,
       gender: answers.gender || null,
     });
+
+    // Дублируем сообщение Кристины в чат пользователя — чтобы то же сообщение
+    // лежало в истории чата и клиент мог ответить.
+    try {
+      const chatMsg = await ChatMessage.create({
+        userId: req.user.id,
+        role: 'admin',
+        content: ai.message || '—',
+        isAi: false,
+      });
+      sendToUser(req.user.id, { type: 'chat_message', message: chatMsg });
+      broadcast({ type: 'chat_admin_update', userId: req.user.id, message: chatMsg });
+    } catch (e) {
+      console.error('Atlas → chat duplication error:', e.message);
+    }
 
     res.json({
       id: row.id,

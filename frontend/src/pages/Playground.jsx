@@ -3,7 +3,7 @@ import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '..
 
 // ─── Зоны ────────────────────────────────────────────────────
 export const ZONES = [
-  { id: 'brain',       label: 'Сон и нервы', icon: '🧠', hint: 'Сон, стресс, восстановление' },
+  { id: 'brain',       label: 'Сон', icon: '🧠', hint: 'Сон, стресс, восстановление' },
   { id: 'thyroid',     label: 'Энергия',     icon: '⚡', hint: 'Щитовидка, митохондрии' },
   { id: 'gut',         label: 'ЖКТ',         icon: '🍽️', hint: 'Желудок, кишечник, пищеварение' },
   { id: 'hormones',    label: 'Гормоны',     icon: '🌸', hint: 'Репродукция, цикл, кожа' },
@@ -146,11 +146,11 @@ function useAnimatedLevels(targetLevels, duration = 1000) {
 export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
   const animated = useAnimatedLevels(levels, 1100);
 
-  const SIZE = 600;
+  const SIZE = 480;   // совпадает с max-width приложения — текст 1:1 к CSS px
   const CX = SIZE / 2;
   const CY = SIZE / 2;
-  const R = 180;
-  const INNER = 28;
+  const R = 128;
+  const INNER = 22;
   const N = ZONES.length;
   const SLICE = (Math.PI * 2) / N;
   const GAP = 0.018; // небольшой зазор между секторами
@@ -244,13 +244,12 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
       {ZONES.map((z, i) => {
         const level = Math.round(animated[z.id] ?? 0);
         const a = -Math.PI / 2 + (i + 0.5) * SLICE;
-        const [lx, ly] = pt(R + 40, a);
+        const [lx, ly] = pt(R + 44, a);
         const active = z.id === focusId;
         const c = zoneColor(level);
 
-        // Ширина плашки от длины названия
-        const w = Math.max(78, z.label.length * 9 + 28);
-        const h = 46;
+        const w = Math.max(108, z.label.length * 10 + 48);
+        const h = 54;
 
         return (
           <g key={z.id + '-lbl'} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
@@ -259,28 +258,28 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
               x={lx - w / 2} y={ly - h / 2} width={w} height={h} rx={h / 2} ry={h / 2}
               fill="#FFFFFF"
               stroke={active ? c : '#E5E0D0'}
-              strokeWidth={active ? 2 : 1}
-              style={{ filter: 'drop-shadow(0 2px 6px rgba(45,74,45,0.08))' }}
+              strokeWidth={active ? 2.2 : 1}
+              style={{ filter: 'drop-shadow(0 2px 6px rgba(45,74,45,0.10))' }}
             />
             {/* Иконка */}
             <text
-              x={lx - w / 2 + 22} y={ly + 6}
-              textAnchor="middle" fontSize="20"
+              x={lx - w / 2 + 24} y={ly + 8}
+              textAnchor="middle" fontSize="22"
               style={{ pointerEvents: 'none' }}
             >{z.icon}</text>
             {/* Название */}
             <text
-              x={lx - w / 2 + 40} y={ly - 2}
-              textAnchor="start" fontSize="12"
+              x={lx - w / 2 + 44} y={ly - 1}
+              textAnchor="start" fontSize="15"
               fontWeight={700} fill={INK}
-              style={{ pointerEvents: 'none' }}
+              style={{ pointerEvents: 'none', fontFamily: sans }}
             >{z.label}</text>
             {/* % */}
             <text
-              x={lx - w / 2 + 40} y={ly + 13}
-              textAnchor="start" fontSize="11"
+              x={lx - w / 2 + 44} y={ly + 16}
+              textAnchor="start" fontSize="13"
               fontWeight={700} fill={c}
-              style={{ pointerEvents: 'none' }}
+              style={{ pointerEvents: 'none', fontFamily: sans }}
             >{level}%</text>
           </g>
         );
@@ -405,140 +404,147 @@ export function Onboarding({ onDone }) {
   const next = () => setStep(s => s + 1);
   const back = () => setStep(s => Math.max(1, s - 1));
 
+  // Универсальный контейнер: фиксируется высотой экрана минус навбар,
+  // шапка + контент + подвал — без скролла.
+  const Shell = ({ children, footer, stepLabel }) => (
+    <div style={{
+      background: '#F9F7F4',
+      height: 'calc(100vh - 80px)',  // 80px — место под нижний навбар приложения
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+    }}>
+      <div style={{ padding: '12px 20px 6px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <button onClick={back} disabled={step === 1} style={{ background: 'none', border: 'none', fontSize: 22, color: step === 1 ? '#E0DACC' : INK3, cursor: step === 1 ? 'default' : 'pointer', padding: 0 }}>‹</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${(step / (QUESTIONS.length + 1)) * 100}%`, background: G, borderRadius: 2, transition: 'width .4s ease' }} />
+          </div>
+          <div style={{ fontSize: 11, color: INK3, fontFamily: sans, marginTop: 5 }}>{stepLabel}</div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 22px', minHeight: 0 }}>
+        {children}
+      </div>
+
+      {footer && <div style={{ padding: '12px 22px 16px', flexShrink: 0 }}>{footer}</div>}
+    </div>
+  );
+
   // Вопросы
   if (step >= 1 && step <= QUESTIONS.length) {
     const q = QUESTIONS[step - 1];
-    const progress = (step / (QUESTIONS.length + 1)) * 100;
     const current = answers[q.id];
     const isScale = q.type === 'scale';
 
-    return (
-      <div style={{ background: '#F9F7F4', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px 24px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={back} disabled={step === 1} style={{ background: 'none', border: 'none', fontSize: 22, color: step === 1 ? '#E0DACC' : INK3, cursor: step === 1 ? 'default' : 'pointer', padding: 0 }}>‹</button>
-          <div style={{ flex: 1 }}>
-            <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${progress}%`, background: G, borderRadius: 2, transition: 'width .4s ease' }} />
-            </div>
-            <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 8 }}>Шаг {step} из {QUESTIONS.length + 1}</div>
-          </div>
+    const body = (
+      <>
+        <div style={{ fontFamily: serif, fontSize: 21, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 6, lineHeight: 1.25 }}>
+          {q.label}
         </div>
-
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 28px' }}>
-          <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 12, lineHeight: 1.3 }}>
-            {q.label}
-          </div>
-          {q.hint && (
-            <div style={{ fontFamily: sans, fontSize: 13, color: INK3, textAlign: 'center', marginBottom: 30, lineHeight: 1.5 }}>{q.hint}</div>
-          )}
-
-          {isScale && (
-            <div style={{ padding: '10px 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-                <div style={{ fontFamily: serif, fontSize: 72, fontWeight: 700, color: G, lineHeight: 1, minWidth: 100, textAlign: 'center' }}>
-                  {current ?? 5}
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, padding: '0 4px' }}>
-                <div style={{ fontSize: 28 }}>{q.low}</div>
-                <div style={{ fontSize: 28 }}>{q.high}</div>
-              </div>
-              <input
-                type="range" min="0" max="10" step="1"
-                value={current ?? 5}
-                onChange={e => answer(q, Number(e.target.value))}
-                style={{
-                  width: '100%', height: 8, borderRadius: 4,
-                  background: `linear-gradient(to right, ${G} 0%, ${G} ${((current ?? 5) * 10)}%, #EDE9E2 ${((current ?? 5) * 10)}%, #EDE9E2 100%)`,
-                  appearance: 'none', WebkitAppearance: 'none', outline: 'none', cursor: 'pointer',
-                }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: INK3, fontFamily: sans }}>
-                <span>0</span><span>5</span><span>10</span>
-              </div>
-            </div>
-          )}
-
-          {!isScale && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {q.options.map(o => {
-                const selected = current === o.v;
-                return (
-                  <button key={o.v} onClick={() => { answer(q, o.v); setTimeout(next, 180); }} style={{
-                    padding: '18px 20px',
-                    background: selected ? GLL : W,
-                    border: `1.5px solid ${selected ? G : BD}`,
-                    borderRadius: 18,
-                    display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', textAlign: 'left',
-                  }}>
-                    <div style={{ fontSize: 32 }}>{o.emoji}</div>
-                    <div style={{ fontSize: 17, fontWeight: 600, color: INK, fontFamily: sans }}>{o.label}</div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {q.hint && (
+          <div style={{ fontFamily: sans, fontSize: 12, color: INK3, textAlign: 'center', marginBottom: 16, lineHeight: 1.45 }}>{q.hint}</div>
+        )}
 
         {isScale && (
-          <div style={{ padding: '0 28px 30px' }}>
-            <button onClick={() => { if (current == null) answer(q, 5); next(); }} style={{
-              width: '100%', padding: '18px', background: G, border: 'none', borderRadius: 30,
-              color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
-            }}>ДАЛЬШЕ</button>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <div style={{ fontFamily: serif, fontSize: 64, fontWeight: 700, color: G, lineHeight: 1, textAlign: 'center' }}>
+                {current ?? 5}
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
+              <div style={{ fontSize: 26 }}>{q.low}</div>
+              <div style={{ fontSize: 26 }}>{q.high}</div>
+            </div>
+            <input
+              type="range" min="0" max="10" step="1"
+              value={current ?? 5}
+              onChange={e => answer(q, Number(e.target.value))}
+              style={{
+                width: '100%', height: 8, borderRadius: 4,
+                background: `linear-gradient(to right, ${G} 0%, ${G} ${((current ?? 5) * 10)}%, #EDE9E2 ${((current ?? 5) * 10)}%, #EDE9E2 100%)`,
+                appearance: 'none', WebkitAppearance: 'none', outline: 'none', cursor: 'pointer',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: INK3, fontFamily: sans }}>
+              <span>0</span><span>5</span><span>10</span>
+            </div>
+          </div>
+        )}
+
+        {!isScale && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {q.options.map(o => {
+              const selected = current === o.v;
+              return (
+                <button key={o.v} onClick={() => { answer(q, o.v); setTimeout(next, 180); }} style={{
+                  padding: '14px 18px',
+                  background: selected ? GLL : W,
+                  border: `1.5px solid ${selected ? G : BD}`,
+                  borderRadius: 16,
+                  display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', textAlign: 'left',
+                }}>
+                  <div style={{ fontSize: 26 }}>{o.emoji}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: INK, fontFamily: sans }}>{o.label}</div>
+                </button>
+              );
+            })}
           </div>
         )}
 
         <style>{`
-          input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%; background: ${G}; border: 4px solid ${W}; box-shadow: 0 2px 8px rgba(45,74,45,0.35); cursor: pointer; }
-          input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: ${G}; border: 4px solid ${W}; box-shadow: 0 2px 8px rgba(45,74,45,0.35); cursor: pointer; }
+          input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%; background: ${G}; border: 4px solid ${W}; box-shadow: 0 2px 8px rgba(45,74,45,0.35); cursor: pointer; }
+          input[type=range]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: ${G}; border: 4px solid ${W}; box-shadow: 0 2px 8px rgba(45,74,45,0.35); cursor: pointer; }
         `}</style>
-      </div>
+      </>
+    );
+
+    return (
+      <Shell
+        stepLabel={`Шаг ${step} из ${QUESTIONS.length + 1}`}
+        footer={isScale ? (
+          <button onClick={() => { if (current == null) answer(q, 5); next(); }} style={{
+            width: '100%', padding: '15px', background: G, border: 'none', borderRadius: 28,
+            color: W, fontFamily: sans, fontWeight: 700, fontSize: 15, cursor: 'pointer', letterSpacing: 1,
+          }}>ДАЛЬШЕ</button>
+        ) : null}
+      >
+        {body}
+      </Shell>
     );
   }
 
-  // Последний шаг — жалобы в свободной форме
+  // Последний шаг — жалобы
   if (step === QUESTIONS.length + 1) {
     return (
-      <div style={{ background: '#F9F7F4', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px 24px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={back} style={{ background: 'none', border: 'none', fontSize: 22, color: INK3, cursor: 'pointer', padding: 0 }}>‹</button>
-          <div style={{ flex: 1 }}>
-            <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: '100%', background: G, borderRadius: 2 }} />
-            </div>
-            <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 8 }}>Последний шаг</div>
-          </div>
-        </div>
-
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 28px' }}>
-          <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 12, lineHeight: 1.3 }}>
-            Что ещё тебя беспокоит?
-          </div>
-          <div style={{ fontFamily: sans, fontSize: 13, color: INK3, textAlign: 'center', marginBottom: 22, lineHeight: 1.5 }}>
-            Опиши своими словами — от чего хотелось бы избавиться в первую очередь. Можно пропустить.
-          </div>
-
-          <textarea
-            value={complaints}
-            onChange={e => setComplaints(e.target.value)}
-            placeholder="Например: постоянная усталость, вздутие после еды, тяжело засыпать..."
-            rows={6}
-            style={{
-              width: '100%', padding: '16px', border: `1.5px solid ${BD}`, borderRadius: 18,
-              fontFamily: sans, fontSize: 15, lineHeight: 1.5, color: INK,
-              outline: 'none', resize: 'none', background: W,
-            }}
-          />
-        </div>
-
-        <div style={{ padding: '20px 28px 30px' }}>
+      <Shell
+        stepLabel="Последний шаг"
+        footer={
           <button onClick={() => onDone(answers, complaints)} style={{
-            width: '100%', padding: '18px', background: G, border: 'none', borderRadius: 30,
-            color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
+            width: '100%', padding: '15px', background: G, border: 'none', borderRadius: 28,
+            color: W, fontFamily: sans, fontWeight: 700, fontSize: 15, cursor: 'pointer', letterSpacing: 1,
           }}>ПОКАЗАТЬ АТЛАС</button>
+        }
+      >
+        <div style={{ fontFamily: serif, fontSize: 21, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 6, lineHeight: 1.25 }}>
+          Что ещё тебя беспокоит?
         </div>
-      </div>
+        <div style={{ fontFamily: sans, fontSize: 12, color: INK3, textAlign: 'center', marginBottom: 14, lineHeight: 1.45 }}>
+          Опиши своими словами. Можно пропустить.
+        </div>
+        <textarea
+          value={complaints}
+          onChange={e => setComplaints(e.target.value)}
+          placeholder="Например: постоянная усталость, вздутие после еды, тяжело засыпать..."
+          rows={4}
+          style={{
+            width: '100%', padding: '14px', border: `1.5px solid ${BD}`, borderRadius: 16,
+            fontFamily: sans, fontSize: 14, lineHeight: 1.5, color: INK,
+            outline: 'none', resize: 'none', background: W,
+          }}
+        />
+      </Shell>
     );
   }
   return null;
