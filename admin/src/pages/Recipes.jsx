@@ -3,11 +3,49 @@ import { recipes as recipesApi } from '../api';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea, Table } from '../components/UI';
 
 function RecipeModal({ recipe, onClose, onSave }) {
-  const [data, setData] = useState(recipe || { title: '', cat: 'Завтрак', time: '', kcal: '', protein: '', fat: '', carbs: '', fact: '' });
+  const [data, setData] = useState(recipe || { title: '', cat: 'Завтрак', time: '', kcal: '', protein: '', fat: '', carbs: '', fact: '', dietTags: [] });
   const [ingredientsText, setIngredientsText] = useState((recipe?.ingredients || []).join('\n'));
   const [stepsText, setStepsText] = useState((recipe?.steps || []).join('\n'));
+  const [dietTagsText, setDietTagsText] = useState((recipe?.dietTags || []).join(', '));
   const [image, setImage] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const aiGenerate = async () => {
+    if (!data.title.trim() && !ingredientsText.trim()) {
+      return alert('Сначала заполни название и/или ингредиенты');
+    }
+    setAiLoading(true);
+    try {
+      const r = await fetch('/api/admin/recipes/ai-generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('vforme_admin_token')}`,
+        },
+        body: JSON.stringify({
+          title: data.title,
+          ingredients: ingredientsText,
+          steps: stepsText,
+        }),
+      });
+      const ai = await r.json();
+      if (ai.error) return alert(ai.error);
+      setData(d => ({
+        ...d,
+        kcal: ai.kcal || d.kcal,
+        protein: ai.protein || d.protein,
+        fat: ai.fat || d.fat,
+        carbs: ai.carbs || d.carbs,
+        fact: ai.fact || d.fact,
+        dietTags: Array.isArray(ai.dietTags) && ai.dietTags.length > 0 ? ai.dietTags : (d.dietTags || []),
+      }));
+      if (Array.isArray(ai.dietTags) && ai.dietTags.length > 0) {
+        setDietTagsText(ai.dietTags.join(', '));
+      }
+    } catch (e) { alert('Ошибка AI: ' + e.message); }
+    finally { setAiLoading(false); }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -16,6 +54,7 @@ function RecipeModal({ recipe, onClose, onSave }) {
         ...data,
         ingredients: ingredientsText.split('\n').filter(Boolean),
         steps: stepsText.split('\n').filter(Boolean),
+        dietTags: dietTagsText.split(',').map(t => t.trim()).filter(Boolean),
         kcal: data.kcal ? Number(data.kcal) : null,
         protein: data.protein ? Number(data.protein) : null,
         fat: data.fat ? Number(data.fat) : null,
@@ -60,7 +99,19 @@ function RecipeModal({ recipe, onClose, onSave }) {
       </div>
       <Textarea label="Ингредиенты (каждый с новой строки)" value={ingredientsText} onChange={setIngredientsText} placeholder="Яйца — 4 шт.&#10;Томаты — 2 шт." rows={4} />
       <Textarea label="Шаги приготовления" value={stepsText} onChange={setStepsText} placeholder="Обжарить лук.&#10;Добавить томаты." rows={4} />
+
+      {/* AI генератор */}
+      <div style={{ marginBottom: 16 }}>
+        <Btn onClick={aiGenerate} disabled={aiLoading} variant="outline" style={{ width: '100%' }}>
+          {aiLoading ? '🪄 Считаем...' : '🪄 Посчитать КБЖУ и факт через AI'}
+        </Btn>
+        <div style={{ fontSize: 11, color: C.ink3, marginTop: 6, textAlign: 'center' }}>
+          AI заполнит ккал, белки, жиры, углеводы, факт и диет-тэги на основе ингредиентов
+        </div>
+      </div>
+
       <Textarea label="Интересный факт" value={data.fact || ''} onChange={v => setData(d => ({ ...d, fact: v }))} placeholder="Польза блюда..." rows={2} />
+      <Input label="Диет-тэги (через запятую)" value={dietTagsText} onChange={setDietTagsText} placeholder="кето, без глютена, высокобелковое" />
       {!recipe && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ФОТО</div>

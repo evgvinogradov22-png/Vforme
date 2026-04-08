@@ -29,6 +29,8 @@ require('./models/ChatSettings');
 require('./models/ChatMessage');
 require('./models/UserEvent');
 const AtlasResult = require('./models/AtlasResult');
+const RecipeLike = require('./models/RecipeLike');
+const RecipeSave = require('./models/RecipeSave');
 
 const app = express();
 const ALLOWED_ORIGINS = [
@@ -82,6 +84,8 @@ async function start() {
     // Безопасно создаём только новые таблицы (CREATE IF NOT EXISTS),
     // не трогаем существующие.
     await AtlasResult.sync();
+    await RecipeLike.sync();
+    await RecipeSave.sync();
     // Idempotent ALTER TABLE для полей которые появились после первой схемы.
     // ADD COLUMN IF NOT EXISTS безопасен и не тронет данные.
     try {
@@ -98,6 +102,7 @@ async function start() {
         ALTER TABLE "Supplements"       ADD COLUMN IF NOT EXISTS "promo" VARCHAR(255);
         ALTER TABLE "Users"             ADD COLUMN IF NOT EXISTS "chatSummary" TEXT;
         ALTER TABLE "ChatMessages"      ADD COLUMN IF NOT EXISTS "summarized" BOOLEAN DEFAULT false;
+        ALTER TABLE "Recipes"           ADD COLUMN IF NOT EXISTS "dietTags" JSONB DEFAULT '[]'::jsonb;
       `);
     } catch (e) { console.error('Schema migration warning:', e.message); }
     console.log('✅ База данных подключена');

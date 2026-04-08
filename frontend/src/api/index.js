@@ -36,6 +36,9 @@ export const recipes = {
   getOne: (id) => req('GET', `/recipes/${id}`),
   create: (formData) => req('POST', '/recipes', formData, true),
   like: (id) => req('POST', `/recipes/${id}/like`),
+  save: (id) => req('POST', `/recipes/${id}/save`),
+  saved: () => req('GET', '/recipes/saved/list'),
+  random: () => req('GET', '/recipes/random/one'),
   comment: (id, text) => req('POST', `/recipes/${id}/comment`, { text }),
 };
 

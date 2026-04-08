@@ -1,15 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { recipes as recipesApi } from '../api';
 import { Spinner, BackHeader } from '../components/UI';
 import { G, GLL, GOLD, BD, INK, INK2, INK3, OW, W, sans, serif } from '../utils/theme';
 
 const CATS = ['Все', 'Завтрак', 'Обед', 'Ужин', 'Перекус', 'Напитки'];
-const CAT_ICON = { Завтрак: '🌅', Обед: '☀️', Ужин: '🌙', Перекус: '🍎', Напитки: '🫖' };
+
+// Доступные диет-тэги (Кристина может ввести любые свои в админке, эти просто дефолт-фильтр)
+const DIET_DEFAULTS = ['без глютена', 'без лактозы', 'кето', 'низкоуглеводное', 'веган', 'высокобелковое', 'детокс'];
 
 export default function Recipes({ user, flash }) {
   const [recipeList, setRecipeList] = useState([]);
+  const [savedList, setSavedList]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [cat, setCat] = useState('Все');
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // all | saved
+  const [activeDietTags, setActiveDietTags] = useState([]);
   const [openRecipe, setOpenRecipe] = useState(null);
   const [addingRecipe, setAddingRecipe] = useState(false);
   const [newRecipe, setNewRecipe] = useState({ title: '', cat: 'Завтрак', time: '', ingredients: '', steps: '', fact: '' });
@@ -18,8 +24,14 @@ export default function Recipes({ user, flash }) {
 
   const load = useCallback(() => {
     setLoading(true);
-    recipesApi.getAll(cat)
-      .then(setRecipeList)
+    Promise.all([
+      recipesApi.getAll(cat),
+      recipesApi.saved().catch(() => []),
+    ])
+      .then(([list, saved]) => {
+        setRecipeList(Array.isArray(list) ? list : []);
+        setSavedList(Array.isArray(saved) ? saved : []);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [cat]);
@@ -31,12 +43,67 @@ export default function Recipes({ user, flash }) {
     return () => window.removeEventListener('vforme:data_updated', h);
   }, [load]);
 
-  const handleLike = async (id) => {
+  // Все доступные diet тэги — собираем из загруженных рецептов
+  const allDietTags = useMemo(() => {
+    const set = new Set();
+    recipeList.forEach(r => (r.dietTags || []).forEach(t => set.add(t)));
+    DIET_DEFAULTS.forEach(t => set.add(t));
+    return [...set];
+  }, [recipeList]);
+
+  // Применяем поиск, диет-фильтр и вкладку saved/all
+  const visibleList = useMemo(() => {
+    const base = activeTab === 'saved' ? savedList : recipeList;
+    const q = search.trim().toLowerCase();
+    return base.filter(r => {
+      // diet
+      if (activeDietTags.length > 0 && !activeDietTags.every(t => (r.dietTags || []).includes(t))) return false;
+      // search в title + ingredients
+      if (q) {
+        const inTitle = (r.title || '').toLowerCase().includes(q);
+        const ings = Array.isArray(r.ingredients) ? r.ingredients.join(' ').toLowerCase() : (r.ingredients || '').toString().toLowerCase();
+        if (!inTitle && !ings.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [activeTab, savedList, recipeList, search, activeDietTags]);
+
+  const toggleDietTag = (t) => {
+    setActiveDietTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  };
+
+  const handleLike = async (id, e) => {
+    if (e) e.stopPropagation();
     try {
       const res = await recipesApi.like(id);
-      setRecipeList(p => p.map(r => r.id === id ? { ...r, likes: res.likes } : r));
-      if (openRecipe?.id === id) setOpenRecipe(r => ({ ...r, likes: res.likes }));
-    } catch (e) {}
+      const upd = (r) => r.id === id ? { ...r, likes: res.likes, liked: res.liked } : r;
+      setRecipeList(p => p.map(upd));
+      setSavedList(p => p.map(upd));
+      if (openRecipe?.id === id) setOpenRecipe(r => ({ ...r, likes: res.likes, liked: res.liked }));
+    } catch {}
+  };
+
+  const handleSave = async (id, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const res = await recipesApi.save(id);
+      const upd = (r) => r.id === id ? { ...r, saved: res.saved } : r;
+      setRecipeList(p => p.map(upd));
+      if (res.saved) {
+        const r = recipeList.find(x => x.id === id) || openRecipe;
+        if (r) setSavedList(p => [{ ...r, saved: true }, ...p.filter(x => x.id !== id)]);
+      } else {
+        setSavedList(p => p.filter(x => x.id !== id));
+      }
+      if (openRecipe?.id === id) setOpenRecipe(r => ({ ...r, saved: res.saved }));
+    } catch {}
+  };
+
+  const handleRandom = async () => {
+    try {
+      const r = await recipesApi.random();
+      if (r?.id) openOne(r.id);
+    } catch {}
   };
 
   const handleComment = async (id) => {
@@ -82,7 +149,7 @@ export default function Recipes({ user, flash }) {
 
   const inputStyle = { width: '100%', border: '1px solid ' + BD, borderRadius: 12, padding: '12px 14px', fontSize: 15, fontFamily: sans, color: INK, background: W, outline: 'none', boxSizing: 'border-box' };
 
-  // ADD FORM
+  // ─── ADD FORM ───────────────────────────────────────────────
   if (addingRecipe) return (
     <div style={{ padding: '24px 20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -115,7 +182,7 @@ export default function Recipes({ user, flash }) {
     </div>
   );
 
-  // RECIPE DETAIL
+  // ─── RECIPE DETAIL ──────────────────────────────────────────
   if (openRecipe) {
     const r = openRecipe;
     const commentText = newComment[r.id] || '';
@@ -123,17 +190,51 @@ export default function Recipes({ user, flash }) {
       <div style={{ paddingBottom: 40 }}>
         <BackHeader onBack={() => setOpenRecipe(null)} title={r.title} subtitle={r.cat} />
         <div style={{ padding: '24px 20px' }}>
-          {r.imageUrl && <img src={r.imageUrl} alt={r.title} style={{ width: '100%', borderRadius: 16, marginBottom: 20, display: 'block' }} />}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+          {r.imageUrl && (
+            <div style={{ position: 'relative', marginBottom: 20 }}>
+              <div style={{
+                width: '100%', aspectRatio: '4 / 3',
+                backgroundImage: `url(${r.imageUrl})`,
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                borderRadius: 16,
+              }} />
+              {/* Лайк/сохранить overlay */}
+              <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
+                <button onClick={() => handleSave(r.id)} style={{
+                  width: 40, height: 40, borderRadius: 20,
+                  background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+                  border: 'none', cursor: 'pointer', fontSize: 18,
+                  color: r.saved ? GOLD : INK3,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                }}>{r.saved ? '★' : '☆'}</button>
+                <button onClick={() => handleLike(r.id)} style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  height: 40, padding: '0 14px', borderRadius: 20,
+                  background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+                  border: 'none', cursor: 'pointer',
+                  color: r.liked ? '#E55' : INK2, fontFamily: sans, fontWeight: 700, fontSize: 13,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                }}>{r.liked ? '♥' : '♡'} {r.likes || 0}</button>
+              </div>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
             {r.time && <span style={{ background: GLL, color: G, fontSize: 13, borderRadius: 20, padding: '5px 14px', fontFamily: sans }}>⏱ {r.time}</span>}
-            {r.kcal && <span style={{ background: '#FBF5EB', color: GOLD, fontSize: 13, borderRadius: 20, padding: '5px 14px', border: '1px solid #EDD9B0', fontFamily: sans }}>~{r.kcal} ккал</span>}
+            {r.kcal != null && <span style={{ background: '#FBF5EB', color: GOLD, fontSize: 13, borderRadius: 20, padding: '5px 14px', border: '1px solid #EDD9B0', fontFamily: sans }}>~{r.kcal} ккал</span>}
             <span style={{ background: '#F9F7F4', color: INK3, fontSize: 13, borderRadius: 20, padding: '5px 14px', fontFamily: sans }}>
               {r.authorName === 'Кристина' ? '👩‍⚕️ Кристина' : '👤 Участница'}
             </span>
           </div>
-          {r.kcal && (
+          {r.dietTags?.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
+              {r.dietTags.map((t, i) => (
+                <span key={i} style={{ fontSize: 11, color: '#5A4D34', background: '#F3EFE6', border: '1px solid #D9D2C0', padding: '4px 10px', borderRadius: 12, fontFamily: sans, fontWeight: 600 }}>{t}</span>
+              ))}
+            </div>
+          )}
+          {(r.kcal != null && (r.protein != null || r.fat != null || r.carbs != null)) && (
             <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-              {[{ l: 'Белки', v: r.protein + 'г' }, { l: 'Жиры', v: r.fat + 'г' }, { l: 'Углеводы', v: r.carbs + 'г' }].map((s, i) => (
+              {[{ l: 'Белки', v: (r.protein ?? 0) + 'г' }, { l: 'Жиры', v: (r.fat ?? 0) + 'г' }, { l: 'Углеводы', v: (r.carbs ?? 0) + 'г' }].map((s, i) => (
                 <div key={i} style={{ flex: 1, background: GLL, borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
                   <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: G }}>{s.v}</div>
                   <div style={{ fontSize: 11, color: '#3D6B3D', marginTop: 3, fontFamily: sans }}>{s.l}</div>
@@ -169,12 +270,8 @@ export default function Recipes({ user, flash }) {
               <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans }}>{r.fact}</div>
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-            <button onClick={() => handleLike(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', border: '1px solid ' + BD, borderRadius: 30, background: W, cursor: 'pointer', fontFamily: sans, fontSize: 14, color: INK2 }}>
-              ♥ {r.likes}
-            </button>
-            <div style={{ fontSize: 14, color: INK3, fontFamily: sans }}>{(r.comments || []).length} комментариев</div>
-          </div>
+
+          {/* Комментарии */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 16, fontFamily: sans }}>КОММЕНТАРИИ</div>
             {(r.comments || []).map((c, i) => (
@@ -201,37 +298,132 @@ export default function Recipes({ user, flash }) {
     );
   }
 
-  // LIST
+  // ─── LIST ───────────────────────────────────────────────────
   return (
     <div style={{ padding: '24px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 600, color: G }}>Рецепты</div>
-        <button onClick={() => setAddingRecipe(true)} style={{ background: G, border: 'none', borderRadius: 20, padding: '8px 16px', color: W, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>+ Добавить</button>
+        <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 600, color: G }}>Рецепты</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={handleRandom} title="Случайный рецепт" style={{ background: W, border: '1px solid ' + BD, borderRadius: 20, padding: '8px 14px', color: INK2, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🎲 Случайный</button>
+          <button onClick={() => setAddingRecipe(true)} style={{ background: G, border: 'none', borderRadius: 20, padding: '8px 16px', color: W, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>+ Добавить</button>
+        </div>
       </div>
-      <div style={{ fontSize: 15, color: INK2, marginBottom: 20, fontFamily: sans }}>{recipeList.length} рецептов от Кристины и участниц</div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 22, overflowX: 'auto', paddingBottom: 4 }}>
-        {CATS.map(c => (
-          <button key={c} onClick={() => setCat(c)} style={{ padding: '8px 16px', borderRadius: 30, border: '1px solid ' + (cat === c ? G : BD), background: cat === c ? G : W, color: cat === c ? W : INK2, fontFamily: sans, fontSize: 14, fontWeight: cat === c ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{c}</button>
+      <div style={{ fontSize: 14, color: INK2, marginBottom: 14, fontFamily: sans }}>{visibleList.length} рецептов</div>
+
+      {/* Поиск */}
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Поиск по названию или ингредиенту..."
+        style={{
+          width: '100%', boxSizing: 'border-box',
+          border: '1px solid ' + BD, borderRadius: 14,
+          padding: '12px 16px', fontSize: 14, fontFamily: sans, color: INK, background: W,
+          outline: 'none', marginBottom: 14,
+        }}
+      />
+
+      {/* Все / Сохранённые */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        {[
+          { id: 'all', label: 'Все' },
+          { id: 'saved', label: '★ Сохранённые' },
+        ].map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+            padding: '8px 16px', borderRadius: 20,
+            background: activeTab === t.id ? G : W,
+            color: activeTab === t.id ? W : INK2,
+            border: '1px solid ' + (activeTab === t.id ? G : BD),
+            fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          }}>{t.label}</button>
         ))}
       </div>
-      {loading ? <Spinner /> : recipeList.map(r => (
-        <div key={r.id} onClick={() => openOne(r.id)} style={{ border: '1px solid ' + BD, borderRadius: 18, marginBottom: 12, overflow: 'hidden', cursor: 'pointer', background: W }}>
-          {r.imageUrl && <img src={r.imageUrl} alt={r.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
-          <div style={{ padding: '16px 18px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: GLL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                {CAT_ICON[r.cat] || '🍽'}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: serif, fontSize: 16, fontWeight: 600, color: INK }}>{r.title}</div>
-                <div style={{ fontSize: 13, color: INK3, marginTop: 3, fontFamily: sans }}>{r.cat}{r.time ? ' · ' + r.time : ''} · {r.authorName === 'Кристина' ? '👩‍⚕️ Кристина' : '👤 Участница'}</div>
-              </div>
+
+      {/* Категории */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
+        {CATS.map(c => (
+          <button key={c} onClick={() => setCat(c)} style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid ' + (cat === c ? G : BD), background: cat === c ? G : W, color: cat === c ? W : INK2, fontFamily: sans, fontSize: 13, fontWeight: cat === c ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{c}</button>
+        ))}
+      </div>
+
+      {/* Diet тэги */}
+      {allDietTags.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 18, overflowX: 'auto', paddingBottom: 4, flexWrap: 'wrap' }}>
+          {allDietTags.map(t => {
+            const active = activeDietTags.includes(t);
+            return (
+              <button key={t} onClick={() => toggleDietTag(t)} style={{
+                padding: '5px 11px', borderRadius: 14,
+                background: active ? '#5A4D34' : '#F3EFE6',
+                color: active ? W : '#5A4D34',
+                border: '1px solid #D9D2C0',
+                fontFamily: sans, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}>{t}</button>
+            );
+          })}
+        </div>
+      )}
+
+      {loading && <Spinner />}
+      {!loading && visibleList.length === 0 && (
+        <div style={{ textAlign: 'center', padding: 40, color: INK3, fontSize: 14, fontFamily: sans }}>
+          Ничего не нашлось
+        </div>
+      )}
+
+      {!loading && visibleList.map(r => (
+        <div key={r.id} onClick={() => openOne(r.id)} style={{ border: '1px solid ' + BD, borderRadius: 18, marginBottom: 14, overflow: 'hidden', cursor: 'pointer', background: W }}>
+          {r.imageUrl ? (
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                width: '100%', aspectRatio: '4 / 3',
+                backgroundImage: `url(${r.imageUrl})`,
+                backgroundSize: 'cover', backgroundPosition: 'center',
+              }} />
+              {/* Лайк overlay glass */}
+              <button onClick={(e) => handleLike(r.id, e)} style={{
+                position: 'absolute', top: 12, right: 12,
+                display: 'flex', alignItems: 'center', gap: 5,
+                height: 32, padding: '0 12px', borderRadius: 16,
+                background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+                border: 'none', cursor: 'pointer',
+                color: r.liked ? '#E55' : INK2, fontFamily: sans, fontWeight: 700, fontSize: 13,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              }}>{r.liked ? '♥' : '♡'} {r.likes || 0}</button>
+              {/* Сохранить overlay */}
+              <button onClick={(e) => handleSave(r.id, e)} style={{
+                position: 'absolute', top: 12, left: 12,
+                width: 32, height: 32, borderRadius: 16,
+                background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+                border: 'none', cursor: 'pointer', fontSize: 16,
+                color: r.saved ? GOLD : INK3,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              }}>{r.saved ? '★' : '☆'}</button>
             </div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <span style={{ fontSize: 13, color: INK3, fontFamily: sans }}>♥ {r.likes}</span>
-              <span style={{ fontSize: 13, color: INK3, fontFamily: sans }}>💬 {r.commentCount || 0}</span>
-              {r.kcal && <span style={{ fontSize: 13, color: INK3, fontFamily: sans }}>{r.kcal} ккал</span>}
+          ) : null}
+          <div style={{ padding: '14px 18px' }}>
+            <div style={{ fontFamily: serif, fontSize: 17, fontWeight: 600, color: INK, marginBottom: 4 }}>{r.title}</div>
+            <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginBottom: 8 }}>
+              {r.cat}{r.time ? ' · ' + r.time : ''}
             </div>
+            {/* КБЖУ строка */}
+            {r.kcal != null && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: GOLD, background: '#FBF5EB', padding: '3px 10px', borderRadius: 10, fontFamily: sans }}>{r.kcal} ккал</span>
+                {r.protein != null && <span style={{ fontSize: 11, color: INK3, fontFamily: sans }}>Б {r.protein}г</span>}
+                {r.fat != null && <span style={{ fontSize: 11, color: INK3, fontFamily: sans }}>Ж {r.fat}г</span>}
+                {r.carbs != null && <span style={{ fontSize: 11, color: INK3, fontFamily: sans }}>У {r.carbs}г</span>}
+              </div>
+            )}
+            {/* Diet тэги */}
+            {r.dietTags?.length > 0 && (
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
+                {r.dietTags.slice(0, 3).map((t, i) => (
+                  <span key={i} style={{ fontSize: 10, color: '#5A4D34', background: '#F3EFE6', border: '1px solid #D9D2C0', padding: '3px 8px', borderRadius: 10, fontFamily: sans, fontWeight: 600 }}>{t}</span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       ))}

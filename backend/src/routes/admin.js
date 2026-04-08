@@ -26,7 +26,7 @@ const ALLOWED_FIELDS = {
   Program:  ['title', 'subtitle', 'desc', 'icon', 'color', 'price', 'available', 'order', 'image', 'features', 'tags', 'coverImage'],
   Module:   ['title', 'desc', 'order', 'programId', 'icon'],
   Lecture:  ['title', 'content', 'order', 'moduleId', 'type', 'videoUrl', 'duration'],
-  Recipe:   ['title', 'desc', 'content', 'image', 'tags', 'calories', 'available'],
+  Recipe:   ['title', 'desc', 'content', 'image', 'tags', 'calories', 'available', 'cat', 'time', 'kcal', 'protein', 'fat', 'carbs', 'ingredients', 'steps', 'fact', 'imageUrl', 'dietTags'],
   Supplement: ['schemeId', 'name', 'dose', 'time', 'note', 'buyUrl', 'brand', 'image', 'order', 'promo', 'desc', 'link', 'tags', 'available'],
   SupplementScheme: ['title', 'desc', 'content', 'available', 'order', 'tags', 'price', 'coverImage'],
 };
@@ -126,6 +126,59 @@ router.post('/recipes', A, upload.single('image'), async (req, res) => {
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 router.put('/recipes/:id', A, async (req,res) => { try { await Recipe.update(req.body,{where:{id:req.params.id}}); emitUpdate('Recipe'); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
+
+// AI: посчитать калории/КБЖУ/факт по ингредиентам и шагам
+router.post('/recipes/ai-generate', A, async (req, res) => {
+  try {
+    const { title = '', ingredients = '', steps = '' } = req.body || {};
+    const https = require('https');
+    const body = JSON.stringify({
+      model: 'anthropic/claude-sonnet-4.6',
+      messages: [
+        { role: 'system', content: 'Ты — нутрициолог-аналитик. По названию блюда, ингредиентам и шагам ты оцениваешь КБЖУ на одну порцию и подбираешь интересный нутрициологический факт. Отвечаешь СТРОГО в JSON.' },
+        { role: 'user', content: `Название: ${title}\n\nИнгредиенты:\n${ingredients}\n\nШаги:\n${steps}\n\nВерни JSON:\n{\n  "kcal": число (ккал на порцию),\n  "protein": число (г),\n  "fat": число (г),\n  "carbs": число (г),\n  "fact": "интересный нутрициологический факт об этом блюде или его ингредиентах, 2-3 предложения, на русском",\n  "dietTags": ["подходит под диету", ... — несколько коротких тэгов: например 'без глютена', 'кето', 'низкоуглеводное', 'веган', 'высокобелковое' — только те что реально подходят]\n}\n\nТолько JSON, без markdown.` },
+      ],
+      max_tokens: 800,
+      temperature: 0.5,
+    });
+    const opts = {
+      hostname: 'openrouter.ai', path: '/api/v1/chat/completions', method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://app.nutrikris.ru',
+        'X-Title': 'V Forme Recipes AI',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    };
+    const raw = await new Promise((resolve, reject) => {
+      const r = https.request(opts, resp => {
+        let d = ''; resp.on('data', c => d += c); resp.on('end', () => resolve(d));
+      });
+      r.on('error', reject); r.write(body); r.end();
+    });
+    const data = JSON.parse(raw);
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) return res.status(502).json({ error: 'AI не ответил' });
+    let parsed;
+    try {
+      const cleaned = text.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+      const i = cleaned.indexOf('{'); const j = cleaned.lastIndexOf('}');
+      parsed = JSON.parse(cleaned.slice(i, j + 1));
+    } catch { return res.status(502).json({ error: 'AI вернул не JSON' }); }
+    res.json({
+      kcal:    Number(parsed.kcal) || 0,
+      protein: Number(parsed.protein) || 0,
+      fat:     Number(parsed.fat) || 0,
+      carbs:   Number(parsed.carbs) || 0,
+      fact:    parsed.fact || '',
+      dietTags: Array.isArray(parsed.dietTags) ? parsed.dietTags : [],
+    });
+  } catch (e) {
+    console.error('Recipe AI error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
 router.delete('/recipes/:id', A, async (req,res) => { try { await Recipe.destroy({where:{id:req.params.id}}); emitUpdate('Recipe'); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
 
 // Supplement Schemes
