@@ -3,6 +3,7 @@ import {
   ZONES, QUESTIONS, computeLevels,
   BalanceWheel, ZoneSheet, ContentCard, Onboarding,
 } from './Playground';
+import { renderMarkdown } from '../utils/md';
 import { G, GL, GLL, GOLD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 
 const TOKEN = () => localStorage.getItem('vforme_token');
@@ -87,8 +88,8 @@ function AtlasMain({ result, onRetake, onGoChat }) {
             </div>
           </div>
 
-          <div style={{ fontFamily: sans, fontSize: 14, color: INK, lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: 14 }}>
-            {result.message || '—'}
+          <div style={{ fontFamily: sans, fontSize: 14, color: INK, lineHeight: 1.6, marginBottom: 14 }}>
+            {renderMarkdown(result.message || '—', 'kr')}
           </div>
 
           <button onClick={onGoChat} style={{

@@ -10,7 +10,7 @@ const CACHE_DIR = path.join(__dirname, '../../.cache/atlas');
 try { fs.mkdirSync(CACHE_DIR, { recursive: true }); } catch {}
 
 // Поднимаем версию при смене модели или промпта — автоматически инвалидирует кеш
-const AI_VERSION = 'claude-sonnet-4-6-v1';
+const AI_VERSION = 'claude-sonnet-4-6-v2-utf8';
 
 const ZONE_LABELS = {
   brain:       'Сон и нервная система',
@@ -36,6 +36,7 @@ function openrouter(payload) {
       },
     };
     const req = https.request(opts, res => {
+      res.setEncoding('utf8');
       let d = '';
       res.on('data', c => d += c);
       res.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { reject(e); } });

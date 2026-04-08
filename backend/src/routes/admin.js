@@ -153,6 +153,7 @@ router.post('/recipes/ai-generate', A, async (req, res) => {
     };
     const raw = await new Promise((resolve, reject) => {
       const r = https.request(opts, resp => {
+        resp.setEncoding('utf8');
         let d = ''; resp.on('data', c => d += c); resp.on('end', () => resolve(d));
       });
       r.on('error', reject); r.write(body); r.end();

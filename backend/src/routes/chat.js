@@ -25,6 +25,7 @@ function openrouterRequest(payload) {
       },
     };
     const req = https.request(opts, res => {
+      res.setEncoding('utf8');
       let d = '';
       res.on('data', c => d += c);
       res.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { reject(e); } });
