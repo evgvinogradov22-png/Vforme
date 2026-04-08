@@ -222,7 +222,7 @@ function FeedCard({ item, onClick }) {
             {kindLabel}
           </div>
           <div style={{ position: 'absolute', top: 12, right: 12, ...glassPill({ fontSize: 13, padding: '7px 14px' }) }}>
-            {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
+            {free ? 'БЕСПЛАТНО' : `${item.price} руб.`}
           </div>
         </div>
       )}
@@ -233,7 +233,7 @@ function FeedCard({ item, onClick }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div style={flatPill()}>{kindLabel}</div>
             <div style={{ ...flatPill(true), fontSize: 14, padding: '6px 14px' }}>
-              {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
+              {free ? 'БЕСПЛАТНО' : `${item.price} руб.`}
             </div>
           </div>
         )}
@@ -382,7 +382,7 @@ function PaywallCard({ price, payUrl, payLoading, onPay, ctaTitle = 'Откро�
             width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 28,
             color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
           }}>
-            {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${price} ₽`}
+            {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${price} руб.`}
           </button>
         </>
       )}
@@ -450,7 +450,7 @@ function ProgramPage({ program, user, onBack }) {
     return <LecturePage lecture={openLecture} onBack={() => setOpenLecture(null)} />;
   }
 
-  const status = free ? 'БЕСПЛАТНО' : owned ? 'ОТКРЫТА' : `${program.price} ₽`;
+  const status = free ? 'БЕСПЛАТНО' : owned ? 'ОТКРЫТА' : `${program.price} руб.`;
 
   return (
     <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
@@ -541,7 +541,7 @@ function ProtocolPage({ protocol, onBack }) {
     finally { setPayLoading(false); }
   };
 
-  const status = free ? 'БЕСПЛАТНО' : (data?.hasAccess ? 'ОТКРЫТ' : `${protocol.price} ₽`);
+  const status = free ? 'БЕСПЛАТНО' : (data?.hasAccess ? 'ОТКРЫТ' : `${protocol.price} руб.`);
 
   return (
     <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
@@ -654,7 +654,7 @@ function SchemePage({ scheme, onBack }) {
   }, [scheme.id]);
 
   const free = Number(scheme.price) === 0;
-  const status = free ? 'БЕСПЛАТНО' : `${scheme.price} ₽`;
+  const status = free ? 'БЕСПЛАТНО' : `${scheme.price} руб.`;
 
   return (
     <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>

@@ -56,7 +56,7 @@ function Paywall({ proto, onClose, onPaid }) {
           {proto.description && <div style={{ fontSize: 14, color: INK2, marginTop: 6 }}>{proto.description}</div>}
         </div>
         <div style={{ background: GLL, borderRadius: 16, padding: '16px 20px', marginBottom: 20, textAlign: 'center' }}>
-          <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 700, color: G }}>{proto.price} ₽</div>
+          <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 700, color: G }}>{proto.price} руб.</div>
         </div>
         {payUrl ? (
           <div style={{ position: 'relative', width: '100%', height: 500, borderRadius: 16, overflow: 'hidden', border: `1px solid ${BD}` }}>
@@ -66,7 +66,7 @@ function Paywall({ proto, onClose, onPaid }) {
           <>
             <button onClick={handlePay}
               style={{ width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 12, letterSpacing: 1 }}>
-              ОПЛАТИТЬ {proto.price} ₽
+              ОПЛАТИТЬ {proto.price} руб.
             </button>
             <button onClick={onClose}
               style={{ width: '100%', padding: '14px', background: 'transparent', border: `1px solid ${BD}`, borderRadius: 30, color: INK2, fontFamily: sans, fontSize: 15, cursor: 'pointer' }}>
@@ -169,7 +169,7 @@ function ProtocolPage({ proto, onBack, onBuy }) {
             <div style={{ fontSize: 14, color: INK2, marginBottom: 20 }}>Чтобы просматривать протокол и ссылки на БАДы</div>
             <button onClick={() => onBuy(proto)}
               style={{ width: '100%', padding: '16px', background: GOLD, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 10, letterSpacing: 1 }}>
-              {proto.price > 0 ? `ПОЛУЧИТЬ ДОСТУП — ${proto.price} ₽` : 'ПОЛУЧИТЬ БЕСПЛАТНО'}
+              {proto.price > 0 ? `ПОЛУЧИТЬ ДОСТУП — ${proto.price} руб.` : 'ПОЛУЧИТЬ БЕСПЛАТНО'}
             </button>
             <button onClick={onBack}
               style={{ width: '100%', padding: '12px', background: 'transparent', border: `1px solid ${BD}`, borderRadius: 30, color: INK2, fontFamily: sans, fontSize: 14, cursor: 'pointer' }}>
@@ -254,7 +254,7 @@ export default function Protocols({ flash }) {
               {proto.hasAccess
                 ? <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4, letterSpacing: 1 }}>✓ ДОСТУПНО</div>
                 : proto.price > 0
-                  ? <div style={{ fontSize: 13, color: GOLD, marginTop: 4, fontWeight: 700 }}>💳 {proto.price} ₽</div>
+                  ? <div style={{ fontSize: 13, color: GOLD, marginTop: 4, fontWeight: 700 }}>💳 {proto.price} руб.</div>
                   : <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>Бесплатно</div>
               }
             </div>

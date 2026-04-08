@@ -212,7 +212,7 @@ export default function Protocols({ flash }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                   <div style={{ fontSize: 17, fontWeight: 700, color: C.ink }}>{proto.title}</div>
                   <Badge color={proto.available ? 'green' : 'gray'}>{proto.available ? 'Активен' : 'Скрыт'}</Badge>
-                  <Badge color={proto.price > 0 ? 'gold' : 'blue'}>{proto.price > 0 ? `${proto.price} ₽` : 'Бесплатно'}</Badge>
+                  <Badge color={proto.price > 0 ? 'gold' : 'blue'}>{proto.price > 0 ? `${proto.price} руб.` : 'Бесплатно'}</Badge>
                 </div>
                 {proto.description && <div style={{ fontSize: 13, color: C.ink2, marginBottom: 8 }}>{proto.description}</div>}
                 <div style={{ display: 'flex', gap: 12, fontSize: 12, color: C.ink3 }}>

@@ -40,7 +40,7 @@ export default function Payments() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         <Card style={{ padding: 16, textAlign: 'center' }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: C.green }}>{totalRevenue.toLocaleString('ru')} ₽</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: C.green }}>{totalRevenue.toLocaleString('ru')} руб.</div>
           <div style={{ fontSize: 13, color: C.ink3, marginTop: 4 }}>Выручка</div>
         </Card>
         <Card style={{ padding: 16, textAlign: 'center' }}>
@@ -81,7 +81,7 @@ export default function Payments() {
                   <div style={{ color: C.ink3, fontSize: 11 }}>{o.user?.email || ''}</div>
                 </td>
                 <td style={{ padding: '10px 14px', color: C.ink }}>{o.program?.title || '—'}</td>
-                <td style={{ padding: '10px 14px', fontWeight: 700, color: C.ink }}>{Number(o.amount || 0).toLocaleString('ru')} ₽</td>
+                <td style={{ padding: '10px 14px', fontWeight: 700, color: C.ink }}>{Number(o.amount || 0).toLocaleString('ru')} руб.</td>
                 <td style={{ padding: '10px 14px' }}>
                   <span style={{ background: (STATUS_COLOR[o.status] || '#9CA3AF') + '22', color: STATUS_COLOR[o.status] || '#9CA3AF', padding: '3px 10px', borderRadius: 20, fontWeight: 600, fontSize: 12 }}>
                     {STATUS_LABEL[o.status] || o.status}

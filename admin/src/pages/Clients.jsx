@@ -69,7 +69,7 @@ function ClientModal({ client, programs, onClose, onUpdate, flash }) {
           <div style={{ fontSize: 11, color: C.gold, marginTop: 2 }}>оплат</div>
         </div>
         <div style={{ background: '#FBF5EB', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: C.gold }}>{(client.totalRevenue || 0).toLocaleString()} ₽</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.gold }}>{(client.totalRevenue || 0).toLocaleString()} руб.</div>
           <div style={{ fontSize: 11, color: C.gold, marginTop: 2 }}>сумма</div>
         </div>
       </div>

@@ -145,9 +145,9 @@ export default function Stats() {
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24 }}>
             <StatCard icon="👤" label="Пользователей" value={users?.total || 0} sub={`+${users?.todayCount || 0} сегодня`} />
-            <StatCard icon="💳" label="Оплат" value={payments?.total || 0} sub={`${(payments?.totalRevenue || 0).toLocaleString()} ₽`} color={C.gold} />
+            <StatCard icon="💳" label="Оплат" value={payments?.total || 0} sub={`${(payments?.totalRevenue || 0).toLocaleString()} руб.`} color={C.gold} />
             <StatCard icon="⭐" label="Баллов выдано" value={(points?.totalAwarded || 0).toLocaleString()} color="#7C3AED" />
-            <StatCard icon="📅" label="За неделю" value={`${(payments?.weekRevenue || 0).toLocaleString()} ₽`} sub={`${users?.weekCount || 0} новых`} color={C.blue} />
+            <StatCard icon="📅" label="За неделю" value={`${(payments?.weekRevenue || 0).toLocaleString()} руб.`} sub={`${users?.weekCount || 0} новых`} color={C.blue} />
           </div>
 
           {system && (
@@ -225,8 +225,8 @@ export default function Stats() {
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
             <StatCard label="Оплат всего" value={payments.total} icon="💳" />
-            <StatCard label="Выручка" value={`${(payments.totalRevenue || 0).toLocaleString()} ₽`} color={C.gold} icon="💰" />
-            <StatCard label="За 7 дней" value={`${(payments.weekRevenue || 0).toLocaleString()} ₽`} icon="📈" />
+            <StatCard label="Выручка" value={`${(payments.totalRevenue || 0).toLocaleString()} руб.`} color={C.gold} icon="💰" />
+            <StatCard label="За 7 дней" value={`${(payments.weekRevenue || 0).toLocaleString()} руб.`} icon="📈" />
           </div>
           {points?.byReason?.length > 0 && (
             <Card style={{ marginBottom: 24 }}>
@@ -256,7 +256,7 @@ export default function Stats() {
                 {(payments.recent || []).map((o, i) => (
                   <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
                     <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 12, color: C.ink3 }}>{o.orderId?.slice(0, 24)}...</td>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, color: C.green }}>{(o.amount || 0).toLocaleString()} ₽</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 700, color: C.green }}>{(o.amount || 0).toLocaleString()} руб.</td>
                     <td style={{ padding: '12px 16px', color: C.ink3, fontSize: 13 }}>{new Date(o.updatedAt).toLocaleString('ru')}</td>
                   </tr>
                 ))}

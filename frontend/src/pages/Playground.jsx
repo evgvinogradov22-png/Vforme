@@ -375,7 +375,7 @@ export function ContentCard({ item }) {
             color: free ? G : GOLDD,
             padding: '2px 7px', borderRadius: 6,
           }}>
-            {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
+            {free ? 'БЕСПЛАТНО' : `${item.price} руб.`}
           </div>
         </div>
         <div style={{ fontSize: 14, fontWeight: 600, color: INK, fontFamily: sans, lineHeight: 1.3 }}>

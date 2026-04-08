@@ -62,12 +62,12 @@ function Paywall({ prog, user, onClose }) {
         <div style={{ background: GLL, borderRadius: 16, padding: '16px 20px', marginBottom: 20, textAlign: 'center' }}>
           {promoResult ? (
             <div>
-              <div style={{ fontSize: 14, color: INK3, textDecoration: 'line-through' }}>{prog.price} ₽</div>
-              <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 700, color: G }}>{finalPrice} ₽</div>
-              <div style={{ fontSize: 13, color: '#3D6B3D', fontWeight: 600 }}>🎉 {promoResult.message} — экономия {promoResult.discount} ₽</div>
+              <div style={{ fontSize: 14, color: INK3, textDecoration: 'line-through' }}>{prog.price} руб.</div>
+              <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 700, color: G }}>{finalPrice} руб.</div>
+              <div style={{ fontSize: 13, color: '#3D6B3D', fontWeight: 600 }}>🎉 {promoResult.message} — экономия {promoResult.discount} руб.</div>
             </div>
           ) : (
-            <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 700, color: G }}>{prog.price} ₽</div>
+            <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 700, color: G }}>{prog.price} руб.</div>
           )}
         </div>
 
@@ -95,7 +95,7 @@ function Paywall({ prog, user, onClose }) {
           <>
             <button onClick={handlePay}
               style={{ width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 12, letterSpacing: 1 }}>
-              ОПЛАТИТЬ {finalPrice} ₽
+              ОПЛАТИТЬ {finalPrice} руб.
             </button>
             <button onClick={onClose}
               style={{ width: '100%', padding: '14px', background: 'transparent', border: `1px solid ${BD}`, borderRadius: 30, color: INK2, fontFamily: sans, fontSize: 15, cursor: 'pointer' }}>
@@ -307,7 +307,7 @@ export default function Programs({ flash, user }) {
               <div style={{ fontSize: 14, color: INK2, marginBottom: 20 }}>Чтобы проходить уроки и получать баллы — оформи доступ к программе</div>
               <button onClick={() => setPaywall(activeLec.prog)}
                 style={{ width: '100%', padding: '16px', background: GOLD, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 10, letterSpacing: 1 }}>
-                ПОЛУЧИТЬ ДОСТУП — {activeLec.prog.price} ₽
+                ПОЛУЧИТЬ ДОСТУП — {activeLec.prog.price} руб.
               </button>
               <button onClick={() => setActiveLec(null)}
                 style={{ width: '100%', padding: '12px', background: 'transparent', border: `1px solid ${BD}`, borderRadius: 30, color: INK2, fontFamily: sans, fontSize: 14, cursor: 'pointer' }}>
@@ -360,7 +360,7 @@ export default function Programs({ flash, user }) {
                 } else { setPaywall(prog); }
               }}
                 style={{ marginTop: 16, padding: '12px 24px', background: GOLD, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 14, cursor: 'pointer', letterSpacing: 1 }}>
-                {!prog.price || prog.price === 0 ? 'ПОЛУЧИТЬ БЕСПЛАТНО' : `ПОЛУЧИТЬ ДОСТУП — ${prog.price} ₽`}
+                {!prog.price || prog.price === 0 ? 'ПОЛУЧИТЬ БЕСПЛАТНО' : `ПОЛУЧИТЬ ДОСТУП — ${prog.price} руб.`}
               </button>
             )}
           </div>
@@ -451,7 +451,7 @@ export default function Programs({ flash, user }) {
                 <div style={{ fontFamily: serif, fontSize: 20, fontWeight: 600, color: W }}>{prog.title}</div>
                 {!prog.available && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>🔒 Скоро</div>}
                 {prog.available && access && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4, letterSpacing: 1 }}>✓ ДОСТУПНО</div>}
-                {prog.available && !access && prog.price > 0 && <div style={{ fontSize: 13, color: GOLD, marginTop: 4, fontWeight: 700 }}>💳 {prog.price} ₽</div>}
+                {prog.available && !access && prog.price > 0 && <div style={{ fontSize: 13, color: GOLD, marginTop: 4, fontWeight: 700 }}>💳 {prog.price} руб.</div>}
                 {prog.available && !access && !prog.price && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>Бесплатно</div>}
               </div>
               {prog.available && <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 24 }}>›</span>}

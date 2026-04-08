@@ -185,7 +185,7 @@ function ProgramModal({ prog, onClose, onSave }) {
       <div style={{ display: 'flex', gap: 12 }}>
         <Input label="Иконка" value={data.icon || ''} onChange={v => setData(d => ({ ...d, icon: v }))} placeholder="🌿" style={{ flex: 1 }} />
         <Input label="Цвет" value={data.color || ''} onChange={v => setData(d => ({ ...d, color: v }))} placeholder="#2D4A2D" style={{ flex: 1 }} />
-        <Input label="Цена (₽)" value={String(data.price || 0)} onChange={v => setData(d => ({ ...d, price: Number(v) }))} type="number" style={{ flex: 1 }} />
+        <Input label="Цена (руб.)" value={String(data.price || 0)} onChange={v => setData(d => ({ ...d, price: Number(v) }))} type="number" style={{ flex: 1 }} />
         <Input label="Порядок" value={String(data.order)} onChange={v => setData(d => ({ ...d, order: Number(v) }))} type="number" style={{ flex: 1 }} />
       </div>
       <div style={{ marginBottom: 16 }}>
@@ -254,7 +254,7 @@ export default function Programs({ flash }) {
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{prog.title}</div>
               <div style={{ fontSize: 13, color: '#fff', marginTop: 2 }}>
-                {(prog.modules || []).length} модулей · {prog.available ? '✓ Активна' : '⏸ Скрыта'} {prog.price > 0 ? `· ${prog.price} ₽` : '· Бесплатно'}
+                {(prog.modules || []).length} модулей · {prog.available ? '✓ Активна' : '⏸ Скрыта'} {prog.price > 0 ? `· ${prog.price} руб.` : '· Бесплатно'}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>

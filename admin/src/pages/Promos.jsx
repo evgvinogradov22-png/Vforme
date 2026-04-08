@@ -30,7 +30,7 @@ function PromoModal({ promo, programs, onClose, onSave }) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ТИП СКИДКИ</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {[{ v: 'percent', l: '% Процент' }, { v: 'fixed', l: '₽ Фиксированная' }].map(t => (
+          {[{ v: 'percent', l: '% Процент' }, { v: 'fixed', l: 'руб. Фиксированная' }].map(t => (
             <button key={t.v} onClick={() => setData(d => ({ ...d, type: t.v }))}
               style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${data.type === t.v ? C.green : C.border}`, background: data.type === t.v ? C.greenLL : C.white, color: data.type === t.v ? C.green : C.ink2, cursor: 'pointer', fontWeight: data.type === t.v ? 700 : 400, fontSize: 14 }}>
               {t.l}
@@ -39,7 +39,7 @@ function PromoModal({ promo, programs, onClose, onSave }) {
         </div>
       </div>
       <div style={{ display: 'flex', gap: 12 }}>
-        <Input label={data.type === 'percent' ? 'Скидка (%)' : 'Скидка (₽)'} value={String(data.value)} onChange={v => setData(d => ({ ...d, value: v }))} type="number" style={{ flex: 1 }} />
+        <Input label={data.type === 'percent' ? 'Скидка (%)' : 'Скидка (руб.)'} value={String(data.value)} onChange={v => setData(d => ({ ...d, value: v }))} type="number" style={{ flex: 1 }} />
         <Input label="Макс. использований (0 = ∞)" value={String(data.maxUses)} onChange={v => setData(d => ({ ...d, maxUses: v }))} type="number" style={{ flex: 1 }} />
       </div>
       <div style={{ marginBottom: 16 }}>
@@ -107,7 +107,7 @@ export default function Promos({ flash }) {
         <Table
           columns={[
             { title: 'Код', key: 'code', render: v => <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 15, color: C.ink }}>{v}</span> },
-            { title: 'Скидка', key: 'type', render: (v, row) => <Badge color="gold">{row.type === 'percent' ? `${row.value}%` : `${row.value} ₽`}</Badge> },
+            { title: 'Скидка', key: 'type', render: (v, row) => <Badge color="gold">{row.type === 'percent' ? `${row.value}%` : `${row.value} руб.`}</Badge> },
             { title: 'Использований', key: 'usedCount', render: (v, row) => `${v} / ${row.maxUses === 0 ? '∞' : row.maxUses}` },
             { title: 'Статус', key: 'active', render: (v, row) => (
               <div onClick={() => toggle(row)} style={{ cursor: 'pointer' }}>
