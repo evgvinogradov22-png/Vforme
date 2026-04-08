@@ -3,13 +3,33 @@ import { recipes as recipesApi } from '../api';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea, Table } from '../components/UI';
 
 function RecipeModal({ recipe, onClose, onSave }) {
-  const [data, setData] = useState(recipe || { title: '', cat: 'Завтрак', time: '', kcal: '', protein: '', fat: '', carbs: '', fact: '', dietTags: [] });
+  const [data, setData] = useState(recipe || { title: '', cat: 'Завтрак', time: '', kcal: '', protein: '', fat: '', carbs: '', fact: '', dietTags: [], imageUrl: '' });
   const [ingredientsText, setIngredientsText] = useState((recipe?.ingredients || []).join('\n'));
   const [stepsText, setStepsText] = useState((recipe?.steps || []).join('\n'));
   const [dietTagsText, setDietTagsText] = useState((recipe?.dietTags || []).join(', '));
   const [image, setImage] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Загружаем картинку сразу при выборе файла — и при create, и при edit
+  const uploadImage = async (file) => {
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/api/upload/image', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('vforme_admin_token')}` },
+        body: fd,
+      });
+      const res = await r.json();
+      if (res.url) setData(d => ({ ...d, imageUrl: res.url }));
+      else alert(res.error || 'Не удалось загрузить');
+    } catch (e) { alert('Ошибка: ' + e.message); }
+    finally { setUploadingImg(false); }
+  };
 
   const aiGenerate = async () => {
     if (!data.title.trim() && !ingredientsText.trim()) {
@@ -61,11 +81,12 @@ function RecipeModal({ recipe, onClose, onSave }) {
         carbs: data.carbs ? Number(data.carbs) : null,
       };
       if (recipe?.id) {
+        // При редактировании — чистый JSON PUT. Картинка уже загружена в data.imageUrl.
         await recipesApi.update(recipe.id, payload);
       } else {
+        // При создании — imageUrl уже записан через uploadImage.
         const fd = new FormData();
         fd.append('data', JSON.stringify(payload));
-        if (image) fd.append('image', image);
         await recipesApi.create(fd);
       }
       onSave();
@@ -112,12 +133,27 @@ function RecipeModal({ recipe, onClose, onSave }) {
 
       <Textarea label="Интересный факт" value={data.fact || ''} onChange={v => setData(d => ({ ...d, fact: v }))} placeholder="Польза блюда..." rows={2} />
       <Input label="Диет-тэги (через запятую)" value={dietTagsText} onChange={setDietTagsText} placeholder="кето, без глютена, высокобелковое" />
-      {!recipe && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ФОТО</div>
-          <input type="file" accept="image/*" onChange={e => setImage(e.target.files[0])} />
-        </div>
-      )}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ФОТО</div>
+        {data.imageUrl && (
+          <img src={data.imageUrl} alt="" style={{ width: 140, height: 105, objectFit: 'cover', borderRadius: 10, border: `1px solid ${C.border}`, display: 'block', marginBottom: 8 }} />
+        )}
+        <label style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '10px 16px', border: `1px dashed ${C.border}`, borderRadius: 10,
+          cursor: uploadingImg ? 'wait' : 'pointer', fontSize: 14, color: C.ink2,
+        }}>
+          {uploadingImg ? 'Загружаем…' : (data.imageUrl ? '🔄 Заменить фото' : '📷 Загрузить фото')}
+          <input type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={e => uploadImage(e.target.files[0])} />
+        </label>
+        {data.imageUrl && (
+          <button type="button" onClick={() => setData(d => ({ ...d, imageUrl: '' }))} style={{
+            marginLeft: 8, padding: '10px 14px', border: `1px solid ${C.border}`, borderRadius: 10,
+            background: 'none', cursor: 'pointer', fontSize: 12, color: C.red,
+          }}>✕ Убрать</button>
+        )}
+      </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <Btn onClick={onClose} variant="ghost" style={{ flex: 1 }}>Отмена</Btn>
         <Btn onClick={save} disabled={!data.title || saving} variant="primary" style={{ flex: 2 }}>{saving ? 'Сохраняем...' : 'Сохранить'}</Btn>
