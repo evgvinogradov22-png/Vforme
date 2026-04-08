@@ -6,11 +6,11 @@ const DeployHistory = require('../models/DeployHistory');
 const User = require('../models/User');
 
 const A = [auth, role('admin', 'superadmin')];
-const DEPLOY_SCRIPT = '/var/www/deploy.sh';
+const DEPLOY_SCRIPT = '/var/www/vforme/deploy.sh';
 
 function run(args) {
   return new Promise((resolve, reject) => {
-    execFile('/bin/bash', [DEPLOY_SCRIPT, ...args], { timeout: 300000 }, (err, stdout, stderr) => {
+    execFile('/bin/bash', [DEPLOY_SCRIPT, ...args], { timeout: 600000, maxBuffer: 10 * 1024 * 1024 }, (err, stdout, stderr) => {
       if (err) reject(new Error(stderr || err.message));
       else resolve(stdout);
     });
@@ -71,45 +71,28 @@ router.get('/versions/:id', A, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST деплой на тест
+// POST деплой в прод (у нас пока только один env)
+// Сам deploy.sh после успешного завершения пишет запись в DeployHistories
+// через psql. Этот эндпоинт также дополнительно сохраняет запись на случай
+// если скрипт упадёт до finalize.
 router.post('/deploy', A, async (req, res) => {
   const { desc } = req.body;
   if (!desc) return res.status(400).json({ error: 'Введи описание' });
   const safeDesc = String(desc).slice(0, 300).replace(/[^a-zA-Zа-яёА-ЯЁ0-9 .,!?()_\-\n]/g, '');
   try {
-    const output = await run(['deploy', safeDesc]);
-    await saveHistory({ env: 'test', action: 'deploy', desc: safeDesc, status: 'ok', output, userId: req.user.id });
+    const output = await run([safeDesc]);
+    // deploy.sh уже должен был создать запись 'Shell'. Дополнительная запись от API — с userId.
+    await saveHistory({ env: 'prod', action: 'deploy', desc: safeDesc, status: 'ok', output, userId: req.user.id });
     res.json({ ok: true, output });
   } catch(e) {
-    await saveHistory({ env: 'test', action: 'deploy', desc: safeDesc, status: 'error', errorMsg: e.message, userId: req.user.id });
+    await saveHistory({ env: 'prod', action: 'deploy', desc: safeDesc, status: 'error', errorMsg: e.message, userId: req.user.id });
     console.error('Deploy error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-// POST promote тест → боевая
-router.post('/promote', A, async (req, res) => {
-  try {
-    const output = await run(['promote']);
-    await saveHistory({ env: 'prod', action: 'promote', desc: 'Выкатка теста в боевую', status: 'ok', output, userId: req.user.id });
-    res.json({ ok: true, output });
-  } catch(e) {
-    await saveHistory({ env: 'prod', action: 'promote', desc: 'Выкатка теста в боевую', status: 'error', errorMsg: e.message, userId: req.user.id });
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// POST откат
-router.post('/rollback', A, async (req, res) => {
-  const n = Math.max(1, Math.min(20, parseInt(req.body.n) || 1));
-  try {
-    const output = await run(['rollback', String(n)]);
-    await saveHistory({ env: 'prod', action: 'rollback', desc: `Откат на ${n} шаг(ов) назад`, status: 'ok', output, userId: req.user.id });
-    res.json({ ok: true, output });
-  } catch(e) {
-    await saveHistory({ env: 'prod', action: 'rollback', desc: `Откат на ${n}`, status: 'error', errorMsg: e.message, userId: req.user.id });
-    res.status(500).json({ error: e.message });
-  }
-});
+// Заглушки promote/rollback — инфраструктура пока поддерживает только один env
+router.post('/promote', A, async (req, res) => res.status(400).json({ error: 'Promote не поддерживается: у нас только один env (prod)' }));
+router.post('/rollback', A, async (req, res) => res.status(400).json({ error: 'Rollback не поддерживается: используй git revert + деплой' }));
 
 module.exports = router;
