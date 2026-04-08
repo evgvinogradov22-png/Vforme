@@ -13,11 +13,11 @@ const ZONES = [
 // ─── Вопросы (анкета Кристины) ───────────────────────────────
 const QUESTIONS = [
   { id: 'gender', type: 'choice',
-    label: 'Как к тебе обращаться?',
+    label: 'Какой у тебя пол?',
     weights: {},
     options: [
-      { v: 'female', label: 'Девушка', emoji: '👩', impact: 0 },
-      { v: 'male',   label: 'Парень',  emoji: '👨', impact: 0 },
+      { v: 'male',   label: 'М', emoji: '👨', impact: 0 },
+      { v: 'female', label: 'Ж', emoji: '👩', impact: 0 },
     ]},
   { id: 'sleep',    type: 'scale', direction: 'higher-better',
     label: 'Насколько ты довольна своим сном?',
@@ -593,17 +593,18 @@ function MainScreen({ state, onZoneClick, onReset }) {
   const focusZoneId = analysis?.focusZoneIds?.[0] || [...Object.entries(state.levels || {})].sort((a, b) => a[1] - b[1])[0]?.[0];
   const focusZone = ZONES.find(z => z.id === focusZoneId);
 
-  // Сопоставление рекомендаций по заголовкам
+  // Сопоставление рекомендаций по заголовкам + сортировка: сначала бесплатные
   const recommended = useMemo(() => {
     if (!content.length) return [];
+    const byFree = (a, b) => (Number(a.price) || 0) - (Number(b.price) || 0);
     const titles = (analysis?.recommendedTitles || []).map(t => t.toLowerCase());
-    if (!titles.length) return content; // нет рекомендаций — показываем весь каталог
+    if (!titles.length) return [...content].sort(byFree);
     const matched = content.filter(c => titles.some(t =>
       c.title?.toLowerCase().includes(t) || t.includes(c.title?.toLowerCase() || '')
     ));
-    // Сначала matched, потом остальные
     const rest = content.filter(c => !matched.includes(c));
-    return [...matched, ...rest];
+    // Сначала matched (бесплатные → платные), потом остальные (бесплатные → платные)
+    return [...matched.sort(byFree), ...rest.sort(byFree)];
   }, [analysis, content]);
 
   const filtered = recommended.filter(it => {

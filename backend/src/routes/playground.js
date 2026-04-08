@@ -43,51 +43,64 @@ function buildUserPrompt(answers, complaints, levels, weakest, catalog) {
   const fmtChoice = (v) => ({ often: 'часто', some: 'иногда', never: 'нет/всё ок' }[v] || '—');
   const isMale = answers.gender === 'male';
   const voc = isMale ? 'мужской' : 'женский';
-  const verbBe = isMale ? 'ты доволен' : 'ты довольна';
-  const addr = isMale ? 'обращайся в мужском роде (ты доволен, ты заметил, ты готов)' : 'обращайся в женском роде (ты довольна, ты заметила, ты готова)';
+  const addr = isMale
+    ? 'обращайся в МУЖСКОМ роде (ты доволен, ты заметил, ты готов, тебе нужно)'
+    : 'обращайся в ЖЕНСКОМ роде (ты довольна, ты заметила, ты готова, тебе нужно)';
 
   const zonesList = weakest.map(z => `${ZONE_LABELS[z.id] || z.id} (${z.level}%)`).join(', ');
   const levelsAll = Object.entries(levels).map(([k, v]) => `${ZONE_LABELS[k] || k}: ${v}%`).join(', ');
+
   const catalogList = catalog.length
-    ? catalog.map(c => `- "${c.title}" (${c.kind === 'program' ? 'программа' : 'протокол'}${Number(c.price) > 0 ? `, ${c.price} ₽` : ', бесплатно'})`).join('\n')
+    ? catalog.map(c => {
+        const kind = c.kind === 'program' ? 'программа' : 'протокол';
+        const price = Number(c.price) > 0 ? `${c.price} ₽` : 'БЕСПЛАТНО';
+        const descLine = c.desc ? `  описание: ${c.desc}` : '';
+        const modsLine = c.modules ? `  о чём внутри: ${c.modules}` : '';
+        return `- "${c.title}" [${kind}, ${price}]\n${descLine}${descLine && modsLine ? '\n' : ''}${modsLine}`.trimEnd();
+      }).join('\n')
     : '(каталог пуст)';
 
-  return `Клиент прошёл анкету. Пол: ${voc}. В сообщении ${addr}.
+  const hasComplaint = complaints && complaints.trim().length > 2;
 
-ВСЕ его ответы с цифрами — ты ОБЯЗАН учесть каждый из них, не обобщать:
+  return `Клиент прошёл анкету. Пол: ${voc}. В ответе ${addr}.
+
+Все ответы — ты ОБЯЗАН учесть каждый, ссылаться на конкретные цифры, НЕ обобщать:
 
 - Сон (0 плохо, 10 отлично): ${fmtScale(answers.sleep)}
-- Стресс (0 спокойно, 10 сильный): ${fmtScale(answers.stress)}
+- Стресс (0 спокойно, 10 сильный ежедневный): ${fmtScale(answers.stress)}
 - Энергия (0 нет сил, 10 через край): ${fmtScale(answers.energy)}
-- Физическая активность (0 лежит, 10 тренировки 3–5 раз): ${fmtScale(answers.activity)}
+- Физическая активность (0 лежит, 10 тренировки 3–5 раз в неделю): ${fmtScale(answers.activity)}
 - Кожа (0 плохо, 10 отлично): ${fmtScale(answers.skin)}
 - Головные боли / мигрени: ${fmtChoice(answers.headaches)}
 - Проблемы с ЖКТ (вздутие, тяжесть): ${fmtChoice(answers.gut)}
 
-Жалобы своими словами: "${complaints || '(не указал)'}"
+${hasComplaint
+  ? `⚠️ КЛИЕНТ НАПИСАЛ ЛИЧНУЮ ЖАЛОБУ СВОИМИ СЛОВАМИ — это САМОЕ ВАЖНОЕ в сообщении, отреагируй на каждую упомянутую проблему:\n"""\n${complaints.trim()}\n"""`
+  : 'Свободной жалобы нет.'
+}
 
-Карта здоровья (уровни всех зон): ${levelsAll}.
+Карта здоровья (уровни ВСЕХ зон): ${levelsAll}.
 Самые слабые зоны: ${zonesList}.
 
-Наши программы и протоколы (выбирай ТОЛЬКО из этого списка, заголовки слово-в-слово):
+Наши программы и протоколы. Для каждой есть описание и состав — ИЗУЧИ их внимательно и выбирай ТО, что РЕАЛЬНО решает озвученные проблемы. Заголовки используй слово-в-слово.
+
 ${catalogList}
 
-Напиши короткое персональное сообщение в мессенджере. ОЧЕНЬ ВАЖНО:
-1. Процитируй минимум 3 конкретных ответа с цифрами или выбранными вариантами — чтобы клиент(ка) увидел что ты реально прочитала его анкету. Например: "сон ты оценила на 3/10, а энергию всего на 4 — это связано". Не используй общие фразы типа "у тебя есть точки роста".
-2. Если клиент(ка) написал(а) жалобу в свободной форме — обязательно отреагируй на неё отдельным предложением.
-3. Свяжи ответы между собой — покажи КАК они влияют друг на друга (например: стресс 8 + ЖКТ часто = логическая связь).
-4. Назови конкретную зону с которой стоит начать и почему именно она.
-5. В конце одним предложением сошлись на подборку ниже.
+Напиши персональное сообщение в мессенджере. ЖЁСТКИЕ ТРЕБОВАНИЯ:
+1. Процитируй минимум 3 конкретных цифры или выбранных варианта из ответов. Примеры: "сон ты поставила 3/10", "ЖКТ беспокоит часто", "стресс 8 из 10".
+${hasComplaint ? '2. ОБЯЗАТЕЛЬНО отреагируй отдельным предложением на то что клиент написал в свободной форме. Прямо перефразируй или упомяни его слова — чтобы он видел что ты это прочитала.' : '2. Если жалобы нет — сделай акцент на самой слабой зоне.'}
+3. Свяжи ответы причинно: покажи как одно влияет на другое (стресс 8 → ЖКТ, плохой сон → энергия, и т.п.).
+4. Назови конкретную зону (одну) с которой разумно начать, и объясни почему именно она.
+5. Рекомендации (recommendedTitles): читай ОПИСАНИЕ и СОСТАВ каждой программы/протокола и выбирай ТОЛЬКО те, что реально попадают в озвученные проблемы. НЕ бери всё подряд. Приоритет — бесплатные программы и протоколы (их предлагай первыми), дальше платные. Если в каталоге ничего не подходит под проблему клиента — лучше верни меньше рекомендаций, но точных.
+6. В конце сообщения — одна строка со ссылкой на подборку: "Ниже я собрала для тебя — начни с ...".
 
-Формат: 3 абзаца по 2–3 строки каждый. Тёплый живой тон, ${addr}. Без диагнозов, без медицинских терминов.
-
-В recommendedTitles верни 3–5 заголовков ИЗ СПИСКА ВЫШЕ, которые ТОЧНО подходят к ответам клиент(ки).
+Формат: 3–4 короткие абзаца, живой дружелюбный тон, ${addr}. Без диагнозов, без медицинских терминов, без "рекомендую проконсультироваться с врачом".
 
 Верни строго JSON без markdown:
 {
   "message": "текст с \\n\\n между абзацами",
   "focusZoneIds": ["brain", "gut"],
-  "recommendedTitles": ["точный заголовок 1", "точный заголовок 2"]
+  "recommendedTitles": ["точный заголовок 1", "точный заголовок 2", "точный заголовок 3"]
 }
 
 Доступные зоны: brain, thyroid, gut, hormones, composition.`;
@@ -103,17 +116,45 @@ router.post('/analyze', async (req, res) => {
       .sort((a, b) => a.level - b.level)
       .slice(0, 3);
 
-    // Подтягиваем каталог доступных программ и протоколов
+    // Подтягиваем каталог доступных программ и протоколов с описаниями
     const Program = require('../models/Program');
     const Protocol = require('../models/Protocol');
+    const Module = require('../models/Module');
+    const Lecture = require('../models/Lecture');
     const [programs, protocols] = await Promise.all([
       Program.findAll({ where: { available: true }, order: [['order', 'ASC']] }).catch(() => []),
       Protocol.findAll({ where: { available: true }, order: [['order', 'ASC']] }).catch(() => []),
     ]);
-    const catalog = [
-      ...programs.map(p => ({ title: p.title, kind: 'program',  price: Number(p.price) || 0 })),
-      ...protocols.map(p => ({ title: p.title, kind: 'protocol', price: Number(p.price) || 0 })),
-    ];
+
+    // Для каждой программы подтягиваем первые модули с названиями — даёт контекст чем она наполнена
+    const enrichProgram = async (p) => {
+      try {
+        const modules = await Module.findAll({
+          where: { programId: p.id }, order: [['order', 'ASC']], limit: 5,
+        });
+        const moduleTitles = modules.map(m => m.title).filter(Boolean).join(' · ');
+        return {
+          title: p.title,
+          kind: 'program',
+          price: Number(p.price) || 0,
+          desc: (p.desc || '').slice(0, 240),
+          modules: moduleTitles.slice(0, 280),
+        };
+      } catch {
+        return { title: p.title, kind: 'program', price: Number(p.price) || 0, desc: (p.desc || '').slice(0, 240), modules: '' };
+      }
+    };
+
+    const enrichedPrograms = await Promise.all(programs.map(enrichProgram));
+    const enrichedProtocols = protocols.map(p => ({
+      title: p.title,
+      kind: 'protocol',
+      price: Number(p.price) || 0,
+      desc: (p.description || '').slice(0, 240),
+      modules: '',
+    }));
+
+    const catalog = [...enrichedPrograms, ...enrichedProtocols];
 
     const systemPrompt = `Ты — Кристина Виноградова, нутрициолог и эксперт по здоровью. Общаешься тёплым дружелюбным тоном, на "ты". Твоя задача — коротко поддержать клиентку и направить её к конкретным продуктам из нашего каталога. Без диагнозов, без лекарств. Отвечай строго в формате JSON.`;
 
