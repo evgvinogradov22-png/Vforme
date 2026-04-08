@@ -1,279 +1,287 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 
-// ─── Данные зон ──────────────────────────────────────────────
-// viewBox="0 0 320 720" — женский силуэт. cx=160 — центр.
+// ─── Зоны ────────────────────────────────────────────────────
 const ZONES = [
-  { id: 'brain',       label: 'Сон и нервная',   icon: '🧠', hint: 'Голова, сон, стресс',          shape: { cx: 160, cy: 72,  rx: 36, ry: 44 } },
-  { id: 'thyroid',     label: 'Энергия',         icon: '⚡', hint: 'Щитовидка, митохондрии',       shape: { cx: 160, cy: 134, rx: 16, ry: 10 } },
-  { id: 'lungs',       label: 'Дыхание',         icon: '🫁', hint: 'Лёгкие, кислород',             shape: { cx: 160, cy: 200, rx: 56, ry: 28 } },
-  { id: 'heart',       label: 'Сердце',          icon: '❤️', hint: 'Сердце, сосуды',               shape: { cx: 160, cy: 186, rx: 20, ry: 14 } },
-  { id: 'liver',       label: 'Детокс',          icon: '🌿', hint: 'Печень, очищение',             shape: { cx: 185, cy: 240, rx: 22, ry: 14 } },
-  { id: 'gut',         label: 'ЖКТ',             icon: '🍽️', hint: 'Желудок, кишечник',            shape: { cx: 160, cy: 290, rx: 40, ry: 28 } },
-  { id: 'hormones',    label: 'Гормоны',         icon: '🌸', hint: 'Репродукция, таз',             shape: { cx: 160, cy: 360, rx: 46, ry: 22 } },
-  { id: 'composition', label: 'Тело',            icon: '💪', hint: 'Мышцы, композиция',            shape: { cx: 160, cy: 510, rx: 72, ry: 130 } },
+  { id: 'brain',       label: 'Сон и нервы', icon: '🧠', hint: 'Голова, сон, стресс' },
+  { id: 'thyroid',     label: 'Энергия',     icon: '⚡', hint: 'Щитовидка, митохондрии' },
+  { id: 'heart',       label: 'Сердце',      icon: '❤️', hint: 'Сердце, сосуды' },
+  { id: 'lungs',       label: 'Дыхание',     icon: '🫁', hint: 'Лёгкие, кислород' },
+  { id: 'gut',         label: 'ЖКТ',         icon: '🍽️', hint: 'Желудок, кишечник' },
+  { id: 'liver',       label: 'Детокс',      icon: '🌿', hint: 'Печень, очищение' },
+  { id: 'hormones',    label: 'Гормоны',     icon: '🌸', hint: 'Репродукция, цикл' },
+  { id: 'composition', label: 'Тело',        icon: '💪', hint: 'Мышцы, активность' },
 ];
 
-// Связанный контент — mock
-const CONTENT = {
-  brain: [
-    { type: 'program',  title: 'Протокол спокойного сна',   meta: '12 уроков · 8 дней в фокусе' },
-    { type: 'protocol', title: 'Перезагрузка нервной',      meta: 'Короткий сезон · 3 недели' },
-    { type: 'recipe',   title: 'Ромашка с магнием',         meta: 'Вечерний ритуал' },
-  ],
-  thyroid: [
-    { type: 'program',  title: 'Энергия без кофе',          meta: '8 уроков · базовый курс' },
-    { type: 'supplement', title: 'Селен + йод',             meta: 'Схема БАД' },
-  ],
-  heart: [
-    { type: 'program', title: 'Чистое сердце', meta: '10 уроков' },
-    { type: 'recipe',  title: 'Омега-боул',    meta: 'Для сосудов' },
-  ],
-  lungs: [
-    { type: 'protocol', title: 'Дыхание 4-7-8', meta: '2 минуты утром' },
-  ],
-  liver: [
-    { type: 'program',  title: 'Мягкий детокс',    meta: '14 дней' },
-    { type: 'recipe',   title: 'Зелёный смузи',     meta: 'Утро' },
-  ],
-  gut: [
-    { type: 'program', title: 'ЖКТ от А до Я',              meta: '20 уроков' },
-    { type: 'program', title: 'Без вздутия',                meta: '3 недели' },
-    { type: 'supplement', title: 'Пробиотики базовые',       meta: 'Схема' },
-  ],
-  hormones: [
-    { type: 'program', title: 'Женский цикл в балансе', meta: '15 уроков' },
-  ],
-  composition: [
-    { type: 'program', title: 'Композиция тела',  meta: '30 дней' },
-    { type: 'recipe',  title: 'Белковый завтрак', meta: 'Для мышц' },
-  ],
-};
+// ─── Вопросы (анкета Кристины) ───────────────────────────────
+const QUESTIONS = [
+  { id: 'sleep',    type: 'scale', direction: 'higher-better',
+    label: 'Насколько ты довольна своим сном?',
+    hint: '0 — совсем плохо, 10 — высыпаюсь отлично',
+    low: '😣', high: '😴',
+    weights: { brain: 35, thyroid: 10, hormones: 8 } },
+  { id: 'stress',   type: 'scale', direction: 'higher-worse',
+    label: 'Уровень стресса в последнее время?',
+    hint: '0 — спокойно, 10 — сильный ежедневный стресс',
+    low: '🧘', high: '😵',
+    weights: { brain: 25, hormones: 15, heart: 10, gut: 8 } },
+  { id: 'energy',   type: 'scale', direction: 'higher-better',
+    label: 'Сколько у тебя энергии в течение дня?',
+    hint: '0 — совсем нет сил, 10 — энергия через край',
+    low: '🪫', high: '⚡',
+    weights: { thyroid: 35, heart: 10, composition: 10 } },
+  { id: 'activity', type: 'scale', direction: 'higher-better',
+    label: 'Уровень физической активности?',
+    hint: '0 — почти не двигаюсь, 10 — тренировки 3–5 раз в неделю',
+    low: '🛋️', high: '🏃‍♀️',
+    weights: { composition: 30, lungs: 20, heart: 15 } },
+  { id: 'skin',     type: 'scale', direction: 'higher-better',
+    label: 'Как бы ты оценила состояние кожи?',
+    hint: '0 — высыпания и сухость, 10 — всё отлично',
+    low: '😔', high: '✨',
+    weights: { liver: 20, hormones: 15, gut: 10 } },
+  { id: 'swelling', type: 'choice',
+    label: 'Замечаешь отёчность утром?',
+    weights: { liver: 20, heart: 8 },
+    options: [
+      { v: 'often', label: 'Часто',  emoji: '💧', impact: 1 },
+      { v: 'some',  label: 'Иногда', emoji: '🌤', impact: 0.5 },
+      { v: 'never', label: 'Нет',    emoji: '☀️', impact: 0 },
+    ]},
+  { id: 'headaches', type: 'choice',
+    label: 'Бывают головные боли или мигрени?',
+    weights: { brain: 18, liver: 6 },
+    options: [
+      { v: 'often', label: 'Часто',  emoji: '🤕', impact: 1 },
+      { v: 'some',  label: 'Иногда', emoji: '😐', impact: 0.5 },
+      { v: 'never', label: 'Нет',    emoji: '🙂', impact: 0 },
+    ]},
+  { id: 'gut', type: 'choice',
+    label: 'Есть ли проблемы с ЖКТ — вздутие, тяжесть?',
+    weights: { gut: 30, liver: 10 },
+    options: [
+      { v: 'often', label: 'Часто',  emoji: '😖', impact: 1 },
+      { v: 'some',  label: 'Иногда', emoji: '🤔', impact: 0.5 },
+      { v: 'never', label: 'Всё ок', emoji: '🙂', impact: 0 },
+    ]},
+];
 
-// Цвет зоны от уровня
+// ─── Служебные функции ───────────────────────────────────────
+function answerScore(q, value) {
+  if (value == null) return 0.5;
+  if (q.type === 'scale') {
+    const n = Math.max(0, Math.min(10, value)) / 10;
+    return q.direction === 'higher-worse' ? 1 - n : n;
+  }
+  if (q.type === 'choice') {
+    const opt = q.options.find(o => o.v === value);
+    return opt ? 1 - opt.impact : 0.5;
+  }
+  return 0.5;
+}
+
+function computeLevels(answers) {
+  const BASELINE = 60;
+  const levels = {};
+  ZONES.forEach(z => { levels[z.id] = BASELINE; });
+  QUESTIONS.forEach(q => {
+    const score = answerScore(q, answers[q.id]);
+    const delta = (score - 0.5) * 2;
+    Object.entries(q.weights || {}).forEach(([zone, w]) => {
+      levels[zone] = (levels[zone] ?? BASELINE) + w * delta;
+    });
+  });
+  Object.keys(levels).forEach(k => {
+    levels[k] = Math.round(Math.max(5, Math.min(100, levels[k])));
+  });
+  return levels;
+}
+
 function zoneColor(level) {
   if (level >= 75) return '#3D6B3D';
   if (level >= 50) return '#7AAE7A';
   if (level >= 25) return '#D4A94A';
-  return '#BDB8AF';
+  return '#C88A5E';
 }
-function zoneFill(level) {
-  if (level >= 75) return 'rgba(61, 107, 61, 0.75)';
-  if (level >= 50) return 'rgba(122, 174, 122, 0.65)';
-  if (level >= 25) return 'rgba(212, 169, 74, 0.6)';
-  return 'rgba(189, 184, 175, 0.45)';
-}
-
-const STORAGE = 'vforme_playground_v1';
-
-function loadState() {
-  try { return JSON.parse(localStorage.getItem(STORAGE) || 'null'); } catch { return null; }
-}
-function saveState(s) {
-  try { localStorage.setItem(STORAGE, JSON.stringify(s)); } catch {}
+function zoneSoftFill(level) {
+  if (level >= 75) return 'rgba(61, 107, 61, 0.78)';
+  if (level >= 50) return 'rgba(122, 174, 122, 0.72)';
+  if (level >= 25) return 'rgba(212, 169, 74, 0.72)';
+  return 'rgba(200, 138, 94, 0.68)';
 }
 
-const DEFAULT_LEVELS = {
-  brain: 20, thyroid: 30, heart: 55, lungs: 45, liver: 40, gut: 25, hormones: 35, composition: 50,
-};
+const STORAGE = 'vforme_playground_v2';
+const loadState = () => { try { return JSON.parse(localStorage.getItem(STORAGE) || 'null'); } catch { return null; } };
+const saveState = (s) => { try { localStorage.setItem(STORAGE, JSON.stringify(s)); } catch {} };
+
+// ─── Анимированные уровни ────────────────────────────────────
+function useAnimatedLevels(targetLevels, duration = 1000) {
+  const [displayed, setDisplayed] = useState(() => {
+    const zeros = {};
+    ZONES.forEach(z => { zeros[z.id] = 0; });
+    return zeros;
+  });
+
+  useEffect(() => {
+    const start = performance.now();
+    const from = { ...displayed };
+    let raf;
+    const ease = (t) => 1 - Math.pow(1 - t, 3); // easeOutCubic
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const e = ease(t);
+      const next = {};
+      ZONES.forEach(z => {
+        const target = targetLevels[z.id] ?? 0;
+        next[z.id] = from[z.id] + (target - from[z.id]) * e;
+      });
+      setDisplayed(next);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(targetLevels)]);
+
+  return displayed;
+}
 
 // ─── Колесо баланса ──────────────────────────────────────────
-// 8 зон по 45°. Длина сектора от центра = уровень зоны.
-function Silhouette({ levels, focusId, onZoneClick, pulse = true, uid = '', compact = false }) {
-  const SIZE = 440;
+function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
+  const animated = useAnimatedLevels(levels, 1100);
+
+  const SIZE = 520;
   const CX = SIZE / 2;
   const CY = SIZE / 2;
-  const R = compact ? 150 : 170;        // максимальный радиус уровня (100%)
-  const INNER = 16;                      // пустота в центре
-  const SLICE_DEG = 360 / ZONES.length;  // 45°
-  const STEP = SLICE_DEG * Math.PI / 180;
+  const R = 180;
+  const INNER = 26;
+  const N = ZONES.length;
+  const SLICE = (Math.PI * 2) / N;
+  const GAP = 0.018; // небольшой зазор между секторами
 
-  // точка на окружности
   const pt = (r, a) => [CX + r * Math.cos(a), CY + r * Math.sin(a)];
 
-  // sector path от innerR до outerR, от углов a1..a2
   const sectorPath = (innerR, outerR, a1, a2) => {
     const [x1, y1] = pt(outerR, a1);
     const [x2, y2] = pt(outerR, a2);
     const [x3, y3] = pt(innerR, a2);
     const [x4, y4] = pt(innerR, a1);
     const large = a2 - a1 > Math.PI ? 1 : 0;
-    return `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 ${large} 0 ${x4} ${y4} Z`;
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)}
+            A ${outerR} ${outerR} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}
+            L ${x3.toFixed(2)} ${y3.toFixed(2)}
+            A ${innerR} ${innerR} 0 ${large} 0 ${x4.toFixed(2)} ${y4.toFixed(2)} Z`;
   };
-
-  // метка снаружи сектора
-  const label = (zone, i) => {
-    const a = (-90 + (i + 0.5) * SLICE_DEG) * Math.PI / 180;
-    const [lx, ly] = pt(R + 28, a);
-    return { x: lx, y: ly, a };
-  };
-
-  const glowId = `glow-${uid}`;
 
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible', fontFamily: sans }}>
       <defs>
-        <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="5" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
         <radialGradient id={`bg-${uid}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%"  stopColor="#F9F7F4" />
-          <stop offset="100%" stopColor="#EDE9E2" />
+          <stop offset="0%"   stopColor="#FFFFFF" />
+          <stop offset="60%"  stopColor="#F6F2EA" />
+          <stop offset="100%" stopColor="#EAE3D1" />
         </radialGradient>
+        {ZONES.map((z, i) => {
+          const level = animated[z.id] ?? 0;
+          const c = zoneColor(level);
+          return (
+            <radialGradient key={z.id} id={`sect-${uid}-${z.id}`} cx="50%" cy="50%" r="100%">
+              <stop offset="0%"  stopColor={c} stopOpacity="0.22" />
+              <stop offset="75%" stopColor={c} stopOpacity="0.82" />
+              <stop offset="100%" stopColor={c} stopOpacity="0.92" />
+            </radialGradient>
+          );
+        })}
+        <filter id={`shadow-${uid}`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="8" result="b" />
+          <feComposite in="b" in2="SourceAlpha" operator="in" result="bs" />
+          <feMerge><feMergeNode in="bs" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
       </defs>
 
-      {/* Фон */}
-      <circle cx={CX} cy={CY} r={R + 6} fill={`url(#bg-${uid})`} />
+      {/* Фон-круг с мягкой тенью */}
+      <circle cx={CX} cy={CY} r={R + 10} fill={`url(#bg-${uid})`} />
+      <circle cx={CX} cy={CY} r={R + 10} fill="none" stroke="#E6DFCE" strokeWidth="1" />
 
-      {/* Кольца-градация 25/50/75/100 */}
+      {/* Концентрические сетки 25/50/75/100 */}
       {[0.25, 0.5, 0.75, 1].map(p => (
         <circle key={p} cx={CX} cy={CY} r={R * p}
-          fill="none" stroke="#DAD3C3" strokeWidth="0.8"
-          strokeDasharray={p === 1 ? 'none' : '2 4'} />
+          fill="none" stroke="#D9D2C0" strokeWidth="1"
+          strokeDasharray={p === 1 ? 'none' : '3 4'} />
       ))}
 
-      {/* Спицы-разделители */}
-      {ZONES.map((_, i) => {
-        const a = (-90 + i * SLICE_DEG) * Math.PI / 180;
-        const [x1, y1] = pt(INNER, a);
-        const [x2, y2] = pt(R, a);
-        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#D9D2C2" strokeWidth="1" />;
-      })}
-
-      {/* Сами зоны — заполнение до уровня */}
+      {/* Сектора */}
       {ZONES.map((z, i) => {
-        const level = levels[z.id] ?? 0;
-        const active = z.id === focusId;
-        const a1 = (-90 + i * SLICE_DEG) * Math.PI / 180;
-        const a2 = (-90 + (i + 1) * SLICE_DEG - 1) * Math.PI / 180;
+        const level = animated[z.id] ?? 0;
+        const a1 = -Math.PI / 2 + i * SLICE + GAP / 2;
+        const a2 = -Math.PI / 2 + (i + 1) * SLICE - GAP / 2;
         const outer = INNER + (R - INNER) * (level / 100);
-        const d = sectorPath(INNER, outer, a1, a2);
+        const active = z.id === focusId;
+        const c = zoneColor(level);
 
         return (
           <g key={z.id} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
-            {/* "пустой" сектор-фон для кликов на полную высоту */}
-            <path d={sectorPath(INNER, R, a1, a2)} fill="rgba(0,0,0,0.01)" />
+            {/* Невидимая хит-область на весь радиус */}
+            <path d={sectorPath(INNER, R, a1, a2)} fill="transparent" />
+            {/* Сама заливка сектора */}
             <path
-              d={d}
-              fill={zoneFill(level)}
-              stroke={zoneColor(level)}
-              strokeWidth={active ? 2 : 0.8}
-              filter={active && pulse ? `url(#${glowId})` : undefined}
-              style={active && pulse ? { animation: 'pulseWheel 2.8s ease-in-out infinite', transformOrigin: `${CX}px ${CY}px` } : undefined}
+              d={sectorPath(INNER, outer, a1, a2)}
+              fill={`url(#sect-${uid}-${z.id})`}
+              stroke={c}
+              strokeWidth={active ? 2.2 : 0.8}
+              style={{ transition: 'stroke-width .3s' }}
             />
           </g>
         );
       })}
 
-      {/* Центр — круг с суммарным % */}
-      <circle cx={CX} cy={CY} r={INNER} fill="#FFFFFF" stroke="#DAD3C3" strokeWidth="1" />
+      {/* Центральный круг */}
+      <circle cx={CX} cy={CY} r={INNER} fill="#FFFFFF" stroke="#D9D2C0" strokeWidth="1.2" />
+      <text x={CX} y={CY - 2} textAnchor="middle" fontSize="9" fill={INK3} letterSpacing="1">
+        АТЛАС
+      </text>
+      <text x={CX} y={CY + 11} textAnchor="middle" fontSize="11" fontWeight="700" fill={G}>
+        {Math.round(Object.values(animated).reduce((s, v) => s + v, 0) / N)}%
+      </text>
 
       {/* Метки зон */}
       {ZONES.map((z, i) => {
-        const { x, y } = label(z, i);
-        const level = levels[z.id] ?? 0;
+        const level = Math.round(animated[z.id] ?? 0);
+        const a = -Math.PI / 2 + (i + 0.5) * SLICE;
+        const [lx, ly] = pt(R + 34, a);
         const active = z.id === focusId;
+        const c = active ? zoneColor(level) : INK2;
+
+        // Разная вертикальная раскладка в зависимости от угла
+        const isTop = Math.sin(a) < -0.3;
+        const isBottom = Math.sin(a) > 0.3;
+        const dy1 = isTop ? -10 : isBottom ? 8 : 0;
+        const dy2 = dy1 + 14;
+        const dy3 = dy2 + 12;
+
         return (
-          <g key={z.id + '-l'} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
-            <text
-              x={x} y={y - 6}
-              textAnchor="middle"
-              fontSize="17"
-              style={{ pointerEvents: 'none' }}
-            >{z.icon}</text>
-            <text
-              x={x} y={y + 12}
-              textAnchor="middle"
-              fontSize="10"
-              fontWeight={active ? 700 : 600}
-              fill={active ? zoneColor(level) : INK2}
-              style={{ pointerEvents: 'none' }}
-            >{z.label}</text>
-            <text
-              x={x} y={y + 24}
-              textAnchor="middle"
-              fontSize="9"
-              fill={INK3}
-              style={{ pointerEvents: 'none' }}
-            >{level}%</text>
+          <g key={z.id + '-lbl'} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
+            <text x={lx} y={ly + dy1} textAnchor="middle" fontSize="18" style={{ pointerEvents: 'none' }}>
+              {z.icon}
+            </text>
+            <text x={lx} y={ly + dy2} textAnchor="middle" fontSize="11"
+              fontWeight={active ? 700 : 600} fill={c} style={{ pointerEvents: 'none' }}>
+              {z.label}
+            </text>
+            <text x={lx} y={ly + dy3} textAnchor="middle" fontSize="10" fill={INK3} style={{ pointerEvents: 'none' }}>
+              {level}%
+            </text>
           </g>
         );
       })}
-
-      <style>{`
-        @keyframes pulseWheel {
-          0%, 100% { opacity: 0.9; }
-          50%      { opacity: 1;   }
-        }
-      `}</style>
     </svg>
   );
 }
 
-// ─── Экран «Путь» (таймлайн) ─────────────────────────────────
-function JourneyScreen({ state, onBack }) {
-  // Фейковые снимки: берём последние 6 месяцев, искусственно уменьшая уровни
-  const snapshots = useMemo(() => {
-    const months = ['Нояб', 'Дек', 'Янв', 'Фев', 'Март', 'Апр'];
-    return months.map((m, i) => {
-      const fade = (6 - i) * 6;
-      const levels = Object.fromEntries(
-        Object.entries(state.levels).map(([k, v]) => [k, Math.max(0, v - fade)])
-      );
-      return { month: m, levels, active: i === months.length - 1 };
-    });
-  }, [state.levels]);
-
-  return (
-    <div style={{ background: '#F9F7F4', minHeight: '100vh', paddingBottom: 100 }}>
-      <div style={{ background: G, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', color: W, fontSize: 24, cursor: 'pointer' }}>‹</button>
-        <div>
-          <div style={{ color: W, fontFamily: serif, fontSize: 17, fontWeight: 600 }}>Твой путь</div>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontFamily: sans }}>{state.days} дней вместе · с ноября</div>
-        </div>
-      </div>
-
-      <div style={{ padding: '20px 16px' }}>
-        <div style={{ fontSize: 13, color: INK2, fontFamily: sans, marginBottom: 16, lineHeight: 1.5 }}>
-          Посмотри как менялась твоя карта тела месяц за месяцем. Это не челлендж — это путь.
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {snapshots.map(s => (
-            <div key={s.month} style={{
-              background: W, borderRadius: 16, padding: 12,
-              border: s.active ? `2px solid ${G}` : `1px solid ${BD}`,
-              boxShadow: s.active ? '0 4px 16px rgba(61,107,61,0.12)' : 'none',
-            }}>
-              <div style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, color: s.active ? G : INK3, letterSpacing: 1, marginBottom: 4 }}>
-                {s.month.toUpperCase()}
-              </div>
-              <div style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
-                <Silhouette levels={s.levels} pulse={false} />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 24, background: W, borderRadius: 16, padding: '16px 18px', border: `1px solid ${BD}` }}>
-          <div style={{ fontFamily: serif, fontSize: 16, fontWeight: 700, color: INK, marginBottom: 8 }}>История этой недели</div>
-          <div style={{ fontSize: 13, color: INK2, fontFamily: sans, lineHeight: 1.6 }}>
-            • Прошла 3 урока в «Протоколе спокойного сна»<br/>
-            • Отмечено самочувствие 5 из 7 дней<br/>
-            • Зона «Сон и нервная» поднялась +4%
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Экран зоны ─────────────────────────────────────────────
-function ZoneSheet({ zone, level, onClose }) {
+// ─── Шторка зоны (без изменений) ─────────────────────────────
+function ZoneSheet({ zone, level, content, onClose }) {
   if (!zone) return null;
-  const items = CONTENT[zone.id] || [];
+  const items = (content || []).filter(it => it.zones?.includes(zone.id));
   const c = zoneColor(level);
 
   return (
@@ -285,6 +293,7 @@ function ZoneSheet({ zone, level, onClose }) {
       <div onClick={e => e.stopPropagation()} style={{
         background: W, width: '100%', maxWidth: 480,
         borderRadius: '24px 24px 0 0', padding: '28px 22px 100px',
+        maxHeight: '75vh', overflowY: 'auto',
         animation: 'slideup .3s ease',
       }}>
         <div style={{ width: 40, height: 4, background: '#E5E1D8', borderRadius: 2, margin: '0 auto 22px' }} />
@@ -292,7 +301,7 @@ function ZoneSheet({ zone, level, onClose }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
           <div style={{
             width: 56, height: 56, borderRadius: 18,
-            background: zoneFill(level), display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: zoneSoftFill(level), display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 28, border: `1.5px solid ${c}`,
           }}>{zone.icon}</div>
           <div style={{ flex: 1 }}>
@@ -301,191 +310,88 @@ function ZoneSheet({ zone, level, onClose }) {
           </div>
         </div>
 
-        {/* Уровень */}
         <div style={{ background: '#F9F7F4', borderRadius: 16, padding: '14px 16px', marginBottom: 22 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, fontFamily: sans }}>УРОВЕНЬ</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: c, fontFamily: serif }}>{level}<span style={{ fontSize: 13, color: INK3 }}>/100</span></div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: c, fontFamily: serif }}>
+              {level}<span style={{ fontSize: 13, color: INK3 }}>/100</span>
+            </div>
           </div>
           <div style={{ height: 6, background: '#EDE9E2', borderRadius: 3, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${level}%`, background: c, borderRadius: 3, transition: 'width .6s ease' }} />
           </div>
         </div>
 
-        {/* Что влияет на зону */}
-        <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 10, fontFamily: sans }}>
-          ЧТО ПОДДЕРЖИВАЕТ
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {items.map((it, i) => {
-            const tag = { program: 'Программа', protocol: 'Протокол', recipe: 'Рецепт', supplement: 'БАД' }[it.type];
-            return (
-              <div key={i} style={{
-                background: W, border: `1px solid ${BD}`, borderRadius: 14, padding: '14px 16px',
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: c, letterSpacing: 1, marginBottom: 2, fontFamily: sans }}>{tag?.toUpperCase()}</div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: INK, marginBottom: 2, fontFamily: sans }}>{it.title}</div>
-                  <div style={{ fontSize: 12, color: INK3, fontFamily: sans }}>{it.meta}</div>
-                </div>
-                <div style={{ color: INK3, fontSize: 18 }}>›</div>
-              </div>
-            );
-          })}
-          {items.length === 0 && (
-            <div style={{ fontSize: 13, color: INK3, fontStyle: 'italic', padding: '10px 0', fontFamily: sans }}>
-              Скоро здесь появится контент для этой зоны.
+        {items.length > 0 && (
+          <>
+            <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 10, fontFamily: sans }}>
+              ЧТО ПОДДЕРЖИВАЕТ
             </div>
-          )}
-        </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {items.map((it, i) => (
+                <ContentCard key={i} item={it} />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <style>{`
-        @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideup { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       `}</style>
     </div>
   );
 }
 
-// ─── Онбординг ──────────────────────────────────────────────
-// Вопросы из анкеты Кристины. type: 'scale' = 0-10 слайдер; 'choice' = карточки с вариантами.
-// direction: 'higher-better' — большой балл хорошо; 'higher-worse' — большой балл плохо (стресс).
-// weights — вклад в уровни зон. Итоговый уровень зоны = 60 + сумма вкладов вопросов.
-const QUESTIONS = [
-  {
-    id: 'sleep', type: 'scale', direction: 'higher-better',
-    label: 'Насколько ты довольна своим сном?',
-    hint: '0 — совсем плохо, 10 — высыпаюсь отлично',
-    low: '😣', high: '😴',
-    weights: { brain: 35, thyroid: 10, hormones: 8 },
-  },
-  {
-    id: 'stress', type: 'scale', direction: 'higher-worse',
-    label: 'Уровень стресса в последнее время?',
-    hint: '0 — спокойно, 10 — сильный ежедневный стресс',
-    low: '🧘', high: '😵',
-    weights: { brain: 25, hormones: 15, heart: 10, gut: 8 },
-  },
-  {
-    id: 'energy', type: 'scale', direction: 'higher-better',
-    label: 'Сколько у тебя энергии в течение дня?',
-    hint: '0 — совсем нет сил, 10 — энергия через край',
-    low: '🪫', high: '⚡',
-    weights: { thyroid: 35, heart: 10, composition: 10 },
-  },
-  {
-    id: 'activity', type: 'scale', direction: 'higher-better',
-    label: 'Уровень физической активности?',
-    hint: '0 — почти не двигаюсь, 10 — тренировки 3–5 раз в неделю',
-    low: '🛋️', high: '🏃‍♀️',
-    weights: { composition: 30, lungs: 20, heart: 15 },
-  },
-  {
-    id: 'skin', type: 'scale', direction: 'higher-better',
-    label: 'Как бы ты оценила состояние кожи?',
-    hint: '0 — высыпания и сухость, 10 — всё отлично',
-    low: '😔', high: '✨',
-    weights: { liver: 20, hormones: 15, gut: 10 },
-  },
-  {
-    id: 'swelling', type: 'choice',
-    label: 'Замечаешь отёчность утром?',
-    weights: { liver: 20, heart: 8 },
-    options: [
-      { v: 'often',  label: 'Часто',   emoji: '💧', impact: 1 },
-      { v: 'some',   label: 'Иногда',  emoji: '🌤', impact: 0.5 },
-      { v: 'never',  label: 'Нет',     emoji: '☀️', impact: 0 },
-    ],
-  },
-  {
-    id: 'headaches', type: 'choice',
-    label: 'Бывают головные боли или мигрени?',
-    weights: { brain: 18, liver: 6 },
-    options: [
-      { v: 'often',  label: 'Часто',   emoji: '🤕', impact: 1 },
-      { v: 'some',   label: 'Иногда',  emoji: '😐', impact: 0.5 },
-      { v: 'never',  label: 'Нет',     emoji: '🙂', impact: 0 },
-    ],
-  },
-  {
-    id: 'gut', type: 'choice',
-    label: 'Есть ли проблемы с ЖКТ — вздутие, тяжесть?',
-    weights: { gut: 30, liver: 10 },
-    options: [
-      { v: 'often',  label: 'Часто',   emoji: '😖', impact: 1 },
-      { v: 'some',   label: 'Иногда',  emoji: '🤔', impact: 0.5 },
-      { v: 'never',  label: 'Всё ок',  emoji: '🙂', impact: 0 },
-    ],
-  },
-];
-
-// Преобразует ответ в коэффициент 0..1, где 1 = всё хорошо (полный бонус), 0 = совсем плохо (полный штраф)
-function answerToScore(q, value) {
-  if (value == null) return 0.5;
-  if (q.type === 'scale') {
-    const normalized = Math.max(0, Math.min(10, value)) / 10;
-    return q.direction === 'higher-worse' ? 1 - normalized : normalized;
-  }
-  if (q.type === 'choice') {
-    const opt = q.options.find(o => o.v === value);
-    return opt ? 1 - opt.impact : 0.5;
-  }
-  return 0.5;
-}
-
-// Считает уровни зон по ответам
-function computeLevels(answers) {
-  const BASELINE = 60;
-  const levels = { brain: BASELINE, thyroid: BASELINE, heart: BASELINE, lungs: BASELINE,
-                   liver: BASELINE, gut: BASELINE, hormones: BASELINE, composition: BASELINE };
-  QUESTIONS.forEach(q => {
-    const score = answerToScore(q, answers[q.id]);      // 0..1
-    const delta = (score - 0.5) * 2;                     // -1..+1
-    Object.entries(q.weights || {}).forEach(([zone, w]) => {
-      levels[zone] = (levels[zone] ?? BASELINE) + w * delta;
-    });
-  });
-  Object.keys(levels).forEach(k => {
-    levels[k] = Math.round(Math.max(5, Math.min(100, levels[k])));
-  });
-  return levels;
-}
-
-function Onboarding({ onDone }) {
-  const [step, setStep] = useState(0); // 0 = welcome, 1..N = вопросы, N+1 = результат
-  const [answers, setAnswers] = useState({});
-
-  const answer = (q, val) => {
-    setAnswers(prev => ({ ...prev, [q.id]: val }));
-  };
-  const next = () => setStep(s => s + 1);
-  const back = () => setStep(s => Math.max(0, s - 1));
-
-  // Welcome
-  if (step === 0) {
-    return (
-      <div style={{ background: '#F9F7F4', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 28px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ fontSize: 56, marginBottom: 20 }}>🌿</div>
-          <div style={{ fontFamily: serif, fontSize: 30, fontWeight: 700, color: INK, lineHeight: 1.2, marginBottom: 14 }}>
-            Твоя карта<br/>здоровья
-          </div>
-          <div style={{ fontSize: 16, color: INK2, fontFamily: sans, lineHeight: 1.55 }}>
-            Расскажи что чувствуешь — я подсвечу<br/>твою карту тела и покажу с чего начать.
+// ─── Карточка контента ───────────────────────────────────────
+function ContentCard({ item }) {
+  const tag = item.kind === 'program' ? 'ПРОГРАММА' : 'ПРОТОКОЛ';
+  const free = Number(item.price) === 0;
+  return (
+    <div style={{
+      background: W, border: `1px solid ${BD}`, borderRadius: 16, padding: '14px 16px',
+      display: 'flex', alignItems: 'center', gap: 12, minWidth: 220,
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 12, background: GLL,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0,
+      }}>{item.icon || '📚'}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: G, letterSpacing: 1, fontFamily: sans }}>{tag}</div>
+          <div style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: 0.5, fontFamily: sans,
+            background: free ? '#E7F0E7' : '#FBF2DB',
+            color: free ? G : GOLDD,
+            padding: '2px 6px', borderRadius: 6,
+          }}>
+            {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
           </div>
         </div>
-        <button onClick={() => setStep(1)} style={{
-          padding: '18px', background: G, border: 'none', borderRadius: 30,
-          color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
-        }}>НАЧАТЬ</button>
-        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: INK3, fontFamily: sans }}>
-          Займёт меньше минуты
+        <div style={{ fontSize: 14, fontWeight: 600, color: INK, fontFamily: sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {item.title}
         </div>
+        {item.desc && (
+          <div style={{ fontSize: 11, color: INK3, fontFamily: sans, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {item.desc}
+          </div>
+        )}
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+// ─── Онбординг ───────────────────────────────────────────────
+function Onboarding({ onDone }) {
+  // step 1..QUESTIONS.length = вопросы, N+1 = complaints textarea
+  const [step, setStep] = useState(1);
+  const [answers, setAnswers] = useState({});
+  const [complaints, setComplaints] = useState('');
+
+  const answer = (q, val) => setAnswers(prev => ({ ...prev, [q.id]: val }));
+  const next = () => setStep(s => s + 1);
+  const back = () => setStep(s => Math.max(1, s - 1));
 
   // Вопросы
   if (step >= 1 && step <= QUESTIONS.length) {
@@ -493,17 +399,16 @@ function Onboarding({ onDone }) {
     const progress = (step / (QUESTIONS.length + 1)) * 100;
     const current = answers[q.id];
     const isScale = q.type === 'scale';
-    const canNext = current != null || isScale; // для scale есть default 5
 
     return (
       <div style={{ background: '#F9F7F4', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '20px 24px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={back} style={{ background: 'none', border: 'none', fontSize: 22, color: INK3, cursor: 'pointer', padding: 0 }}>‹</button>
+          <button onClick={back} disabled={step === 1} style={{ background: 'none', border: 'none', fontSize: 22, color: step === 1 ? '#E0DACC' : INK3, cursor: step === 1 ? 'default' : 'pointer', padding: 0 }}>‹</button>
           <div style={{ flex: 1 }}>
             <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${progress}%`, background: G, borderRadius: 2, transition: 'width .4s ease' }} />
             </div>
-            <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 8 }}>Шаг {step} из {QUESTIONS.length}</div>
+            <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 8 }}>Шаг {step} из {QUESTIONS.length + 1}</div>
           </div>
         </div>
 
@@ -512,18 +417,13 @@ function Onboarding({ onDone }) {
             {q.label}
           </div>
           {q.hint && (
-            <div style={{ fontFamily: sans, fontSize: 13, color: INK3, textAlign: 'center', marginBottom: 30, lineHeight: 1.5 }}>
-              {q.hint}
-            </div>
+            <div style={{ fontFamily: sans, fontSize: 13, color: INK3, textAlign: 'center', marginBottom: 30, lineHeight: 1.5 }}>{q.hint}</div>
           )}
 
           {isScale && (
             <div style={{ padding: '10px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-                <div style={{
-                  fontFamily: serif, fontSize: 72, fontWeight: 700, color: G, lineHeight: 1,
-                  minWidth: 100, textAlign: 'center',
-                }}>
+                <div style={{ fontFamily: serif, fontSize: 72, fontWeight: 700, color: G, lineHeight: 1, minWidth: 100, textAlign: 'center' }}>
                   {current ?? 5}
                 </div>
               </div>
@@ -558,7 +458,6 @@ function Onboarding({ onDone }) {
                     border: `1.5px solid ${selected ? G : BD}`,
                     borderRadius: 18,
                     display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', textAlign: 'left',
-                    transition: 'all .15s ease',
                   }}>
                     <div style={{ fontSize: 32 }}>{o.emoji}</div>
                     <div style={{ fontSize: 17, fontWeight: 600, color: INK, fontFamily: sans }}>{o.label}</div>
@@ -579,200 +478,304 @@ function Onboarding({ onDone }) {
         )}
 
         <style>{`
-          input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: ${G};
-            border: 4px solid ${W};
-            box-shadow: 0 2px 8px rgba(45,74,45,0.35);
-            cursor: pointer;
-          }
-          input[type=range]::-moz-range-thumb {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: ${G};
-            border: 4px solid ${W};
-            box-shadow: 0 2px 8px rgba(45,74,45,0.35);
-            cursor: pointer;
-          }
+          input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%; background: ${G}; border: 4px solid ${W}; box-shadow: 0 2px 8px rgba(45,74,45,0.35); cursor: pointer; }
+          input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: ${G}; border: 4px solid ${W}; box-shadow: 0 2px 8px rgba(45,74,45,0.35); cursor: pointer; }
         `}</style>
       </div>
     );
   }
 
-  // Результат
-  const levels = computeLevels(answers);
-  let worstZone = 'brain';
-  let worstLevel = 101;
-  Object.entries(levels).forEach(([k, v]) => {
-    if (v < worstLevel) { worstLevel = v; worstZone = k; }
-  });
-  const focusZone = ZONES.find(z => z.id === worstZone);
-
-  return (
-    <div style={{ background: '#F9F7F4', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '30px 24px 10px', textAlign: 'center' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: GOLD, letterSpacing: 1, fontFamily: sans, marginBottom: 6 }}>ТВОЯ КАРТА</div>
-        <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 700, color: INK, lineHeight: 1.25 }}>
-          Вот что я увидела
-        </div>
-      </div>
-
-      <div style={{ flex: 1, padding: '10px 20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ maxWidth: 280, width: '100%' }}>
-          <Silhouette levels={levels} focusId={worstZone} />
-        </div>
-      </div>
-
-      <div style={{ background: W, borderRadius: '24px 24px 0 0', padding: '22px 22px 30px', boxShadow: '0 -4px 24px rgba(0,0,0,0.06)' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 1, fontFamily: sans, marginBottom: 6 }}>
-          В ФОКУСЕ
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <div style={{ fontSize: 30 }}>{focusZone?.icon}</div>
-          <div>
-            <div style={{ fontFamily: serif, fontSize: 20, fontWeight: 700, color: INK }}>{focusZone?.label}</div>
-            <div style={{ fontSize: 13, color: INK2, fontFamily: sans }}>Начнём с одного простого шага</div>
+  // Последний шаг — жалобы в свободной форме
+  if (step === QUESTIONS.length + 1) {
+    return (
+      <div style={{ background: '#F9F7F4', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '20px 24px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={back} style={{ background: 'none', border: 'none', fontSize: 22, color: INK3, cursor: 'pointer', padding: 0 }}>‹</button>
+          <div style={{ flex: 1 }}>
+            <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: '100%', background: G, borderRadius: 2 }} />
+            </div>
+            <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 8 }}>Последний шаг</div>
           </div>
         </div>
-        <button onClick={() => onDone(levels, worstZone)} style={{
-          width: '100%', padding: '18px', background: G, border: 'none', borderRadius: 30,
-          color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
-        }}>В АТЛАС ЗДОРОВЬЯ</button>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 28px' }}>
+          <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 12, lineHeight: 1.3 }}>
+            Что ещё тебя беспокоит?
+          </div>
+          <div style={{ fontFamily: sans, fontSize: 13, color: INK3, textAlign: 'center', marginBottom: 22, lineHeight: 1.5 }}>
+            Опиши своими словами — от чего хотелось бы избавиться в первую очередь. Можно пропустить.
+          </div>
+
+          <textarea
+            value={complaints}
+            onChange={e => setComplaints(e.target.value)}
+            placeholder="Например: постоянная усталость, вздутие после еды, тяжело засыпать..."
+            rows={6}
+            style={{
+              width: '100%', padding: '16px', border: `1.5px solid ${BD}`, borderRadius: 18,
+              fontFamily: sans, fontSize: 15, lineHeight: 1.5, color: INK,
+              outline: 'none', resize: 'none', background: W,
+            }}
+          />
+        </div>
+
+        <div style={{ padding: '20px 28px 30px' }}>
+          <button onClick={() => onDone(answers, complaints)} style={{
+            width: '100%', padding: '18px', background: G, border: 'none', borderRadius: 30,
+            color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
+          }}>ПОКАЗАТЬ АТЛАС</button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+  return null;
 }
 
-// ─── Главный экран атласа ───────────────────────────────────
-function AtlasScreen({ state, onZoneClick, onJourney, onDoneTask, onReset }) {
-  const focusZone = ZONES.find(z => z.id === state.focusZoneId) || ZONES[0];
+// ─── Главный экран ───────────────────────────────────────────
+function MainScreen({ state, onZoneClick, onReset }) {
+  const [analysis, setAnalysis] = useState(state.analysis || null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(!state.analysis);
+  const [content, setContent] = useState([]);
+  const [filter, setFilter] = useState('all'); // all | free | paid
+
+  // Запрос анализа
+  useEffect(() => {
+    if (state.analysis) return;
+    let cancelled = false;
+    fetch('/api/playground/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers: state.answers, complaints: state.complaints, levels: state.levels }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        if (data?.error) {
+          setAnalysis({ message: '⚠️ ' + data.error, recommendedTitles: [], focusZoneIds: [] });
+        } else {
+          setAnalysis(data);
+          // сохраняем в state чтобы не перезапрашивать
+          const merged = { ...state, analysis: data };
+          saveState(merged);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAnalysis({ message: '⚠️ Не удалось получить ответ. Попробуй позже.', recommendedTitles: [], focusZoneIds: [] });
+      })
+      .finally(() => !cancelled && setLoadingAnalysis(false));
+    return () => { cancelled = true; };
+  }, []);
+
+  // Загрузка каталога контента
+  useEffect(() => {
+    fetch('/api/playground/content')
+      .then(r => r.json())
+      .then(items => {
+        if (Array.isArray(items)) setContent(items);
+      })
+      .catch(() => {});
+  }, []);
+
+  const focusZoneId = analysis?.focusZoneIds?.[0] || [...Object.entries(state.levels || {})].sort((a, b) => a[1] - b[1])[0]?.[0];
+  const focusZone = ZONES.find(z => z.id === focusZoneId);
+
+  // Сопоставление рекомендаций по заголовкам
+  const recommended = useMemo(() => {
+    if (!analysis?.recommendedTitles?.length || !content.length) return [];
+    const titles = analysis.recommendedTitles.map(t => t.toLowerCase());
+    const matched = content.filter(c => titles.some(t => c.title?.toLowerCase().includes(t) || t.includes(c.title?.toLowerCase())));
+    // Если по заголовкам ничего не нашли — покажем первые 6 из каталога
+    return matched.length ? matched : content.slice(0, 6);
+  }, [analysis, content]);
+
+  const filtered = recommended.filter(it => {
+    if (filter === 'free') return Number(it.price) === 0;
+    if (filter === 'paid') return Number(it.price) > 0;
+    return true;
+  });
 
   return (
-    <div style={{ background: '#F9F7F4', minHeight: '100vh', paddingBottom: 100 }}>
+    <div style={{ background: '#F9F7F4', minHeight: '100vh', paddingBottom: 60 }}>
       {/* Хедер */}
       <div style={{ background: G, padding: '18px 20px 22px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, letterSpacing: 1.2, fontFamily: sans }}>
-              ТЫ В ПУТИ
-            </div>
-            <div style={{ color: W, fontFamily: serif, fontSize: 28, fontWeight: 700, lineHeight: 1.1, marginTop: 2 }}>
-              {state.days} <span style={{ fontSize: 16, fontWeight: 400, color: 'rgba(255,255,255,0.8)' }}>дней</span>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, letterSpacing: 1.2, fontFamily: sans }}>ТЫ В ПУТИ</div>
+            <div style={{ color: W, fontFamily: serif, fontSize: 26, fontWeight: 700, lineHeight: 1.1, marginTop: 2 }}>
+              {state.days} <span style={{ fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.8)' }}>дней</span>
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, letterSpacing: 1.2, fontFamily: sans }}>
-              В ФОКУСЕ
+          {focusZone && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, letterSpacing: 1.2, fontFamily: sans }}>В ФОКУСЕ</div>
+              <div style={{ color: GOLD, fontSize: 14, fontWeight: 700, marginTop: 2, fontFamily: sans }}>
+                {focusZone.icon} {focusZone.label}
+              </div>
             </div>
-            <div style={{ color: GOLD, fontSize: 15, fontWeight: 700, marginTop: 2, fontFamily: sans }}>
-              {focusZone.icon} {focusZone.label}
-            </div>
-          </div>
+          )}
+          <button onClick={onReset} title="Сброс"
+            style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: W, width: 34, height: 34, borderRadius: 17, fontSize: 14, cursor: 'pointer', marginLeft: 10 }}>↺</button>
         </div>
       </div>
 
-      {/* Силуэт */}
-      <div style={{ padding: '10px 16px 0', background: '#F9F7F4', maxWidth: 380, margin: '0 auto' }}>
-        <Silhouette levels={state.levels} focusId={state.focusZoneId} onZoneClick={onZoneClick} />
+      {/* Колесо */}
+      <div style={{ padding: '16px 8px 0', maxWidth: 520, margin: '0 auto' }}>
+        <BalanceWheel levels={state.levels} focusId={focusZoneId} onZoneClick={onZoneClick} />
       </div>
 
-      {/* Задача дня */}
-      <div style={{ padding: '0 18px' }}>
+      {/* Сообщение от Кристины */}
+      <div style={{ padding: '0 18px', marginTop: 12 }}>
         <div style={{
-          background: W, borderRadius: 20, padding: '18px 20px',
-          border: `1.5px solid ${state.taskDone ? '#C8DCC8' : BD}`,
-          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+          background: W, borderRadius: 22, padding: '18px 20px 20px',
+          border: `1px solid ${BD}`, boxShadow: '0 2px 14px rgba(0,0,0,0.04)',
         }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: state.taskDone ? G : INK3, letterSpacing: 1, marginBottom: 6, fontFamily: sans }}>
-            {state.taskDone ? '✓ СДЕЛАНО СЕГОДНЯ' : 'ТВОЙ СЕГОДНЯШНИЙ ШАГ'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: '50%', background: G, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🌿</div>
+            <div>
+              <div style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, color: INK }}>Кристина</div>
+              <div style={{ fontSize: 11, color: INK3, fontFamily: sans }}>нутрициолог · сообщение</div>
+            </div>
           </div>
-          <div style={{ fontFamily: serif, fontSize: 17, fontWeight: 600, color: INK, lineHeight: 1.4, marginBottom: 14 }}>
-            {state.taskDone
-              ? 'Увидимся завтра 🌿 Твой путь продолжается.'
-              : 'Выпей стакан тёплой воды с лимоном сразу после пробуждения'}
-          </div>
-          {!state.taskDone && (
-            <button onClick={onDoneTask} style={{
-              width: '100%', padding: '14px', background: G, border: 'none', borderRadius: 20,
-              color: W, fontFamily: sans, fontWeight: 700, fontSize: 14, cursor: 'pointer', letterSpacing: 1,
-            }}>СДЕЛАЛА</button>
+
+          {loadingAnalysis ? (
+            <div style={{ display: 'flex', gap: 6, padding: '10px 0' }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} style={{
+                  width: 10, height: 10, borderRadius: '50%', background: G,
+                  animation: `dotbounce 1s ease-in-out ${i * 0.2}s infinite`,
+                }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontFamily: sans, fontSize: 14, color: INK, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+              {analysis?.message || '—'}
+            </div>
           )}
         </div>
-
-        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-          <button onClick={onJourney} style={{
-            flex: 1, padding: '14px', background: W, border: `1px solid ${BD}`, borderRadius: 18,
-            color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
-          }}>📖 Твой путь</button>
-          <button onClick={onReset} style={{
-            padding: '14px 18px', background: 'transparent', border: `1px solid ${BD}`, borderRadius: 18,
-            color: INK3, fontFamily: sans, fontSize: 12, cursor: 'pointer',
-          }}>↺ Сброс</button>
-        </div>
-
-        <div style={{ textAlign: 'center', fontSize: 11, color: INK3, fontFamily: sans, marginTop: 20, letterSpacing: 0.5 }}>
-          Прототип · все данные только на твоём устройстве
-        </div>
       </div>
+
+      {/* Рекомендации с фильтром */}
+      {recommended.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: INK }}>Рекомендуем начать</div>
+          </div>
+
+          <div style={{ padding: '0 20px', marginBottom: 14, display: 'flex', gap: 8 }}>
+            {[
+              { id: 'all',  label: 'Всё' },
+              { id: 'free', label: 'Бесплатные' },
+              { id: 'paid', label: 'Платные' },
+            ].map(f => (
+              <button key={f.id} onClick={() => setFilter(f.id)} style={{
+                padding: '8px 16px', borderRadius: 18,
+                background: filter === f.id ? G : W,
+                color: filter === f.id ? W : INK2,
+                border: `1px solid ${filter === f.id ? G : BD}`,
+                fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              }}>{f.label}</button>
+            ))}
+          </div>
+
+          <div style={{
+            display: 'flex', gap: 12, overflowX: 'auto',
+            padding: '4px 20px 20px',
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch',
+          }}>
+            {filtered.length === 0 && (
+              <div style={{ fontSize: 13, color: INK3, fontFamily: sans, padding: '12px 0' }}>
+                В этом фильтре пока ничего нет
+              </div>
+            )}
+            {filtered.map(item => (
+              <div key={item.id} style={{ minWidth: 260, scrollSnapAlign: 'start' }}>
+                <ContentCard item={item} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ textAlign: 'center', fontSize: 11, color: INK3, fontFamily: sans, marginTop: 10, letterSpacing: 0.3 }}>
+        Прототип · все ответы хранятся только на твоём устройстве
+      </div>
+
+      <style>{`
+        @keyframes dotbounce {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+          40%           { transform: scale(1);    opacity: 1;   }
+        }
+      `}</style>
     </div>
   );
 }
 
-// ─── Корневой компонент ─────────────────────────────────────
+// ─── Root ────────────────────────────────────────────────────
 export default function Playground() {
   const [state, setState] = useState(() => loadState());
   const [zoneOpen, setZoneOpen] = useState(null);
-  const [view, setView] = useState('atlas'); // atlas | journey
+  const [content, setContent] = useState([]);
+
+  // Нужен для ZoneSheet, чтобы показывать список контента
+  useEffect(() => {
+    fetch('/api/playground/content')
+      .then(r => r.json())
+      .then(items => {
+        if (!Array.isArray(items)) return;
+        // Распределяем контент по зонам через простую эвристику по названию/описанию,
+        // чтобы карточки появлялись в ZoneSheet без AI-маппинга.
+        const KEYWORDS = {
+          brain: ['сон', 'нерв', 'стресс', 'успоко', 'медит'],
+          thyroid: ['энерги', 'щитовидк', 'митохон', 'усталост'],
+          heart: ['сердц', 'сосуд', 'давлен'],
+          lungs: ['дыхан', 'лёгк', 'кислород', 'воздух'],
+          gut: ['жкт', 'кишеч', 'желуд', 'вздут', 'пищеварен'],
+          liver: ['печен', 'детокс', 'очищен', 'жёлч'],
+          hormones: ['гормон', 'цикл', 'менстр', 'репродук', 'женск'],
+          composition: ['тело', 'компози', 'мышц', 'вес', 'стройн', 'жир'],
+        };
+        const tagged = items.map(it => {
+          const t = `${it.title || ''} ${it.desc || ''}`.toLowerCase();
+          const zones = Object.entries(KEYWORDS)
+            .filter(([, kws]) => kws.some(k => t.includes(k)))
+            .map(([z]) => z);
+          return { ...it, zones: zones.length ? zones : ['composition'] };
+        });
+        setContent(tagged);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { if (state) saveState(state); }, [state]);
 
   if (!state) {
-    return (
-      <Onboarding onDone={(levels, focusZoneId) => {
-        setState({ days: 1, levels, focusZoneId, taskDone: false });
-      }} />
-    );
+    return <Onboarding onDone={(answers, complaints) => {
+      const levels = computeLevels(answers);
+      setState({ days: 1, answers, complaints, levels });
+    }} />;
   }
-
-  const handleDoneTask = () => {
-    setState(s => {
-      const nextLevels = { ...s.levels };
-      const focus = s.focusZoneId;
-      nextLevels[focus] = Math.min(100, (nextLevels[focus] ?? 0) + 2);
-      return { ...s, taskDone: true, days: s.days + 1, levels: nextLevels };
-    });
-  };
 
   const handleReset = () => {
-    if (confirm('Сбросить прототип и пройти онбординг заново?')) {
-      localStorage.removeItem(STORAGE);
-      setState(null);
-      setView('atlas');
-    }
+    if (!confirm('Сбросить прототип и пройти анкету заново?')) return;
+    localStorage.removeItem(STORAGE);
+    setState(null);
   };
-
-  if (view === 'journey') {
-    return <JourneyScreen state={state} onBack={() => setView('atlas')} />;
-  }
 
   return (
     <>
-      <AtlasScreen
+      <MainScreen
         state={state}
         onZoneClick={z => setZoneOpen(z)}
-        onJourney={() => setView('journey')}
-        onDoneTask={handleDoneTask}
         onReset={handleReset}
       />
       {zoneOpen && (
         <ZoneSheet
           zone={zoneOpen}
           level={state.levels[zoneOpen.id] ?? 0}
+          content={content}
           onClose={() => setZoneOpen(null)}
         />
       )}

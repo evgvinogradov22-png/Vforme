@@ -66,6 +66,7 @@ app.use('/api/broadcast',   require('./routes/broadcast'));
 app.use('/api/chat',        require('./routes/chat'));
 app.use('/api/events',      require('./routes/events'));
 app.use('/api/admin/deploy', require('./routes/deploy'));
+app.use('/api/playground',   require('./routes/playground'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Централизованный error handler — ДОЛЖЕН быть последним
