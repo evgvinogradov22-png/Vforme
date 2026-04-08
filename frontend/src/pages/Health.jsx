@@ -25,11 +25,6 @@ const KIND_OPTIONS = [
   { id: 'scheme',   label: 'Схемы БАД' },
 ];
 
-const PRICE_OPTIONS = [
-  { id: 'free', label: 'Бесплатно' },
-  { id: 'paid', label: 'Платно' },
-];
-
 const KIND_LABELS = {
   program:  { label: 'ПРОГРАММА', color: G },
   protocol: { label: 'ПРОТОКОЛ',  color: GOLDD },
@@ -190,9 +185,9 @@ function FilterDropdown({ label, options, selected, multi, onChange, anchor }) {
 export default function Health() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [kindFilter, setKindFilter] = useState(null);    // single
-  const [priceFilter, setPriceFilter] = useState(null);  // single
-  const [tagFilter, setTagFilter] = useState([]);        // multi
+  const [kindFilter, setKindFilter] = useState([]); // multi
+  const [onlyFree, setOnlyFree] = useState(false);  // checkbox
+  const [tagFilter, setTagFilter] = useState([]);   // multi
 
   useEffect(() => {
     fetch('/api/health/feed', { headers: { Authorization: 'Bearer ' + TOKEN() } })
@@ -204,13 +199,12 @@ export default function Health() {
 
   const filtered = useMemo(() => {
     return items.filter(it => {
-      if (kindFilter && it.kind !== kindFilter) return false;
-      if (priceFilter === 'free' && Number(it.price) > 0) return false;
-      if (priceFilter === 'paid' && Number(it.price) === 0) return false;
+      if (kindFilter.length > 0 && !kindFilter.includes(it.kind)) return false;
+      if (onlyFree && Number(it.price) > 0) return false;
       if (tagFilter.length > 0 && !tagFilter.some(t => (it.tags || []).includes(t))) return false;
       return true;
     });
-  }, [items, kindFilter, priceFilter, tagFilter]);
+  }, [items, kindFilter, onlyFree, tagFilter]);
 
   return (
     <div style={{
@@ -227,22 +221,38 @@ export default function Health() {
       </div>
 
       {/* Фильтры */}
-      <div style={{ padding: '8px 20px 14px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ padding: '8px 20px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <FilterDropdown
           label="Тип" options={KIND_OPTIONS}
-          selected={kindFilter} multi={false}
+          selected={kindFilter} multi={true}
           onChange={setKindFilter}
-        />
-        <FilterDropdown
-          label="Цена" options={PRICE_OPTIONS}
-          selected={priceFilter} multi={false}
-          onChange={setPriceFilter}
         />
         <FilterDropdown
           label="Зоны" options={TAG_OPTIONS}
           selected={tagFilter} multi={true}
           onChange={setTagFilter}
         />
+
+        {/* Чекбокс «Бесплатно» */}
+        <button onClick={() => setOnlyFree(v => !v)} style={{
+          padding: '9px 16px', borderRadius: 22,
+          background: onlyFree ? F_BG_ACT : F_BG,
+          color: onlyFree ? F_TXT_ACT : F_TXT,
+          border: `1px solid ${F_BD}`,
+          fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{
+            width: 18, height: 18, borderRadius: 5,
+            border: `1.5px solid ${onlyFree ? G : F_BD}`,
+            background: onlyFree ? G : W,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            {onlyFree && <span style={{ color: W, fontSize: 12, lineHeight: 1 }}>✓</span>}
+          </span>
+          Бесплатно
+        </button>
       </div>
 
       {/* Лента */}
