@@ -16,6 +16,7 @@ import VerifyCode from './pages/VerifyCode';
 import PaymentSuccess from './pages/PaymentSuccess';
 import Materials from './pages/Materials';
 import Chat from './pages/Chat';
+import Playground from './pages/Playground';
 import { analytics } from './utils/analytics';
 import { log } from './utils/log';
 import { Toast, Spinner } from './components/UI';
@@ -187,6 +188,10 @@ function AppShell() {
 }
 
 export default function App() {
+  // Песочница прототипа — доступна без авторизации
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/playground')) {
+    return <Playground />;
+  }
   return (
     <AuthProvider>
       <AppShell />
