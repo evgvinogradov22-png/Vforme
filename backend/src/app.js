@@ -31,6 +31,7 @@ require('./models/UserEvent');
 const AtlasResult = require('./models/AtlasResult');
 const RecipeLike = require('./models/RecipeLike');
 const RecipeSave = require('./models/RecipeSave');
+const DeployHistory = require('./models/DeployHistory');
 
 const app = express();
 const ALLOWED_ORIGINS = [
@@ -86,6 +87,7 @@ async function start() {
     await AtlasResult.sync();
     await RecipeLike.sync();
     await RecipeSave.sync();
+    await DeployHistory.sync();
     // Idempotent ALTER TABLE для полей которые появились после первой схемы.
     // ADD COLUMN IF NOT EXISTS безопасен и не тронет данные.
     try {

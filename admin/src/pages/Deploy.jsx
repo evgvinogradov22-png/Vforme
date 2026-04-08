@@ -118,23 +118,49 @@ export default function Deploy({ flash }) {
       <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 12 }}>История версий</div>
       {versions.length === 0 ? (
         <Card style={{ padding: 40, textAlign: 'center', color: C.ink3 }}>Деплоев через эту систему ещё не было</Card>
-      ) : versions.map((v, i) => (
-        <Card key={i} style={{ padding: '14px 20px', marginBottom: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                <span>{v.status === 'ok' ? (v.env === 'prod' ? '🟢' : '🔵') : '🔴'}</span>
-                <span style={{ fontSize: 12, background: v.env === 'prod' ? C.green : C.gold, color: '#fff', padding: '2px 8px', borderRadius: 10, fontWeight: 700 }}>
-                  {v.env === 'prod' ? 'БОЕВОЙ' : 'ТЕСТ'}
-                </span>
-                <span style={{ fontSize: 12, color: C.ink3 }}>{v.date}</span>
+      ) : versions.map((v, i) => {
+        const icon = v.status === 'error' ? '🔴' : (v.action === 'promote' ? '🚀' : v.action === 'rollback' ? '↺' : (v.env === 'prod' ? '🟢' : '🧪'));
+        const envLabel = v.env === 'prod' ? 'БОЕВОЙ' : 'ТЕСТ';
+        const actionLabel = v.action === 'promote' ? 'ВЫКАТКА' : v.action === 'rollback' ? 'ОТКАТ' : 'ДЕПЛОЙ';
+        const dateStr = v.createdAt ? new Date(v.createdAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : (v.date || '');
+        return (
+          <Card key={v.id || i} style={{ padding: '14px 20px', marginBottom: 8, opacity: v.status === 'error' ? 0.85 : 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14 }}>{icon}</span>
+                  <span style={{ fontSize: 10, background: v.env === 'prod' ? C.green : C.gold, color: '#fff', padding: '3px 8px', borderRadius: 8, fontWeight: 700, letterSpacing: 0.5 }}>
+                    {envLabel}
+                  </span>
+                  <span style={{ fontSize: 10, background: C.bg, color: C.ink2, padding: '3px 8px', borderRadius: 8, fontWeight: 700, letterSpacing: 0.5, border: `1px solid ${C.border}` }}>
+                    {actionLabel}
+                  </span>
+                  {v.status === 'error' && (
+                    <span style={{ fontSize: 10, background: '#FFE5E5', color: '#C00', padding: '3px 8px', borderRadius: 8, fontWeight: 700, letterSpacing: 0.5 }}>
+                      ОШИБКА
+                    </span>
+                  )}
+                  <span style={{ fontSize: 12, color: C.ink3 }}>{dateStr}</span>
+                </div>
+                <div style={{ fontSize: 14, color: C.ink, marginBottom: 3, wordBreak: 'break-word' }}>{v.desc || '—'}</div>
+                {(v.userName || v.userEmail) && (
+                  <div style={{ fontSize: 11, color: C.ink3 }}>
+                    {v.userName || ''} {v.userEmail ? `· ${v.userEmail}` : ''}
+                  </div>
+                )}
+                {v.status === 'error' && v.errorMsg && (
+                  <div style={{ fontSize: 11, color: '#C00', marginTop: 6, background: '#FFF5F5', padding: '6px 10px', borderRadius: 6, fontFamily: 'monospace' }}>
+                    {v.errorMsg.slice(0, 200)}
+                  </div>
+                )}
               </div>
-              <div style={{ fontSize: 14, color: C.ink }}>{v.desc}</div>
+              {v.action === 'deploy' && v.status === 'ok' && (
+                <Btn onClick={() => rollback(i + 1)} disabled={deploying} variant="outline" size="sm">Откат</Btn>
+              )}
             </div>
-            <Btn onClick={() => rollback(i + 1)} disabled={deploying} variant="outline" size="sm">Откат</Btn>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 }

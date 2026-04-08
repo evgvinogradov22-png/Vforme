@@ -1,13 +1,12 @@
 const router = require('express').Router();
 const { execFile } = require('child_process');
-const fs = require('fs');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
+const DeployHistory = require('../models/DeployHistory');
+const User = require('../models/User');
 
 const A = [auth, role('admin', 'superadmin')];
-const VERSIONS_FILE = '/var/www/vforme_backups/versions.json';
 const DEPLOY_SCRIPT = '/var/www/deploy.sh';
-
 
 function run(args) {
   return new Promise((resolve, reject) => {
@@ -29,6 +28,20 @@ function checkHealth(port) {
   });
 }
 
+async function saveHistory({ env, action, desc, status, output, errorMsg, userId }) {
+  try {
+    const user = userId ? await User.findByPk(userId, { attributes: ['name', 'email'] }) : null;
+    await DeployHistory.create({
+      env, action, desc, status,
+      output: (output || '').slice(-4000),
+      errorMsg: (errorMsg || '').slice(0, 2000),
+      userId: userId || null,
+      userName: user?.name || null,
+      userEmail: user?.email || null,
+    });
+  } catch (e) { console.error('Deploy history save failed:', e.message); }
+}
+
 // GET статус серверов
 router.get('/status', A, async (req, res) => {
   try {
@@ -37,25 +50,38 @@ router.get('/status', A, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET список версий
+// GET история деплоев
 router.get('/versions', A, async (req, res) => {
   try {
-    if (!fs.existsSync(VERSIONS_FILE)) return res.json([]);
-    const data = JSON.parse(fs.readFileSync(VERSIONS_FILE, 'utf8'));
-    res.json(data);
-  } catch(e) { res.json([]); }
+    const rows = await DeployHistory.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 100,
+      attributes: ['id', 'env', 'action', 'desc', 'status', 'errorMsg', 'userName', 'userEmail', 'createdAt'],
+    });
+    res.json(rows);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET детали одного деплоя с output
+router.get('/versions/:id', A, async (req, res) => {
+  try {
+    const row = await DeployHistory.findByPk(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Не найдено' });
+    res.json(row);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST деплой на тест
 router.post('/deploy', A, async (req, res) => {
+  const { desc } = req.body;
+  if (!desc) return res.status(400).json({ error: 'Введи описание' });
+  const safeDesc = String(desc).slice(0, 300).replace(/[^a-zA-Zа-яёА-ЯЁ0-9 .,!?()_\-\n]/g, '');
   try {
-    const { desc } = req.body;
-    if (!desc) return res.status(400).json({ error: 'Введи описание' });
-    // Валидация: только безопасные символы, макс 200 символов
-    const safeDesc = String(desc).slice(0, 200).replace(/[^a-zA-Zа-яёА-ЯЁ0-9 .,!?()_-]/g, '');
     const output = await run(['deploy', safeDesc]);
+    await saveHistory({ env: 'test', action: 'deploy', desc: safeDesc, status: 'ok', output, userId: req.user.id });
     res.json({ ok: true, output });
   } catch(e) {
+    await saveHistory({ env: 'test', action: 'deploy', desc: safeDesc, status: 'error', errorMsg: e.message, userId: req.user.id });
     console.error('Deploy error:', e.message);
     res.status(500).json({ error: e.message });
   }
@@ -65,17 +91,25 @@ router.post('/deploy', A, async (req, res) => {
 router.post('/promote', A, async (req, res) => {
   try {
     const output = await run(['promote']);
+    await saveHistory({ env: 'prod', action: 'promote', desc: 'Выкатка теста в боевую', status: 'ok', output, userId: req.user.id });
     res.json({ ok: true, output });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) {
+    await saveHistory({ env: 'prod', action: 'promote', desc: 'Выкатка теста в боевую', status: 'error', errorMsg: e.message, userId: req.user.id });
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // POST откат
 router.post('/rollback', A, async (req, res) => {
+  const n = Math.max(1, Math.min(20, parseInt(req.body.n) || 1));
   try {
-    const n = Math.max(1, Math.min(20, parseInt(req.body.n) || 1));
     const output = await run(['rollback', String(n)]);
+    await saveHistory({ env: 'prod', action: 'rollback', desc: `Откат на ${n} шаг(ов) назад`, status: 'ok', output, userId: req.user.id });
     res.json({ ok: true, output });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) {
+    await saveHistory({ env: 'prod', action: 'rollback', desc: `Откат на ${n}`, status: 'error', errorMsg: e.message, userId: req.user.id });
+    res.status(500).json({ error: e.message });
+  }
 });
 
 module.exports = router;
