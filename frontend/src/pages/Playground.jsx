@@ -2,15 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 
 // ─── Данные зон ──────────────────────────────────────────────
+// viewBox="0 0 320 720" — женский силуэт. cx=160 — центр.
 const ZONES = [
-  { id: 'brain',       label: 'Сон и нервная',   icon: '🧠', hint: 'Голова, сон, стресс',         shape: { cx: 150, cy: 52,  rx: 34, ry: 40 } },
-  { id: 'thyroid',     label: 'Энергия',         icon: '⚡', hint: 'Щитовидка, митохондрии',      shape: { cx: 150, cy: 108, rx: 14, ry: 9  } },
-  { id: 'heart',       label: 'Сердце',          icon: '❤️', hint: 'Сердце, сосуды',              shape: { cx: 150, cy: 160, rx: 22, ry: 18 } },
-  { id: 'lungs',       label: 'Дыхание',         icon: '🫁', hint: 'Лёгкие, кислород',            shape: { cx: 150, cy: 190, rx: 48, ry: 24 } },
-  { id: 'liver',       label: 'Детокс',          icon: '🫛', hint: 'Печень, очищение',            shape: { cx: 175, cy: 218, rx: 18, ry: 13 } },
-  { id: 'gut',         label: 'ЖКТ',             icon: '🍽️', hint: 'Желудок, кишечник',           shape: { cx: 150, cy: 260, rx: 34, ry: 22 } },
-  { id: 'hormones',    label: 'Гормоны',         icon: '🌸', hint: 'Репродукция, таз',            shape: { cx: 150, cy: 310, rx: 26, ry: 14 } },
-  { id: 'composition', label: 'Тело',            icon: '💪', hint: 'Мышцы, композиция',          shape: { cx: 150, cy: 430, rx: 68, ry: 110 } },
+  { id: 'brain',       label: 'Сон и нервная',   icon: '🧠', hint: 'Голова, сон, стресс',          shape: { cx: 160, cy: 72,  rx: 36, ry: 44 } },
+  { id: 'thyroid',     label: 'Энергия',         icon: '⚡', hint: 'Щитовидка, митохондрии',       shape: { cx: 160, cy: 134, rx: 16, ry: 10 } },
+  { id: 'lungs',       label: 'Дыхание',         icon: '🫁', hint: 'Лёгкие, кислород',             shape: { cx: 160, cy: 200, rx: 56, ry: 28 } },
+  { id: 'heart',       label: 'Сердце',          icon: '❤️', hint: 'Сердце, сосуды',               shape: { cx: 160, cy: 186, rx: 20, ry: 14 } },
+  { id: 'liver',       label: 'Детокс',          icon: '🌿', hint: 'Печень, очищение',             shape: { cx: 185, cy: 240, rx: 22, ry: 14 } },
+  { id: 'gut',         label: 'ЖКТ',             icon: '🍽️', hint: 'Желудок, кишечник',            shape: { cx: 160, cy: 290, rx: 40, ry: 28 } },
+  { id: 'hormones',    label: 'Гормоны',         icon: '🌸', hint: 'Репродукция, таз',             shape: { cx: 160, cy: 360, rx: 46, ry: 22 } },
+  { id: 'composition', label: 'Тело',            icon: '💪', hint: 'Мышцы, композиция',            shape: { cx: 160, cy: 510, rx: 72, ry: 130 } },
 ];
 
 // Связанный контент — mock
@@ -77,66 +78,122 @@ const DEFAULT_LEVELS = {
 };
 
 // ─── Силуэт SVG ──────────────────────────────────────────────
-function Silhouette({ levels, focusId, onZoneClick, pulse = true }) {
+// Женский силуэт: голова + шея + торс с талией + бёдра + ноги + руки.
+// Всё собрано из чистых примитивов и одного path для торса с bezier-талией.
+function Silhouette({ levels, focusId, onZoneClick, pulse = true, uid = '' }) {
+  const gid = `glow-${uid}`;
+  const bgid = `body-${uid}`;
   return (
-    <svg viewBox="0 0 300 640" style={{ width: '100%', height: 'auto', display: 'block' }}>
+    <svg viewBox="0 0 320 720" style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
       <defs>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="4" result="blur" />
+        <filter id={gid} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
-        <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#F9F7F4" />
-          <stop offset="100%" stopColor="#EDE9E2" />
+        <linearGradient id={bgid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#F4F0E8" />
+          <stop offset="55%"  stopColor="#EAE3D5" />
+          <stop offset="100%" stopColor="#DFD6C3" />
         </linearGradient>
+        <radialGradient id={`shine-${uid}`} cx="35%" cy="25%" r="70%">
+          <stop offset="0%"  stopColor="rgba(255,255,255,0.55)" />
+          <stop offset="60%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
       </defs>
 
-      {/* Контур тела */}
-      <path
-        d="M 150 12
-           C 124 12 108 33 108 58
-           C 108 78 116 93 130 103
-           L 130 120
-           L 96 132
-           L 72 170
-           L 62 215
-           L 58 290
-           L 52 340
-           L 64 344
-           L 74 295
-           L 82 240
-           L 92 200
-           L 104 184
-           L 108 380
-           L 98 480
-           L 94 620
-           L 128 628
-           L 138 500
-           L 148 385
-           L 152 385
-           L 162 500
-           L 172 628
-           L 206 620
-           L 202 480
-           L 192 380
-           L 196 184
-           L 208 200
-           L 218 240
-           L 226 295
-           L 236 344
-           L 248 340
-           L 242 290
-           L 238 215
-           L 228 170
-           L 204 132
-           L 170 120
-           L 170 103
-           C 184 93 192 78 192 58
-           C 192 33 176 12 150 12 Z"
-        fill="url(#bodyGrad)"
-        stroke="#D9D5CC"
-        strokeWidth="1.5"
-      />
+      {/* Мягкая тень под фигурой */}
+      <ellipse cx="160" cy="700" rx="80" ry="8" fill="rgba(45, 74, 45, 0.08)" />
+
+      <g>
+        {/* Голова */}
+        <ellipse cx="160" cy="70" rx="36" ry="44" fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2" />
+
+        {/* Шея */}
+        <path d="M 148 108 Q 148 126, 140 136 L 180 136 Q 172 126, 172 108 Z"
+              fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2" />
+
+        {/* Торс + талия (женская форма с cinched waist) */}
+        <path d="
+          M 96 140
+          Q 86 145, 88 158
+          L 100 220
+          Q 108 262, 116 300
+          Q 108 320, 112 350
+          L 124 410
+          L 196 410
+          L 208 350
+          Q 212 320, 204 300
+          Q 212 262, 220 220
+          L 232 158
+          Q 234 145, 224 140
+          Q 205 132, 190 132
+          L 130 132
+          Q 115 132, 96 140 Z"
+          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
+        />
+
+        {/* Бёдра */}
+        <path d="
+          M 112 340
+          Q 96 380, 100 430
+          Q 106 470, 120 480
+          L 200 480
+          Q 214 470, 220 430
+          Q 224 380, 208 340 Z"
+          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
+        />
+
+        {/* Левая нога */}
+        <path d="
+          M 118 470
+          Q 114 560, 118 640
+          Q 120 680, 130 690
+          L 154 692
+          Q 160 680, 156 620
+          Q 154 540, 152 470 Z"
+          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
+        />
+
+        {/* Правая нога */}
+        <path d="
+          M 168 470
+          Q 166 540, 164 620
+          Q 160 680, 166 692
+          L 190 690
+          Q 200 680, 202 640
+          Q 206 560, 202 470 Z"
+          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
+        />
+
+        {/* Левая рука */}
+        <path d="
+          M 92 150
+          Q 74 162, 68 200
+          Q 62 250, 64 310
+          Q 66 345, 76 352
+          L 92 350
+          Q 96 340, 94 310
+          Q 94 250, 100 200
+          Q 102 175, 102 155 Z"
+          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
+        />
+
+        {/* Правая рука */}
+        <path d="
+          M 228 150
+          Q 246 162, 252 200
+          Q 258 250, 256 310
+          Q 254 345, 244 352
+          L 228 350
+          Q 224 340, 226 310
+          Q 226 250, 220 200
+          Q 218 175, 218 155 Z"
+          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
+        />
+
+        {/* Свет сверху-слева — объём */}
+        <ellipse cx="160" cy="280" rx="140" ry="360" fill={`url(#shine-${uid})`} pointerEvents="none" />
+      </g>
 
       {/* Зоны */}
       {ZONES.map(z => {
@@ -151,9 +208,9 @@ function Silhouette({ levels, focusId, onZoneClick, pulse = true }) {
               ry={z.shape.ry}
               fill={zoneFill(level)}
               stroke={zoneColor(level)}
-              strokeWidth={active ? 2.5 : 1.2}
-              filter={active && pulse ? 'url(#glow)' : undefined}
-              style={active && pulse ? { animation: 'pulse 2.8s ease-in-out infinite' } : undefined}
+              strokeWidth={active ? 2.4 : 1}
+              filter={active && pulse ? `url(#${gid})` : undefined}
+              style={active && pulse ? { animation: 'pulse 2.8s ease-in-out infinite', transformOrigin: `${z.shape.cx}px ${z.shape.cy}px` } : undefined}
             />
           </g>
         );
@@ -161,8 +218,8 @@ function Silhouette({ levels, focusId, onZoneClick, pulse = true }) {
 
       <style>{`
         @keyframes pulse {
-          0%, 100% { opacity: 0.85; transform: scale(1); transform-origin: center; }
-          50%      { opacity: 1;    transform: scale(1.06); }
+          0%, 100% { opacity: 0.85; transform: scale(1); }
+          50%      { opacity: 1;    transform: scale(1.05); }
         }
       `}</style>
     </svg>
@@ -308,28 +365,118 @@ function ZoneSheet({ zone, level, onClose }) {
 }
 
 // ─── Онбординг ──────────────────────────────────────────────
+// Вопросы из анкеты Кристины. type: 'scale' = 0-10 слайдер; 'choice' = карточки с вариантами.
+// direction: 'higher-better' — большой балл хорошо; 'higher-worse' — большой балл плохо (стресс).
+// weights — вклад в уровни зон. Итоговый уровень зоны = 60 + сумма вкладов вопросов.
 const QUESTIONS = [
-  { id: 'sleep',   label: 'Как ты обычно спишь?',         affects: { brain: -30, thyroid: -10 },
-    options: [{ v: 0, label: 'Плохо', emoji: '😣' }, { v: 1, label: 'Так себе', emoji: '😐' }, { v: 2, label: 'Хорошо', emoji: '😴' }] },
-  { id: 'gut',     label: 'ЖКТ беспокоит?',                affects: { gut: -35, liver: -10 },
-    options: [{ v: 0, label: 'Часто', emoji: '😖' }, { v: 1, label: 'Иногда', emoji: '🤔' }, { v: 2, label: 'Всё ок', emoji: '🙂' }] },
-  { id: 'energy',  label: 'Энергия в течение дня?',        affects: { thyroid: -30, heart: -10 },
-    options: [{ v: 0, label: 'Валюсь', emoji: '🪫' }, { v: 1, label: 'Средняя', emoji: '🔋' }, { v: 2, label: 'Бодрая', emoji: '⚡' }] },
-  { id: 'stress',  label: 'Уровень стресса?',              affects: { brain: -20, hormones: -15 },
-    options: [{ v: 0, label: 'Высокий', emoji: '😵' }, { v: 1, label: 'Есть', emoji: '😮‍💨' }, { v: 2, label: 'Спокойно', emoji: '🧘' }] },
-  { id: 'body',    label: 'Как чувствуешь тело?',          affects: { composition: -25, hormones: -5 },
-    options: [{ v: 0, label: 'Вялое', emoji: '🥺' }, { v: 1, label: 'Норм', emoji: '🙂' }, { v: 2, label: 'В форме', emoji: '💪' }] },
+  {
+    id: 'sleep', type: 'scale', direction: 'higher-better',
+    label: 'Насколько ты довольна своим сном?',
+    hint: '0 — совсем плохо, 10 — высыпаюсь отлично',
+    low: '😣', high: '😴',
+    weights: { brain: 35, thyroid: 10, hormones: 8 },
+  },
+  {
+    id: 'stress', type: 'scale', direction: 'higher-worse',
+    label: 'Уровень стресса в последнее время?',
+    hint: '0 — спокойно, 10 — сильный ежедневный стресс',
+    low: '🧘', high: '😵',
+    weights: { brain: 25, hormones: 15, heart: 10, gut: 8 },
+  },
+  {
+    id: 'energy', type: 'scale', direction: 'higher-better',
+    label: 'Сколько у тебя энергии в течение дня?',
+    hint: '0 — совсем нет сил, 10 — энергия через край',
+    low: '🪫', high: '⚡',
+    weights: { thyroid: 35, heart: 10, composition: 10 },
+  },
+  {
+    id: 'activity', type: 'scale', direction: 'higher-better',
+    label: 'Уровень физической активности?',
+    hint: '0 — почти не двигаюсь, 10 — тренировки 3–5 раз в неделю',
+    low: '🛋️', high: '🏃‍♀️',
+    weights: { composition: 30, lungs: 20, heart: 15 },
+  },
+  {
+    id: 'skin', type: 'scale', direction: 'higher-better',
+    label: 'Как бы ты оценила состояние кожи?',
+    hint: '0 — высыпания и сухость, 10 — всё отлично',
+    low: '😔', high: '✨',
+    weights: { liver: 20, hormones: 15, gut: 10 },
+  },
+  {
+    id: 'swelling', type: 'choice',
+    label: 'Замечаешь отёчность утром?',
+    weights: { liver: 20, heart: 8 },
+    options: [
+      { v: 'often',  label: 'Часто',   emoji: '💧', impact: 1 },
+      { v: 'some',   label: 'Иногда',  emoji: '🌤', impact: 0.5 },
+      { v: 'never',  label: 'Нет',     emoji: '☀️', impact: 0 },
+    ],
+  },
+  {
+    id: 'headaches', type: 'choice',
+    label: 'Бывают головные боли или мигрени?',
+    weights: { brain: 18, liver: 6 },
+    options: [
+      { v: 'often',  label: 'Часто',   emoji: '🤕', impact: 1 },
+      { v: 'some',   label: 'Иногда',  emoji: '😐', impact: 0.5 },
+      { v: 'never',  label: 'Нет',     emoji: '🙂', impact: 0 },
+    ],
+  },
+  {
+    id: 'gut', type: 'choice',
+    label: 'Есть ли проблемы с ЖКТ — вздутие, тяжесть?',
+    weights: { gut: 30, liver: 10 },
+    options: [
+      { v: 'often',  label: 'Часто',   emoji: '😖', impact: 1 },
+      { v: 'some',   label: 'Иногда',  emoji: '🤔', impact: 0.5 },
+      { v: 'never',  label: 'Всё ок',  emoji: '🙂', impact: 0 },
+    ],
+  },
 ];
 
+// Преобразует ответ в коэффициент 0..1, где 1 = всё хорошо (полный бонус), 0 = совсем плохо (полный штраф)
+function answerToScore(q, value) {
+  if (value == null) return 0.5;
+  if (q.type === 'scale') {
+    const normalized = Math.max(0, Math.min(10, value)) / 10;
+    return q.direction === 'higher-worse' ? 1 - normalized : normalized;
+  }
+  if (q.type === 'choice') {
+    const opt = q.options.find(o => o.v === value);
+    return opt ? 1 - opt.impact : 0.5;
+  }
+  return 0.5;
+}
+
+// Считает уровни зон по ответам
+function computeLevels(answers) {
+  const BASELINE = 60;
+  const levels = { brain: BASELINE, thyroid: BASELINE, heart: BASELINE, lungs: BASELINE,
+                   liver: BASELINE, gut: BASELINE, hormones: BASELINE, composition: BASELINE };
+  QUESTIONS.forEach(q => {
+    const score = answerToScore(q, answers[q.id]);      // 0..1
+    const delta = (score - 0.5) * 2;                     // -1..+1
+    Object.entries(q.weights || {}).forEach(([zone, w]) => {
+      levels[zone] = (levels[zone] ?? BASELINE) + w * delta;
+    });
+  });
+  Object.keys(levels).forEach(k => {
+    levels[k] = Math.round(Math.max(5, Math.min(100, levels[k])));
+  });
+  return levels;
+}
+
 function Onboarding({ onDone }) {
-  const [step, setStep] = useState(0); // 0 = welcome, 1..N = questions, N+1 = result
+  const [step, setStep] = useState(0); // 0 = welcome, 1..N = вопросы, N+1 = результат
   const [answers, setAnswers] = useState({});
 
   const answer = (q, val) => {
-    const next = { ...answers, [q.id]: val };
-    setAnswers(next);
-    setStep(step + 1);
+    setAnswers(prev => ({ ...prev, [q.id]: val }));
   };
+  const next = () => setStep(s => s + 1);
+  const back = () => setStep(s => Math.max(0, s - 1));
 
   // Welcome
   if (step === 0) {
@@ -359,52 +506,123 @@ function Onboarding({ onDone }) {
   if (step >= 1 && step <= QUESTIONS.length) {
     const q = QUESTIONS[step - 1];
     const progress = (step / (QUESTIONS.length + 1)) * 100;
+    const current = answers[q.id];
+    const isScale = q.type === 'scale';
+    const canNext = current != null || isScale; // для scale есть default 5
 
     return (
       <div style={{ background: '#F9F7F4', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px 24px 8px' }}>
-          <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${progress}%`, background: G, borderRadius: 2, transition: 'width .4s ease' }} />
+        <div style={{ padding: '20px 24px 8px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={back} style={{ background: 'none', border: 'none', fontSize: 22, color: INK3, cursor: 'pointer', padding: 0 }}>‹</button>
+          <div style={{ flex: 1 }}>
+            <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${progress}%`, background: G, borderRadius: 2, transition: 'width .4s ease' }} />
+            </div>
+            <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 8 }}>Шаг {step} из {QUESTIONS.length}</div>
           </div>
-          <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 10 }}>Шаг {step} из {QUESTIONS.length}</div>
         </div>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 28px' }}>
-          <div style={{ fontFamily: serif, fontSize: 26, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 36, lineHeight: 1.25 }}>
+          <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 12, lineHeight: 1.3 }}>
             {q.label}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {q.options.map(o => (
-              <button key={o.v} onClick={() => answer(q, o.v)} style={{
-                padding: '18px 20px', background: W, border: `1.5px solid ${BD}`, borderRadius: 18,
-                display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', textAlign: 'left',
-                transition: 'all .15s ease',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = G; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = BD; }}
-              >
-                <div style={{ fontSize: 32 }}>{o.emoji}</div>
-                <div style={{ fontSize: 17, fontWeight: 600, color: INK, fontFamily: sans }}>{o.label}</div>
-              </button>
-            ))}
-          </div>
+          {q.hint && (
+            <div style={{ fontFamily: sans, fontSize: 13, color: INK3, textAlign: 'center', marginBottom: 30, lineHeight: 1.5 }}>
+              {q.hint}
+            </div>
+          )}
+
+          {isScale && (
+            <div style={{ padding: '10px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+                <div style={{
+                  fontFamily: serif, fontSize: 72, fontWeight: 700, color: G, lineHeight: 1,
+                  minWidth: 100, textAlign: 'center',
+                }}>
+                  {current ?? 5}
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, padding: '0 4px' }}>
+                <div style={{ fontSize: 28 }}>{q.low}</div>
+                <div style={{ fontSize: 28 }}>{q.high}</div>
+              </div>
+              <input
+                type="range" min="0" max="10" step="1"
+                value={current ?? 5}
+                onChange={e => answer(q, Number(e.target.value))}
+                style={{
+                  width: '100%', height: 8, borderRadius: 4,
+                  background: `linear-gradient(to right, ${G} 0%, ${G} ${((current ?? 5) * 10)}%, #EDE9E2 ${((current ?? 5) * 10)}%, #EDE9E2 100%)`,
+                  appearance: 'none', WebkitAppearance: 'none', outline: 'none', cursor: 'pointer',
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: INK3, fontFamily: sans }}>
+                <span>0</span><span>5</span><span>10</span>
+              </div>
+            </div>
+          )}
+
+          {!isScale && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {q.options.map(o => {
+                const selected = current === o.v;
+                return (
+                  <button key={o.v} onClick={() => { answer(q, o.v); setTimeout(next, 180); }} style={{
+                    padding: '18px 20px',
+                    background: selected ? GLL : W,
+                    border: `1.5px solid ${selected ? G : BD}`,
+                    borderRadius: 18,
+                    display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', textAlign: 'left',
+                    transition: 'all .15s ease',
+                  }}>
+                    <div style={{ fontSize: 32 }}>{o.emoji}</div>
+                    <div style={{ fontSize: 17, fontWeight: 600, color: INK, fontFamily: sans }}>{o.label}</div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {isScale && (
+          <div style={{ padding: '0 28px 30px' }}>
+            <button onClick={() => { if (current == null) answer(q, 5); next(); }} style={{
+              width: '100%', padding: '18px', background: G, border: 'none', borderRadius: 30,
+              color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
+            }}>ДАЛЬШЕ</button>
+          </div>
+        )}
+
+        <style>{`
+          input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: ${G};
+            border: 4px solid ${W};
+            box-shadow: 0 2px 8px rgba(45,74,45,0.35);
+            cursor: pointer;
+          }
+          input[type=range]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: ${G};
+            border: 4px solid ${W};
+            box-shadow: 0 2px 8px rgba(45,74,45,0.35);
+            cursor: pointer;
+          }
+        `}</style>
       </div>
     );
   }
 
-  // Результат — вычисляем уровни
-  const levels = { ...DEFAULT_LEVELS };
+  // Результат
+  const levels = computeLevels(answers);
   let worstZone = 'brain';
-  let worstLevel = 100;
-  QUESTIONS.forEach(q => {
-    const v = answers[q.id] ?? 1;
-    // v: 0 = плохо (полный штраф), 1 = средне (половина), 2 = хорошо (без штрафа)
-    const factor = v === 0 ? 1 : v === 1 ? 0.5 : 0;
-    Object.entries(q.affects).forEach(([zone, delta]) => {
-      levels[zone] = Math.max(5, (levels[zone] ?? 50) + delta * factor);
-    });
-  });
+  let worstLevel = 101;
   Object.entries(levels).forEach(([k, v]) => {
     if (v < worstLevel) { worstLevel = v; worstZone = k; }
   });
