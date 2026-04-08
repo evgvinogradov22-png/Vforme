@@ -106,29 +106,67 @@ function Hero({ title, subtitle, tags }) {
   );
 }
 
-// ─── Описание без рамки ──────────────────────────────────────
+// ─── Описание без рамки (стилизовано как vc.ru) ──────────────
 function PlainDesc({ children }) {
   if (!children) return null;
   return (
-    <div style={{
-      padding: '4px 22px 18px',
-      fontSize: 15, color: INK2, lineHeight: 1.65, fontFamily: sans, whiteSpace: 'pre-wrap',
-    }}>
-      {children}
+    <div className="vc-content" style={{ padding: '6px 24px 22px' }}>
+      <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{children}</p>
     </div>
   );
 }
 
-// ─── HTML-контент без рамки (для протоколов и лекций) ────────
+// ─── HTML-контент без рамки (vc.ru-стиль) ────────────────────
 function PlainHtml({ html }) {
   if (!html) return null;
   return (
-    <div style={{
-      padding: '4px 22px 18px',
-      fontSize: 15, color: INK, lineHeight: 1.65, fontFamily: sans,
-    }} dangerouslySetInnerHTML={{ __html: html }} />
+    <div
+      className="vc-content"
+      style={{ padding: '6px 24px 22px' }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
+
+// Глобальные стили для html-контента в vc-стиле
+const VC_STYLES = `
+  .vc-content {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 17px;
+    line-height: 1.7;
+    color: #1A1A1A;
+    word-wrap: break-word;
+  }
+  .vc-content p { margin: 0 0 1.1em; }
+  .vc-content p:last-child { margin-bottom: 0; }
+  .vc-content h1, .vc-content h2 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 24px; font-weight: 700; line-height: 1.25;
+    color: #1A1A1A;
+    margin: 1.6em 0 0.5em;
+  }
+  .vc-content h3 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 19px; font-weight: 700; line-height: 1.3;
+    margin: 1.4em 0 0.4em;
+  }
+  .vc-content ul, .vc-content ol {
+    margin: 0 0 1.1em; padding-left: 1.4em;
+  }
+  .vc-content li { margin-bottom: 0.45em; line-height: 1.6; }
+  .vc-content blockquote {
+    margin: 1.2em 0; padding: 0.6em 1em;
+    border-left: 3px solid #C8B97A;
+    color: #5A4D34;
+    font-style: italic;
+    background: rgba(243,239,230,0.6);
+    border-radius: 0 8px 8px 0;
+  }
+  .vc-content a { color: #3D6B3D; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  .vc-content img { max-width: 100%; border-radius: 12px; margin: 1em 0; display: block; }
+  .vc-content strong, .vc-content b { color: #1A1A1A; }
+  .vc-content em, .vc-content i { color: #4A4A4A; }
+`;
 
 // ─── Карточка ────────────────────────────────────────────────
 function FeedCard({ item, onClick }) {
@@ -493,41 +531,63 @@ function ProtocolPage({ protocol, onBack }) {
 
               {/* БАДы протокола */}
               {Array.isArray(data.supplements) && data.supplements.length > 0 && (
-                <div style={{ padding: '0 22px' }}>
+                <div style={{ padding: '0 22px', marginTop: 8 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 12, fontFamily: sans, padding: '0 4px' }}>
-                    БАДы В ПРОТОКОЛЕ
+                    БАДЫ В ПРОТОКОЛЕ
                   </div>
                   {data.supplements.map((s, i) => {
                     const sup = s.supplement || {};
+                    const name = s.name || sup.name || 'БАД';
+                    const image = s.image || sup.image;
+                    const link = s.link || sup.link;
                     return (
                       <div key={i} style={{
                         background: W, border: `1px solid ${BD}`, borderRadius: 16,
-                        padding: '14px 16px', marginBottom: 8,
+                        padding: 12, marginBottom: 10,
+                        display: 'flex', gap: 12, alignItems: 'center',
                       }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: INK, fontFamily: sans }}>
-                          💊 {sup.name || 'БАД'}
+                        {/* Картинка слева */}
+                        <div style={{
+                          width: 64, height: 64, borderRadius: 12,
+                          background: image ? `url(${image}) center/cover` : F_BG,
+                          border: `1px solid ${F_BD}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 26, flexShrink: 0,
+                        }}>
+                          {!image && '💊'}
                         </div>
-                        {sup.desc && (
-                          <div style={{ fontSize: 13, color: INK3, marginTop: 4, fontFamily: sans }}>{sup.desc}</div>
-                        )}
-                        {s.note && (
-                          <div style={{ fontSize: 13, color: INK2, marginTop: 6, fontFamily: sans, fontStyle: 'italic' }}>
-                            {s.note}
+
+                        {/* Текст в центре */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: INK, fontFamily: sans, lineHeight: 1.3 }}>
+                            {name}
                           </div>
-                        )}
-                        <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
-                          {(s.link || sup.link) && (
-                            <a href={s.link || sup.link} target="_blank" rel="noopener noreferrer" style={{
-                              fontSize: 13, color: G, fontFamily: sans, fontWeight: 600,
-                            }}>Купить ↗</a>
+                          {s.note && (
+                            <div style={{ fontSize: 12, color: INK3, marginTop: 4, fontFamily: sans, lineHeight: 1.4 }}>
+                              {s.note}
+                            </div>
                           )}
                           {s.promo && (
-                            <span style={{
-                              fontSize: 12, color: GOLDD, fontFamily: sans, fontWeight: 600,
+                            <div style={{
+                              display: 'inline-block',
+                              fontSize: 11, color: GOLDD, fontFamily: sans, fontWeight: 600,
                               background: '#FBF2DB', padding: '2px 8px', borderRadius: 6,
-                            }}>Промо: {s.promo}</span>
+                              marginTop: 6,
+                            }}>Промо: {s.promo}</div>
                           )}
                         </div>
+
+                        {/* Кнопка «Открыть» справа */}
+                        {link && (
+                          <a href={link} target="_blank" rel="noopener noreferrer" style={{
+                            padding: '10px 16px',
+                            background: F_BG_ACT, color: F_TXT_ACT,
+                            border: `1px solid ${F_BD}`, borderRadius: 18,
+                            fontSize: 13, fontWeight: 700, fontFamily: sans,
+                            textDecoration: 'none', flexShrink: 0,
+                            whiteSpace: 'nowrap',
+                          }}>Открыть ↗</a>
+                        )}
                       </div>
                     );
                   })}
@@ -596,6 +656,17 @@ function SchemePage({ scheme, onBack }) {
   );
 }
 
+// Инжектим VC-стили один раз в head
+let vcStylesInjected = false;
+function injectVcStyles() {
+  if (vcStylesInjected || typeof document === 'undefined') return;
+  const el = document.createElement('style');
+  el.id = 'vc-content-styles';
+  el.textContent = VC_STYLES;
+  document.head.appendChild(el);
+  vcStylesInjected = true;
+}
+
 // ─── Главная страница Здоровье ───────────────────────────────
 export default function Health() {
   const { user } = useAuth();
@@ -609,6 +680,7 @@ export default function Health() {
   const [openScheme, setOpenScheme] = useState(null);
 
   useEffect(() => {
+    injectVcStyles();
     fetch('/api/health/feed', { headers: authHeaders() })
       .then(r => r.json())
       .then(data => setItems(Array.isArray(data) ? data : []))
