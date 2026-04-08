@@ -24,16 +24,27 @@ export default function Chat() {
     }
   });
 
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const mapMsg = (m) => ({
+    id: m.id,
+    role: m.role === 'admin' ? 'assistant' : m.role,
+    content: m.content,
+    createdAt: m.createdAt,
+  });
+
   useEffect(() => {
-    // Загружаем настройки и историю
     Promise.all([
       fetch('/api/chat/settings', { headers: { Authorization: 'Bearer ' + TOKEN() } }).then(r => r.json()),
-      fetch('/api/chat/history', { headers: { Authorization: 'Bearer ' + TOKEN() } }).then(r => r.json()),
-    ]).then(([settings, history]) => {
+      fetch('/api/chat/history?limit=30', { headers: { Authorization: 'Bearer ' + TOKEN() } }).then(r => r.json()),
+    ]).then(([settings, hist]) => {
       const w = settings.welcomeMessage || welcome;
       setWelcome(w);
-      if (Array.isArray(history) && history.length > 0) {
-        setMessages(history.map(m => ({ role: m.role === 'admin' ? 'assistant' : m.role, content: m.content })));
+      const arr = Array.isArray(hist?.messages) ? hist.messages : (Array.isArray(hist) ? hist : []);
+      setHasMore(!!hist?.hasMore);
+      if (arr.length > 0) {
+        setMessages(arr.map(mapMsg));
       } else {
         setMessages([{ role: 'assistant', content: w }]);
       }
@@ -41,6 +52,22 @@ export default function Chat() {
       setMessages([{ role: 'assistant', content: welcome }]);
     });
   }, []);
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const oldest = messages.find(m => m.createdAt);
+      if (!oldest) return;
+      const r = await fetch(`/api/chat/history?limit=30&before=${encodeURIComponent(oldest.createdAt)}`, {
+        headers: { Authorization: 'Bearer ' + TOKEN() },
+      });
+      const data = await r.json();
+      const arr = Array.isArray(data?.messages) ? data.messages : [];
+      setHasMore(!!data?.hasMore);
+      setMessages(prev => [...arr.map(mapMsg), ...prev]);
+    } catch {} finally { setLoadingMore(false); }
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -117,10 +144,25 @@ export default function Chat() {
     }
   };
 
+  // Аватар Кристины — фото (с fallback на 🌿 при ошибке)
+  const KristinaAvatar = ({ size = 32 }) => (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      overflow: 'hidden', flexShrink: 0,
+      background: G,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.5,
+    }}>
+      <img src="/img/kristina.jpg" alt="Кристина"
+           onError={e => { e.currentTarget.style.display = 'none'; }}
+           style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    </div>
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 140px)', background: '#F9F7F4' }}>
       <div style={{ background: G, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: '50%', background: GOLD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🌿</div>
+        <KristinaAvatar size={44} />
         <div>
           <div style={{ color: W, fontFamily: serif, fontSize: 17, fontWeight: 600 }}>Кристина</div>
           <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontFamily: sans }}>Нутрициолог · Онлайн</div>
@@ -128,10 +170,24 @@ export default function Chat() {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {hasMore && (
+          <div style={{ textAlign: 'center', marginBottom: 8 }}>
+            <button onClick={loadMore} disabled={loadingMore} style={{
+              padding: '8px 18px', borderRadius: 18,
+              background: W, border: `1px solid ${BD}`,
+              color: INK2, fontFamily: sans, fontSize: 13, fontWeight: 600,
+              cursor: loadingMore ? 'default' : 'pointer',
+            }}>
+              {loadingMore ? 'Загружаем…' : '↑ Загрузить предыдущие'}
+            </button>
+          </div>
+        )}
         {messages.map((m, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+          <div key={m.id || i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
             {m.role !== 'user' && (
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: G, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, marginRight: 8, marginTop: 4 }}>🌿</div>
+              <div style={{ marginRight: 8, marginTop: 4 }}>
+                <KristinaAvatar size={32} />
+              </div>
             )}
             <div style={{
               maxWidth: '75%', padding: '12px 16px',
@@ -148,7 +204,9 @@ export default function Chat() {
         ))}
         {loading && (
           <div style={{ display: 'flex' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: G, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, marginRight: 8 }}>🌿</div>
+            <div style={{ marginRight: 8 }}>
+              <KristinaAvatar size={32} />
+            </div>
             <div style={{ padding: '14px 18px', borderRadius: '18px 18px 18px 4px', background: W, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
               <div style={{ display: 'flex', gap: 4 }}>
                 {[0,1,2].map(i => <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: INK3, animation: `bounce 1s ease-in-out ${i*0.2}s infinite` }} />)}

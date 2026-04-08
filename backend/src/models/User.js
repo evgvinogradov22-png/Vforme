@@ -16,5 +16,6 @@ const User = sequelize.define('User', {
   linkToken:         { type: DataTypes.STRING },
   linkTokenAt:       { type: DataTypes.DATE },
   lastSeenAt:        { type: DataTypes.DATE },
+  chatSummary:       { type: DataTypes.TEXT },
 }, { timestamps: true });
 module.exports = User;

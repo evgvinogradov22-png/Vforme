@@ -96,6 +96,8 @@ async function start() {
         ALTER TABLE "Protocols"         ADD COLUMN IF NOT EXISTS "coverImage" VARCHAR(255);
         ALTER TABLE "SupplementSchemes" ADD COLUMN IF NOT EXISTS "coverImage" VARCHAR(255);
         ALTER TABLE "Supplements"       ADD COLUMN IF NOT EXISTS "promo" VARCHAR(255);
+        ALTER TABLE "Users"             ADD COLUMN IF NOT EXISTS "chatSummary" TEXT;
+        ALTER TABLE "ChatMessages"      ADD COLUMN IF NOT EXISTS "summarized" BOOLEAN DEFAULT false;
       `);
     } catch (e) { console.error('Schema migration warning:', e.message); }
     console.log('✅ База данных подключена');

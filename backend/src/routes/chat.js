@@ -79,6 +79,58 @@ router.get('/settings', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Размер активного окна сообщений, передаваемого LLM напрямую
+const ACTIVE_WINDOW = 30;
+// Когда не-summarized сообщений накапливается больше — старые сворачиваются в summary
+const SUMMARIZE_TRIGGER = 50;
+
+// Сжимает старые сообщения в краткое summary через тот же LLM
+async function rollUpSummary(userId, prevSummary) {
+  const old = await ChatMessage.findAll({
+    where: { userId, summarized: false },
+    order: [['createdAt', 'ASC']],
+  });
+  if (old.length <= SUMMARIZE_TRIGGER) return prevSummary;
+
+  // Сворачиваем всё кроме последних ACTIVE_WINDOW
+  const toSummarize = old.slice(0, old.length - ACTIVE_WINDOW);
+  if (toSummarize.length === 0) return prevSummary;
+
+  const transcript = toSummarize.map(m => {
+    const role = m.role === 'user' ? 'Клиент' : 'Кристина';
+    return `${role}: ${(m.content || '').slice(0, 600)}`;
+  }).join('\n');
+
+  const sysPrompt = `Ты — помощник, который ведёт краткий конспект переписки клиента и нутрициолога Кристины. Запомни ВСЕ важные факты о клиенте: жалобы, состояние здоровья, что Кристина ему говорила, какие рекомендации давала, какие БАДы и протоколы упоминались, пол, возраст, особенности. Сохрани преемственность между сессиями.`;
+
+  const userPrompt = (prevSummary
+    ? `Текущее резюме (продолжай его дополнять):\n${prevSummary}\n\nНовая часть переписки:\n`
+    : `Переписка:\n`) + transcript + `\n\nВерни обновлённое краткое резюме (до 800 слов) — фактологически, по пунктам, на русском. Без обращения к клиенту.`;
+
+  try {
+    const r = await openrouterRequest({
+      model: 'openai/gpt-4o-mini',
+      messages: [
+        { role: 'system', content: sysPrompt },
+        { role: 'user',   content: userPrompt },
+      ],
+      max_tokens: 1200,
+      temperature: 0.3,
+    });
+    const newSummary = r.choices?.[0]?.message?.content?.trim();
+    if (!newSummary) return prevSummary;
+    // Помечаем сообщения как summarized
+    await ChatMessage.update(
+      { summarized: true },
+      { where: { id: toSummarize.map(m => m.id) } }
+    );
+    return newSummary;
+  } catch (e) {
+    console.error('Summary roll-up failed:', e.message);
+    return prevSummary;
+  }
+}
+
 router.post('/message', auth, async (req, res) => {
   try {
     const { message } = req.body;
@@ -89,17 +141,30 @@ router.post('/message', auth, async (req, res) => {
     if (!s.enabled) return res.status(503).json({ error: 'Чат временно недоступен' });
 
     const userMsg = await ChatMessage.create({ userId: req.user.id, role: 'user', content: message, isAi: false });
-    // Live: оповестить админов о новом сообщении клиента
     broadcast({ type: 'chat_admin_update', userId: req.user.id, message: userMsg });
 
+    // 1) Откат старых сообщений в summary, если их накопилось много
+    const user = await User.findByPk(req.user.id);
+    let summary = user?.chatSummary || '';
+    const newSummary = await rollUpSummary(req.user.id, summary);
+    if (newSummary !== summary) {
+      summary = newSummary;
+      try { await user.update({ chatSummary: summary }); } catch {}
+    }
+
+    // 2) Берём только активное окно (не-summarized последние N)
     const history = await ChatMessage.findAll({
-      where: { userId: req.user.id },
+      where: { userId: req.user.id, summarized: false },
       order: [['createdAt', 'ASC']],
-      limit: 20,
+      limit: ACTIVE_WINDOW,
     });
 
-    const systemPrompt = s.systemPrompt ||
+    const baseSystemPrompt = s.systemPrompt ||
       `Ты — Кристина Виноградова, нутрициолог и эксперт по здоровью. Ты общаешься с клиентами своего онлайн-приложения V Форме. Отвечай тепло, по-дружески, но профессионально. Отвечай на русском языке.`;
+
+    const systemPrompt = summary
+      ? `${baseSystemPrompt}\n\n=== ИСТОРИЯ ПЕРЕПИСКИ С ЭТИМ КЛИЕНТОМ (краткое резюме предыдущих разговоров — обязательно учитывай) ===\n${summary}\n=== КОНЕЦ ИСТОРИИ ===`
+      : baseSystemPrompt;
 
     const aiMessages = history.map(m => {
       const role = m.role === 'admin' ? 'assistant' : m.role;
@@ -173,12 +238,25 @@ router.post('/image-message', auth, async (req, res) => {
 
 router.get('/history', auth, async (req, res) => {
   try {
-    const messages = await ChatMessage.findAll({
-      where: { userId: req.user.id },
-      order: [['createdAt', 'ASC']],
-      limit: 50,
+    const { Op } = require('sequelize');
+    const limit = Math.min(Number(req.query.limit) || 30, 100);
+    const before = req.query.before; // ISO timestamp курсор для пагинации
+
+    const where = { userId: req.user.id };
+    if (before) where.createdAt = { [Op.lt]: new Date(before) };
+
+    // Берём DESC чтобы получить самые свежие, потом разворачиваем в ASC
+    const rows = await ChatMessage.findAll({
+      where,
+      order: [['createdAt', 'DESC']],
+      limit: limit + 1, // +1 чтобы знать есть ли ещё
     });
-    res.json(messages);
+
+    const hasMore = rows.length > limit;
+    const slice = hasMore ? rows.slice(0, limit) : rows;
+    const messages = slice.reverse();
+
+    res.json({ messages, hasMore });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

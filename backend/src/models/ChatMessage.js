@@ -7,6 +7,7 @@ const ChatMessage = sequelize.define('ChatMessage', {
   role:      { type: DataTypes.ENUM('user', 'assistant', 'admin'), allowNull: false },
   content:   { type: DataTypes.TEXT, allowNull: false },
   isAi:      { type: DataTypes.BOOLEAN, defaultValue: true }, // true = AI ответил, false = admin вручную
+  summarized: { type: DataTypes.BOOLEAN, defaultValue: false }, // включено в summary, не передаётся LLM напрямую
 }, { timestamps: true });
 
 module.exports = ChatMessage;
