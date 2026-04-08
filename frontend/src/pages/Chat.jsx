@@ -89,8 +89,8 @@ export default function Chat() {
 
   const send = async () => {
     if (!input.trim() || loading) return;
-    analytics.chatMessage();
-    log.chatMessage();
+    try { analytics.chatMessage(); } catch {}
+    try { log.chatMessage(); } catch {}
     const text = input.trim();
     setMessages(prev => [...prev, { role: 'user', content: text }]);
     setInput('');
@@ -101,10 +101,20 @@ export default function Chat() {
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN() },
         body: JSON.stringify({ message: text }),
       });
-      const data = await res.json();
-      if (data.reply) setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
-    } catch (e) {}
-    setLoading(false);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = data?.error || `Ошибка сервера (${res.status})`;
+        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${err}` }]);
+      } else if (data.reply) {
+        setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Пустой ответ от сервера' }]);
+      }
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ Сеть: ${e.message || e}` }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
