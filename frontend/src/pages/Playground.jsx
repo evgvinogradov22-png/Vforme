@@ -139,11 +139,11 @@ function useAnimatedLevels(targetLevels, duration = 1000) {
 function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
   const animated = useAnimatedLevels(levels, 1100);
 
-  const SIZE = 520;
+  const SIZE = 600;
   const CX = SIZE / 2;
   const CY = SIZE / 2;
   const R = 180;
-  const INNER = 26;
+  const INNER = 28;
   const N = ZONES.length;
   const SLICE = (Math.PI * 2) / N;
   const GAP = 0.018; // небольшой зазор между секторами
@@ -233,33 +233,48 @@ function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
         {Math.round(Object.values(animated).reduce((s, v) => s + v, 0) / N)}%
       </text>
 
-      {/* Метки зон */}
+      {/* Метки зон — с белой плашкой-подложкой */}
       {ZONES.map((z, i) => {
         const level = Math.round(animated[z.id] ?? 0);
         const a = -Math.PI / 2 + (i + 0.5) * SLICE;
-        const [lx, ly] = pt(R + 34, a);
+        const [lx, ly] = pt(R + 40, a);
         const active = z.id === focusId;
-        const c = active ? zoneColor(level) : INK2;
+        const c = zoneColor(level);
 
-        // Разная вертикальная раскладка в зависимости от угла
-        const isTop = Math.sin(a) < -0.3;
-        const isBottom = Math.sin(a) > 0.3;
-        const dy1 = isTop ? -10 : isBottom ? 8 : 0;
-        const dy2 = dy1 + 14;
-        const dy3 = dy2 + 12;
+        // Ширина плашки от длины названия
+        const w = Math.max(78, z.label.length * 9 + 28);
+        const h = 46;
 
         return (
           <g key={z.id + '-lbl'} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
-            <text x={lx} y={ly + dy1} textAnchor="middle" fontSize="18" style={{ pointerEvents: 'none' }}>
-              {z.icon}
-            </text>
-            <text x={lx} y={ly + dy2} textAnchor="middle" fontSize="11"
-              fontWeight={active ? 700 : 600} fill={c} style={{ pointerEvents: 'none' }}>
-              {z.label}
-            </text>
-            <text x={lx} y={ly + dy3} textAnchor="middle" fontSize="10" fill={INK3} style={{ pointerEvents: 'none' }}>
-              {level}%
-            </text>
+            {/* Подложка */}
+            <rect
+              x={lx - w / 2} y={ly - h / 2} width={w} height={h} rx={h / 2} ry={h / 2}
+              fill="#FFFFFF"
+              stroke={active ? c : '#E5E0D0'}
+              strokeWidth={active ? 2 : 1}
+              style={{ filter: 'drop-shadow(0 2px 6px rgba(45,74,45,0.08))' }}
+            />
+            {/* Иконка */}
+            <text
+              x={lx - w / 2 + 22} y={ly + 6}
+              textAnchor="middle" fontSize="20"
+              style={{ pointerEvents: 'none' }}
+            >{z.icon}</text>
+            {/* Название */}
+            <text
+              x={lx - w / 2 + 40} y={ly - 2}
+              textAnchor="start" fontSize="12"
+              fontWeight={700} fill={INK}
+              style={{ pointerEvents: 'none' }}
+            >{z.label}</text>
+            {/* % */}
+            <text
+              x={lx - w / 2 + 40} y={ly + 13}
+              textAnchor="start" fontSize="11"
+              fontWeight={700} fill={c}
+              style={{ pointerEvents: 'none' }}
+            >{level}%</text>
           </g>
         );
       })}
@@ -573,11 +588,15 @@ function MainScreen({ state, onZoneClick, onReset }) {
 
   // Сопоставление рекомендаций по заголовкам
   const recommended = useMemo(() => {
-    if (!analysis?.recommendedTitles?.length || !content.length) return [];
-    const titles = analysis.recommendedTitles.map(t => t.toLowerCase());
-    const matched = content.filter(c => titles.some(t => c.title?.toLowerCase().includes(t) || t.includes(c.title?.toLowerCase())));
-    // Если по заголовкам ничего не нашли — покажем первые 6 из каталога
-    return matched.length ? matched : content.slice(0, 6);
+    if (!content.length) return [];
+    const titles = (analysis?.recommendedTitles || []).map(t => t.toLowerCase());
+    if (!titles.length) return content; // нет рекомендаций — показываем весь каталог
+    const matched = content.filter(c => titles.some(t =>
+      c.title?.toLowerCase().includes(t) || t.includes(c.title?.toLowerCase() || '')
+    ));
+    // Сначала matched, потом остальные
+    const rest = content.filter(c => !matched.includes(c));
+    return [...matched, ...rest];
   }, [analysis, content]);
 
   const filtered = recommended.filter(it => {
@@ -589,29 +608,14 @@ function MainScreen({ state, onZoneClick, onReset }) {
   return (
     <div style={{ background: '#F9F7F4', minHeight: '100vh', paddingBottom: 60 }}>
       {/* Хедер */}
-      <div style={{ background: G, padding: '18px 20px 22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, letterSpacing: 1.2, fontFamily: sans }}>ТЫ В ПУТИ</div>
-            <div style={{ color: W, fontFamily: serif, fontSize: 26, fontWeight: 700, lineHeight: 1.1, marginTop: 2 }}>
-              {state.days} <span style={{ fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.8)' }}>дней</span>
-            </div>
-          </div>
-          {focusZone && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, letterSpacing: 1.2, fontFamily: sans }}>В ФОКУСЕ</div>
-              <div style={{ color: GOLD, fontSize: 14, fontWeight: 700, marginTop: 2, fontFamily: sans }}>
-                {focusZone.icon} {focusZone.label}
-              </div>
-            </div>
-          )}
-          <button onClick={onReset} title="Сброс"
-            style={{ background: 'rgba(255,255,255,0.12)', border: 'none', color: W, width: 34, height: 34, borderRadius: 17, fontSize: 14, cursor: 'pointer', marginLeft: 10 }}>↺</button>
+      <div style={{ background: G, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ color: W, fontFamily: serif, fontSize: 18, fontWeight: 700, letterSpacing: 3 }}>
+          V ФОРМЕ <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}> · АТЛАС</span>
         </div>
       </div>
 
       {/* Колесо */}
-      <div style={{ padding: '16px 8px 0', maxWidth: 520, margin: '0 auto' }}>
+      <div style={{ padding: '20px 4px 0', maxWidth: 600, margin: '0 auto' }}>
         <BalanceWheel levels={state.levels} focusId={focusZoneId} onZoneClick={onZoneClick} />
       </div>
 
@@ -651,9 +655,17 @@ function MainScreen({ state, onZoneClick, onReset }) {
               ))}
             </div>
           ) : (
-            <div style={{ fontFamily: sans, fontSize: 14, color: INK, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-              {analysis?.message || '—'}
-            </div>
+            <>
+              <div style={{ fontFamily: sans, fontSize: 14, color: INK, lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: 14 }}>
+                {analysis?.message || '—'}
+              </div>
+              <a href="/" style={{
+                display: 'block', textAlign: 'center',
+                padding: '13px', background: G, border: 'none', borderRadius: 22,
+                color: W, fontFamily: sans, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                letterSpacing: 0.5, textDecoration: 'none',
+              }}>💬 Ответить Кристине</a>
+            </>
           )}
         </div>
       </div>
@@ -697,8 +709,16 @@ function MainScreen({ state, onZoneClick, onReset }) {
         </div>
       )}
 
-      <div style={{ textAlign: 'center', fontSize: 11, color: INK3, fontFamily: sans, marginTop: 10, letterSpacing: 0.3 }}>
-        Прототип · все ответы хранятся только на твоём устройстве
+      <div style={{ padding: '24px 20px 10px' }}>
+        <button onClick={onReset} style={{
+          width: '100%', padding: '16px',
+          background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 24,
+          color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer', letterSpacing: 0.5,
+        }}>↺ Пройти анкету заново</button>
+      </div>
+
+      <div style={{ textAlign: 'center', fontSize: 11, color: INK3, fontFamily: sans, marginTop: 8, letterSpacing: 0.3 }}>
+        Прототип · ответы хранятся только на твоём устройстве
       </div>
 
       <style>{`
