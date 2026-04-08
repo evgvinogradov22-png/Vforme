@@ -12,10 +12,12 @@ import Broadcast from './pages/Broadcast';
 import ChatAdmin from './pages/ChatAdmin';
 import Deploy from './pages/Deploy';
 import Payments from './pages/Payments';
+import AtlasResults from './pages/AtlasResults';
 import { C, Toast } from './components/UI';
 
 const NAV = [
   { id: 'clients',     icon: '👥', label: 'Клиенты' },
+  { id: 'atlas',       icon: '🌿', label: 'Атлас' },
   { id: 'programs',    icon: '📚', label: 'Программы' },
   { id: 'recipes',     icon: '🥗', label: 'Рецепты' },
   { id: 'supplements', icon: '💊', label: 'БАДы' },
@@ -101,6 +103,7 @@ export default function App() {
       {/* MAIN */}
       <div style={{ flex: 1, marginLeft: 240, padding: 32, minHeight: '100vh' }}>
         {tab === 'clients'     && <Clients flash={flash} />}
+        {tab === 'atlas'       && <AtlasResults />}
         {tab === 'programs'    && <Programs flash={flash} />}
         {tab === 'recipes'     && <Recipes flash={flash} />}
         {tab === 'supplements' && <Supplements flash={flash} />}

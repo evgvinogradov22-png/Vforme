@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 
 // ─── Зоны ────────────────────────────────────────────────────
-const ZONES = [
+export const ZONES = [
   { id: 'brain',       label: 'Сон и нервы', icon: '🧠', hint: 'Сон, стресс, восстановление' },
   { id: 'thyroid',     label: 'Энергия',     icon: '⚡', hint: 'Щитовидка, митохондрии' },
   { id: 'gut',         label: 'ЖКТ',         icon: '🍽️', hint: 'Желудок, кишечник, пищеварение' },
@@ -11,7 +11,7 @@ const ZONES = [
 ];
 
 // ─── Вопросы (анкета Кристины) ───────────────────────────────
-const QUESTIONS = [
+export const QUESTIONS = [
   { id: 'gender', type: 'choice',
     label: 'Какой у тебя пол?',
     weights: {},
@@ -63,7 +63,7 @@ const QUESTIONS = [
 ];
 
 // ─── Служебные функции ───────────────────────────────────────
-function answerScore(q, value) {
+export function answerScore(q, value) {
   if (value == null) return 0.5;
   if (q.type === 'scale') {
     const n = Math.max(0, Math.min(10, value)) / 10;
@@ -76,7 +76,7 @@ function answerScore(q, value) {
   return 0.5;
 }
 
-function computeLevels(answers) {
+export function computeLevels(answers) {
   const BASELINE = 60;
   const levels = {};
   ZONES.forEach(z => { levels[z.id] = BASELINE; });
@@ -93,13 +93,13 @@ function computeLevels(answers) {
   return levels;
 }
 
-function zoneColor(level) {
+export function zoneColor(level) {
   if (level >= 75) return '#3D6B3D';
   if (level >= 50) return '#7AAE7A';
   if (level >= 25) return '#D4A94A';
   return '#C88A5E';
 }
-function zoneSoftFill(level) {
+export function zoneSoftFill(level) {
   if (level >= 75) return 'rgba(61, 107, 61, 0.78)';
   if (level >= 50) return 'rgba(122, 174, 122, 0.72)';
   if (level >= 25) return 'rgba(212, 169, 74, 0.72)';
@@ -143,7 +143,7 @@ function useAnimatedLevels(targetLevels, duration = 1000) {
 }
 
 // ─── Колесо баланса ──────────────────────────────────────────
-function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
+export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
   const animated = useAnimatedLevels(levels, 1100);
 
   const SIZE = 600;
@@ -290,7 +290,7 @@ function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
 }
 
 // ─── Шторка зоны (без изменений) ─────────────────────────────
-function ZoneSheet({ zone, level, content, onClose }) {
+export function ZoneSheet({ zone, level, content, onClose }) {
   if (!zone) return null;
   const items = (content || []).filter(it => it.zones?.includes(zone.id));
   const c = zoneColor(level);
@@ -356,7 +356,7 @@ function ZoneSheet({ zone, level, content, onClose }) {
 }
 
 // ─── Карточка контента ───────────────────────────────────────
-function ContentCard({ item }) {
+export function ContentCard({ item }) {
   const tag = item.kind === 'program' ? 'ПРОГРАММА' : 'ПРОТОКОЛ';
   const free = Number(item.price) === 0;
   return (
@@ -395,7 +395,7 @@ function ContentCard({ item }) {
 }
 
 // ─── Онбординг ───────────────────────────────────────────────
-function Onboarding({ onDone }) {
+export function Onboarding({ onDone }) {
   // step 1..QUESTIONS.length = вопросы, N+1 = complaints textarea
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState({});

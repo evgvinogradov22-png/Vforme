@@ -17,12 +17,14 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import Materials from './pages/Materials';
 import Chat from './pages/Chat';
 import Playground from './pages/Playground';
+import Atlas from './pages/Atlas';
 import { analytics } from './utils/analytics';
 import { log } from './utils/log';
 import { Toast, Spinner } from './components/UI';
 import { G, GOLD, BD, INK3, W, sans, serif } from './utils/theme';
 
 const TABS = [
+  { id: 'atlas',     icon: '🌿', label: 'Атлас' },
   { id: 'programs',  icon: '📚', label: 'Программы' },
   { id: 'materials', icon: '📋', label: 'Протоколы' },
   { id: 'chat',      icon: '💬', label: 'Чат' },
@@ -33,7 +35,7 @@ const TABS = [
 function AppShell() {
   const { user, loading, setUser, logout } = useAuth();
   const [screen, setScreen] = useState('landing');
-  const [tab, setTab] = useState('programs');
+  const [tab, setTab] = useState('atlas');
   const [toast, setToast] = useState(null);
   const [justRegistered, setJustRegistered] = useState(() => sessionStorage.getItem('justRegistered') === 'true');
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(() => {
@@ -165,6 +167,7 @@ function AppShell() {
       )}
 
       {/* КОНТЕНТ */}
+      {tab === 'atlas'     && <Atlas onGoChat={() => setTab('chat')} />}
       {tab === 'programs'  && <Programs flash={flash} user={user} onAccessGranted={(programId) => setUser(u => ({ ...u, programAccess: [...(u.programAccess || []), programId] }))} />}
       {tab === 'materials' && <Materials flash={flash} user={user} />}
       {tab === 'chat'      && <Chat />}
