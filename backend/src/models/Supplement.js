@@ -11,5 +11,6 @@ const Supplement = sequelize.define('Supplement', {
   brand:    { type: DataTypes.STRING },
   image:    { type: DataTypes.STRING },
   order:    { type: DataTypes.INTEGER, defaultValue: 0 },
+  promo:    { type: DataTypes.STRING },
 }, { timestamps: true });
 module.exports = Supplement;

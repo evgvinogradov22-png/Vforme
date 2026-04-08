@@ -95,6 +95,7 @@ async function start() {
         ALTER TABLE "Programs"          ADD COLUMN IF NOT EXISTS "coverImage" VARCHAR(255);
         ALTER TABLE "Protocols"         ADD COLUMN IF NOT EXISTS "coverImage" VARCHAR(255);
         ALTER TABLE "SupplementSchemes" ADD COLUMN IF NOT EXISTS "coverImage" VARCHAR(255);
+        ALTER TABLE "Supplements"       ADD COLUMN IF NOT EXISTS "promo" VARCHAR(255);
       `);
     } catch (e) { console.error('Schema migration warning:', e.message); }
     console.log('✅ База данных подключена');

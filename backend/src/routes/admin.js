@@ -27,7 +27,7 @@ const ALLOWED_FIELDS = {
   Module:   ['title', 'desc', 'order', 'programId', 'icon'],
   Lecture:  ['title', 'content', 'order', 'moduleId', 'type', 'videoUrl', 'duration'],
   Recipe:   ['title', 'desc', 'content', 'image', 'tags', 'calories', 'available'],
-  Supplement: ['name', 'desc', 'image', 'link', 'tags', 'available'],
+  Supplement: ['schemeId', 'name', 'dose', 'time', 'note', 'buyUrl', 'brand', 'image', 'order', 'promo', 'desc', 'link', 'tags', 'available'],
   SupplementScheme: ['title', 'desc', 'content', 'available', 'order', 'tags', 'price', 'coverImage'],
 };
 

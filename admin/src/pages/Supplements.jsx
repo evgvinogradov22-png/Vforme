@@ -38,6 +38,7 @@ function SupplementModal({ supplement, schemeId, onClose, onSave }) {
       <Textarea label="Примечание" value={data.note || ''} onChange={v => setData(d => ({ ...d, note: v }))} placeholder="Расслабляет, улучшает сон..." rows={2} />
       <Input label="Бренд" value={data.brand || ''} onChange={v => setData(d => ({ ...d, brand: v }))} placeholder="Nature's Way, Solgar..." />
       <Input label="Ссылка где купить" value={data.buyUrl || ''} onChange={v => setData(d => ({ ...d, buyUrl: v }))} placeholder="https://..." />
+      <Input label="Промокод" value={data.promo || ''} onChange={v => setData(d => ({ ...d, promo: v }))} placeholder="NUTRIKRIS10" />
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ФОТО ПРОДУКТА</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
