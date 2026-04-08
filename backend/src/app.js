@@ -1,8 +1,10 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const sequelize = require('./db');
+const { initWebSocket } = require('./ws');
 
 require('./models/User');
 require('./models/Program');
@@ -75,7 +77,9 @@ async function start() {
     await sequelize.authenticate();
     console.log('✅ База данных подключена');
     const PORT = process.env.PORT || 3001;
-    app.listen(PORT, () => console.log('✅ API запущен на порту ' + PORT));
+    const server = http.createServer(app);
+    initWebSocket(server);
+    server.listen(PORT, () => console.log('✅ API запущен на порту ' + PORT));
   } catch (e) { console.error('❌ Ошибка:', e); process.exit(1); }
 }
 start();

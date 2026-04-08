@@ -199,6 +199,11 @@ export default function Protocols({ flash }) {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const h = (e) => { if (e.detail?.entity === 'protocols') load(); };
+    window.addEventListener('vforme:data_updated', h);
+    return () => window.removeEventListener('vforme:data_updated', h);
+  }, []);
 
   const handleFreeAccess = async (proto) => {
     try {

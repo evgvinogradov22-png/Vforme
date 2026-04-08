@@ -5,6 +5,7 @@ const role = require('../middleware/role');
 const ChatSettings = require('../models/ChatSettings');
 const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
+const { sendToUser, broadcast } = require('../ws');
 
 const A = [auth, role('admin', 'superadmin')];
 
@@ -87,7 +88,9 @@ router.post('/message', auth, async (req, res) => {
     if (!s) s = await ChatSettings.create({});
     if (!s.enabled) return res.status(503).json({ error: 'Чат временно недоступен' });
 
-    await ChatMessage.create({ userId: req.user.id, role: 'user', content: message, isAi: false });
+    const userMsg = await ChatMessage.create({ userId: req.user.id, role: 'user', content: message, isAi: false });
+    // Live: оповестить админов о новом сообщении клиента
+    broadcast({ type: 'chat_admin_update', userId: req.user.id, message: userMsg });
 
     const history = await ChatMessage.findAll({
       where: { userId: req.user.id },
@@ -208,7 +211,11 @@ router.get('/admin/chats/:userId', A, async (req, res) => {
 router.post('/admin/chats/:userId/send', A, async (req, res) => {
   try {
     const { content } = req.body;
-    await ChatMessage.create({ userId: req.params.userId, role: 'admin', content, isAi: false });
+    const msg = await ChatMessage.create({ userId: req.params.userId, role: 'admin', content, isAi: false });
+    // Live: доставить сообщение клиенту
+    sendToUser(req.params.userId, { type: 'chat_message', message: msg });
+    // Live: обновить список чатов у админов
+    broadcast({ type: 'chat_admin_update', userId: req.params.userId });
     const user = await User.findByPk(req.params.userId);
     if (user?.telegramId) {
       const token = process.env.TELEGRAM_BOT_TOKEN;

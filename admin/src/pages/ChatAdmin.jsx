@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useWebSocket } from '../hooks/useWebSocket';
 import { C, Spinner } from '../components/UI';
 
 const BASE = '/api';
@@ -107,17 +108,27 @@ export default function ChatAdmin({ flash }) {
   const bottomRef = useRef(null);
   const pollRef = useRef(null);
 
-  useEffect(() => {
+  const reloadChats = () => {
     req('GET', '/chat/admin/chats').then(data => {
       setChats(Array.isArray(data) ? data : []);
     }).finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { reloadChats(); }, []);
+
+  // Live: новые сообщения приходят через WebSocket — без 5-секундного поллинга
+  useWebSocket((data) => {
+    if (data?.type === 'chat_admin_update') {
+      reloadChats();
+      if (selected && data.userId === selected.userId) {
+        loadMessages(selected.userId);
+      }
+    }
+  });
 
   useEffect(() => {
     if (!selected) return;
     loadMessages(selected.userId);
-    pollRef.current = setInterval(() => loadMessages(selected.userId), 5000);
-    return () => clearInterval(pollRef.current);
   }, [selected]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);

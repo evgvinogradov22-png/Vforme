@@ -14,13 +14,12 @@ export default function Chat() {
 
   // Live обновления через WebSocket
   useWebSocket((data) => {
-    if (data.type === 'new_message' && data.message) {
+    if ((data.type === 'chat_message' || data.type === 'new_message') && data.message) {
       const m = data.message;
       const role = m.role === 'admin' ? 'assistant' : m.role;
       setMessages(prev => {
-        // не дублировать
         if (prev.some(x => x.id === m.id)) return prev;
-        return [...prev, { ...m, role }];
+        return [...prev, { ...m, role, content: m.content }];
       });
     }
   });

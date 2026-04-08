@@ -253,11 +253,17 @@ export default function Programs({ flash, user }) {
   const [activeLec, setActiveLec] = useState(null);
   const [paywall, setPaywall] = useState(null);
 
-  useEffect(() => {
+  const loadPrograms = () => {
     Promise.all([programsApi.getAll(), profileApi.getProgress()])
       .then(([progs, prog]) => { setProgramList(progs); setProgress(prog); })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+  useEffect(() => { loadPrograms(); }, []);
+  useEffect(() => {
+    const h = (e) => { if (e.detail?.entity === 'programs') loadPrograms(); };
+    window.addEventListener('vforme:data_updated', h);
+    return () => window.removeEventListener('vforme:data_updated', h);
   }, []);
 
   const isCompleted = (lecId) => progress.some(p => p.lectureId === lecId && p.completed);

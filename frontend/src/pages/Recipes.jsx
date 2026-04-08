@@ -25,6 +25,11 @@ export default function Recipes({ user, flash }) {
   }, [cat]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const h = (e) => { if (e.detail?.entity === 'recipes') load(); };
+    window.addEventListener('vforme:data_updated', h);
+    return () => window.removeEventListener('vforme:data_updated', h);
+  }, [load]);
 
   const handleLike = async (id) => {
     try {

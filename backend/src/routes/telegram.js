@@ -4,6 +4,7 @@ const https = require('https');
 const User = require('../models/User');
 const Points = require('../models/Points');
 const auth = require('../middleware/auth');
+const { sendToUser } = require('../ws');
 
 function tgPost(method, data) {
   return new Promise((resolve, reject) => {
@@ -63,12 +64,16 @@ router.post('/webhook', async (req, res) => {
           } else {
             await user.update({ telegramId: String(chatId), telegramUsername: username, linkToken: null });
             // Начисляем баллы только если первый раз привязывает
+            let bonusGiven = false;
             if (!user.telegramBonusGiven) {
               await Points.create({ userId: user.id, amount: 100, reason: 'telegram_link', refType: 'telegram' });
               await user.update({ telegramBonusGiven: true });
+              bonusGiven = true;
             }
             const msgResult = await sendMessage(chatId, `🎉 <b>Аккаунт привязан!</b>\n\nПривет, ${firstName}! Вам начислено <b>+100 баллов</b>.\n\n🌿 Добро пожаловать в V Форме!`);
             console.log('TG sendMessage result:', JSON.stringify(msgResult));
+            // Live-уведомление в приложении
+            sendToUser(user.id, { type: 'telegram_linked', bonusGiven, points: bonusGiven ? 100 : 0 });
           }
         } else {
           await sendMessage(chatId, '❌ Ссылка устарела. Получите новую в приложении.');

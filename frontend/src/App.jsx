@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { auth as authApi } from './api';
+import { useWebSocket } from './hooks/useWebSocket';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -57,6 +58,24 @@ function AppShell() {
   useEffect(() => {
     if (user) log.sessionStart();
   }, [user?.id]);
+
+  // Live-обновления через WebSocket
+  useWebSocket((msg) => {
+    if (!msg || !msg.type) return;
+    if (msg.type === 'telegram_linked') {
+      authApi.me().then(u => { if (u) setUser(u); }).catch(() => {});
+      flash(msg.bonusGiven ? '✈️ Telegram подключён! +100 баллов' : '✈️ Telegram подключён');
+      return;
+    }
+    if (msg.type === 'data_updated') {
+      window.dispatchEvent(new CustomEvent('vforme:data_updated', { detail: msg }));
+      return;
+    }
+    if (msg.type === 'chat_message') {
+      window.dispatchEvent(new CustomEvent('vforme:chat_message', { detail: msg }));
+      return;
+    }
+  });
 
   // Слушаем Prodamus
   useEffect(() => {

@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
+const { broadcast } = require('../ws');
 const Program = require('../models/Program');
 const Module = require('../models/Module');
 const Lecture = require('../models/Lecture');
@@ -38,13 +39,27 @@ function pick(obj, fields) {
   }, {});
 }
 
+// Соответствие модель → канал live-обновлений, который слушает фронт
+const CHANNEL = {
+  Program: 'programs', Module: 'programs', Lecture: 'programs',
+  Recipe: 'recipes',
+  Supplement: 'supplements', SupplementScheme: 'supplements',
+};
+
+function emitUpdate(modelName) {
+  const channel = CHANNEL[modelName] || modelName.toLowerCase();
+  broadcast({ type: 'data_updated', entity: channel });
+}
+
 const crud = (Model, extra) => ({
   getAll: async (req, res) => { try { res.json(await Model.findAll(extra || {})); } catch(e) { res.status(500).json({error:e.message}); } },
   create: async (req, res) => {
     try {
       const fields = ALLOWED_FIELDS[Model.name];
       const data = pick(req.body, fields);
-      res.json(await Model.create(data));
+      const row = await Model.create(data);
+      emitUpdate(Model.name);
+      res.json(row);
     } catch(e) { res.status(500).json({error:e.message}); }
   },
   update: async (req, res) => {
@@ -52,10 +67,11 @@ const crud = (Model, extra) => ({
       const fields = ALLOWED_FIELDS[Model.name];
       const data = pick(req.body, fields);
       await Model.update(data, { where: { id: req.params.id } });
+      emitUpdate(Model.name);
       res.json({ ok: true });
     } catch(e) { res.status(500).json({error:e.message}); }
   },
-  remove: async (req, res) => { try { await Model.destroy({where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } },
+  remove: async (req, res) => { try { await Model.destroy({where:{id:req.params.id}}); emitUpdate(Model.name); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } },
 });
 
 // Programs
@@ -104,11 +120,13 @@ router.post('/recipes', A, upload.single('image'), async (req, res) => {
       fs.unlinkSync(req.file.path);
       imageUrl = `/uploads/${filename}`;
     }
-    res.json(await Recipe.create({ ...data, imageUrl, authorName: 'Кристина' }));
+    const row = await Recipe.create({ ...data, imageUrl, authorName: 'Кристина' });
+    emitUpdate('Recipe');
+    res.json(row);
   } catch(e) { res.status(500).json({error:e.message}); }
 });
-router.put('/recipes/:id', A, async (req,res) => { try { await Recipe.update(req.body,{where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
-router.delete('/recipes/:id', A, async (req,res) => { try { await Recipe.destroy({where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
+router.put('/recipes/:id', A, async (req,res) => { try { await Recipe.update(req.body,{where:{id:req.params.id}}); emitUpdate('Recipe'); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
+router.delete('/recipes/:id', A, async (req,res) => { try { await Recipe.destroy({where:{id:req.params.id}}); emitUpdate('Recipe'); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
 
 // Supplement Schemes
 router.get('/schemes', A, async (req, res) => {
@@ -186,20 +204,22 @@ router.get('/promos', A, async (req, res) => { res.json(await Promo.findAll({ or
 router.post('/promos', A, async (req, res) => {
   try {
     const data = { ...req.body, code: req.body.code.toUpperCase() };
-    res.json(await Promo.create(data));
+    const row = await Promo.create(data);
+    broadcast({ type: 'data_updated', entity: 'promos' });
+    res.json(row);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-router.put('/promos/:id', A, async (req, res) => { try { await Promo.update(req.body, { where: { id: req.params.id } }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
-router.delete('/promos/:id', A, async (req, res) => { try { await Promo.destroy({ where: { id: req.params.id } }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.put('/promos/:id', A, async (req, res) => { try { await Promo.update(req.body, { where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'promos' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.delete('/promos/:id', A, async (req, res) => { try { await Promo.destroy({ where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'promos' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 
 // Протоколы
 const Protocol = require('../models/Protocol');
 const ProtocolAccess = require('../models/ProtocolAccess');
 
 router.get('/protocols', A, async (req, res) => { res.json(await Protocol.findAll({ order: [['order','ASC']] })); });
-router.post('/protocols', A, async (req, res) => { try { res.json(await Protocol.create(req.body)); } catch(e) { res.status(500).json({ error: e.message }); } });
-router.put('/protocols/:id', A, async (req, res) => { try { await Protocol.update(req.body, { where: { id: req.params.id } }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
-router.delete('/protocols/:id', A, async (req, res) => { try { await Protocol.destroy({ where: { id: req.params.id } }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.post('/protocols', A, async (req, res) => { try { const row = await Protocol.create(req.body); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json(row); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.put('/protocols/:id', A, async (req, res) => { try { await Protocol.update(req.body, { where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.delete('/protocols/:id', A, async (req, res) => { try { await Protocol.destroy({ where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 
 // Открыть доступ к протоколу вручную
 router.post('/protocols/:id/access/:userId', A, async (req, res) => {
