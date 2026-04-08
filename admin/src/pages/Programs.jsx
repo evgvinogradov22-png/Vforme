@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { programs as programsApi, modules as modulesApi, lectures as lecturesApi } from '../api';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea } from '../components/UI';
 import RichEditor from '../components/RichEditor';
+import ImageUpload from '../components/ImageUpload';
 
 const BLOCK_TYPES = [
   { type: 'intro',     label: '💬 Вступление' },
@@ -173,7 +174,13 @@ function ProgramModal({ prog, onClose, onSave }) {
     <Modal title={prog ? 'Редактировать программу' : 'Новая программа'} onClose={onClose}>
       <Input label="Название" value={data.title} onChange={v => setData(d => ({ ...d, title: v }))} placeholder="Здоровье кишечника" />
       <Input label="Подзаголовок" value={data.subtitle || ''} onChange={v => setData(d => ({ ...d, subtitle: v }))} placeholder="V Форме" />
-      <Input label="Обложка (URL картинки)" value={data.coverImage || ''} onChange={v => setData(d => ({ ...d, coverImage: v }))} placeholder="https://..." />
+      <ImageUpload
+        label="Обложка"
+        hint="Рекомендуемый размер: 1200×400 px (соотношение 3:1)"
+        value={data.coverImage || ''}
+        onChange={v => setData(d => ({ ...d, coverImage: v }))}
+        ratio="3/1"
+      />
       <Textarea label="Описание" value={data.desc || ''} onChange={v => setData(d => ({ ...d, desc: v }))} placeholder="Описание программы..." />
       <div style={{ display: 'flex', gap: 12 }}>
         <Input label="Иконка" value={data.icon || ''} onChange={v => setData(d => ({ ...d, icon: v }))} placeholder="🌿" style={{ flex: 1 }} />

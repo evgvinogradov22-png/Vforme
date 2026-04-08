@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { schemes as schemesApi, supplements as supplementsApi, programs as programsApi } from '../api';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea } from '../components/UI';
+import ImageUpload from '../components/ImageUpload';
 
 function SupplementModal({ supplement, schemeId, onClose, onSave }) {
   const [data, setData] = useState(supplement || { schemeId, name: '', brand: '', dose: '', time: '', note: '', buyUrl: '', image: '', order: 0 });
@@ -39,16 +40,13 @@ function SupplementModal({ supplement, schemeId, onClose, onSave }) {
       <Input label="Бренд" value={data.brand || ''} onChange={v => setData(d => ({ ...d, brand: v }))} placeholder="Nature's Way, Solgar..." />
       <Input label="Ссылка где купить" value={data.buyUrl || ''} onChange={v => setData(d => ({ ...d, buyUrl: v }))} placeholder="https://..." />
       <Input label="Промокод" value={data.promo || ''} onChange={v => setData(d => ({ ...d, promo: v }))} placeholder="NUTRIKRIS10" />
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ФОТО ПРОДУКТА</div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          {data.image && <img src={data.image} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />}
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', border: `1px dashed ${C.border}`, borderRadius: 10, cursor: 'pointer', fontSize: 14, color: C.ink2 }}>
-            {uploading ? 'Загружаем...' : '📁 Загрузить фото'}
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files[0]) uploadImage(e.target.files[0]); }} />
-          </label>
-        </div>
-      </div>
+      <ImageUpload
+        label="Фото продукта"
+        hint="Рекомендуемый размер: 600×600 px (квадрат)"
+        value={data.image || ''}
+        onChange={v => setData(d => ({ ...d, image: v }))}
+        ratio="1/1"
+      />
       <Input label="Порядок" value={String(data.order)} onChange={v => setData(d => ({ ...d, order: Number(v) }))} type="number" />
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <Btn onClick={onClose} variant="ghost" style={{ flex: 1 }}>Отмена</Btn>
@@ -74,7 +72,13 @@ function SchemeModal({ scheme, programs, onClose, onSave }) {
   return (
     <Modal title={scheme ? 'Редактировать схему' : 'Новая схема'} onClose={onClose}>
       <Input label="Название" value={data.title} onChange={v => setData(d => ({ ...d, title: v }))} placeholder="Базовая схема — кишечник" />
-      <Input label="Обложка (URL картинки)" value={data.coverImage || ''} onChange={v => setData(d => ({ ...d, coverImage: v }))} placeholder="https://..." />
+      <ImageUpload
+        label="Обложка"
+        hint="Рекомендуемый размер: 1200×400 px (соотношение 3:1)"
+        value={data.coverImage || ''}
+        onChange={v => setData(d => ({ ...d, coverImage: v }))}
+        ratio="3/1"
+      />
       <Textarea label="Описание" value={data.desc || ''} onChange={v => setData(d => ({ ...d, desc: v }))} placeholder="Описание схемы..." rows={2} />
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 8, letterSpacing: 0.5 }}>ПРОГРАММА</div>

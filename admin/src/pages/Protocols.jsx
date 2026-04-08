@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea, Badge } from '../components/UI';
 import RichEditor from '../components/RichEditor';
+import ImageUpload from '../components/ImageUpload';
 
 const BASE = '/api';
 function getToken() { return localStorage.getItem('vforme_admin_token'); }
@@ -71,7 +72,13 @@ function ProtocolModal({ protocol, supplements, onClose, onSave }) {
         <Input label="Название" value={title} onChange={setTitle} placeholder="Протокол здоровья кишечника" style={{ flex: 3 }} />
         <Input label="Цена (0 = бесплатно)" value={price} onChange={setPrice} type="number" style={{ flex: 1 }} />
       </div>
-      <Input label="Обложка (URL картинки)" value={coverImage} onChange={setCoverImage} placeholder="https://..." />
+      <ImageUpload
+        label="Обложка"
+        hint="Рекомендуемый размер: 1200×400 px (соотношение 3:1)"
+        value={coverImage}
+        onChange={setCoverImage}
+        ratio="3/1"
+      />
       <Textarea label="Краткое описание" value={description} onChange={setDescription} placeholder="Что включает протокол..." rows={2} />
 
       <RichEditor value={html} onChange={setHtml} placeholder="Подробное описание протокола..." />
