@@ -408,7 +408,7 @@ function OnboardingShell({ step, onBack, stepLabel, footer, children }) {
       height: '100dvh',
       background: '#F9F7F4',
       display: 'flex', flexDirection: 'column',
-      zIndex: 50,
+      zIndex: 200,
     }}>
       <div style={{ padding: '14px 20px 6px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <button onClick={onBack} disabled={step === 1} style={{ background: 'none', border: 'none', fontSize: 22, color: step === 1 ? '#E0DACC' : INK3, cursor: step === 1 ? 'default' : 'pointer', padding: 0 }}>‹</button>
