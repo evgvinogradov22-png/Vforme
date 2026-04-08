@@ -629,7 +629,7 @@ function MainScreen({ state, onZoneClick, onReset }) {
               flexShrink: 0,
             }}>
               <img
-                src="/playground/kristina.jpg"
+                src="/img/kristina.jpg"
                 alt="Кристина"
                 onError={e => { e.currentTarget.style.display = 'none'; }}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
