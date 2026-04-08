@@ -151,8 +151,8 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
   const SIZE = 520;
   const CX = SIZE / 2;
   const CY = SIZE / 2;
-  const R = 112;
-  const INNER = 20;
+  const R = 158;
+  const INNER = 26;
   const N = ZONES.length;
   const SLICE = (Math.PI * 2) / N;
   const GAP = 0.018; // небольшой зазор между секторами
@@ -246,8 +246,8 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
       {ZONES.map((z, i) => {
         const level = Math.round(animated[z.id] ?? 0);
         const a = -Math.PI / 2 + (i + 0.5) * SLICE;
-        // R + 42 — снаружи светлого круга (R + 6) с запасом
-        const [lx, ly] = pt(R + 42, a);
+        // R + 36 — плашки чуть снаружи фонового круга (R + 6)
+        const [lx, ly] = pt(R + 36, a);
         const active = z.id === focusId;
         const c = zoneColor(level);
 
