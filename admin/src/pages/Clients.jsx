@@ -288,6 +288,22 @@ export default function Clients({ flash }) {
               </span>
             )},
             { title: 'Дата регистрации', key: 'createdAt', render: v => v ? new Date(v).toLocaleString('ru', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—' },
+            { title: 'Последний заход', key: 'lastSeenAt', render: v => {
+              if (!v) return <span style={{ color: C.ink3, fontSize: 12 }}>—</span>;
+              const d = new Date(v);
+              const diffMs = Date.now() - d.getTime();
+              const diffMin = Math.round(diffMs / 60000);
+              const diffH = Math.round(diffMs / 3600000);
+              const diffD = Math.round(diffMs / 86400000);
+              let label;
+              if (diffMin < 5) label = 'только что';
+              else if (diffMin < 60) label = `${diffMin} мин назад`;
+              else if (diffH < 24) label = `${diffH} ч назад`;
+              else if (diffD < 7) label = `${diffD} дн назад`;
+              else label = d.toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: '2-digit' });
+              const fresh = diffH < 24;
+              return <span style={{ fontSize: 12, color: fresh ? '#22C55E' : C.ink3, fontWeight: fresh ? 600 : 400 }}>{label}</span>;
+            }},
             { title: 'Программы', key: 'programAccess', render: (v, row) => (
               <div style={{ fontSize: 13, color: C.ink3 }}>{(v || []).length} доступно</div>
             )},

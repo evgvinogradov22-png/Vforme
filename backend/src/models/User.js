@@ -15,5 +15,6 @@ const User = sequelize.define('User', {
   telegramUsername:  { type: DataTypes.STRING },
   linkToken:         { type: DataTypes.STRING },
   linkTokenAt:       { type: DataTypes.DATE },
+  lastSeenAt:        { type: DataTypes.DATE },
 }, { timestamps: true });
 module.exports = User;

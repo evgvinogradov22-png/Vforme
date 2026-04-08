@@ -59,8 +59,14 @@ router.post('/login', authLimit, async (req, res) => {
 });
 
 router.get('/me', require('../middleware/auth'), async (req, res) => {
-  try { res.json(await User.findByPk(req.user.id, { attributes: { exclude: ['password'] } })); }
-  catch (e) { res.status(500).json({ error: e.message }); }
+  try {
+    const user = await User.findByPk(req.user.id, { attributes: { exclude: ['password'] } });
+    if (user) {
+      // Обновляем дату последнего захода (не блокируем ответ)
+      user.update({ lastSeenAt: new Date() }).catch(() => {});
+    }
+    res.json(user);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 router.post('/verify-code', codeLimit, require('../middleware/auth'), async (req, res) => {

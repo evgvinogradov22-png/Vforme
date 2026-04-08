@@ -91,6 +91,7 @@ async function start() {
         ALTER TABLE "SupplementSchemes" ADD COLUMN IF NOT EXISTS "tags" JSONB DEFAULT '[]'::jsonb;
         ALTER TABLE "SupplementSchemes" ADD COLUMN IF NOT EXISTS "price" INTEGER DEFAULT 0;
         ALTER TABLE "SupplementSchemes" ADD COLUMN IF NOT EXISTS "available" BOOLEAN DEFAULT true;
+        ALTER TABLE "Users"             ADD COLUMN IF NOT EXISTS "lastSeenAt" TIMESTAMP WITH TIME ZONE;
       `);
     } catch (e) { console.error('Schema migration warning:', e.message); }
     console.log('✅ База данных подключена');
