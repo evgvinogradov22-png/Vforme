@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 import { Spinner } from '../components/UI';
 
@@ -105,9 +106,19 @@ function FeedCard({ item, onClick }) {
 }
 
 // ─── Модалка с деталями продукта ─────────────────────────────
-function DetailModal({ item, onClose }) {
+function DetailModal({ item, user, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [openLecture, setOpenLecture] = useState(null);
+  const [payUrl, setPayUrl] = useState(null);
+  const [payLoading, setPayLoading] = useState(false);
+
+  // Проверка доступа: бесплатно ИЛИ программа уже куплена
+  const free = Number(item.price) === 0;
+  const programAccess = user?.programAccess || [];
+  const ownedProgram = item.kind === 'program' && programAccess.includes(item.id);
+  const ownedProtocol = item.kind === 'protocol' && data?.hasAccess;
+  const hasAccess = free || ownedProgram || ownedProtocol || item.kind === 'scheme';
 
   useEffect(() => {
     let url = '';
@@ -121,7 +132,25 @@ function DetailModal({ item, onClose }) {
       .finally(() => setLoading(false));
   }, [item]);
 
-  const free = Number(item.price) === 0;
+  const handlePay = async () => {
+    setPayLoading(true);
+    try {
+      const endpoint = item.kind === 'protocol' ? '/api/payment/create-protocol' : '/api/payment/create';
+      const body = item.kind === 'protocol' ? { protocolId: item.id } : { programId: item.id };
+      const r = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN() },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if (d?.payUrl) setPayUrl(d.payUrl);
+      else alert('Не удалось получить ссылку на оплату');
+    } catch (e) {
+      alert('Ошибка: ' + e.message);
+    } finally {
+      setPayLoading(false);
+    }
+  };
 
   return (
     <div onClick={onClose} style={{
@@ -179,7 +208,33 @@ function DetailModal({ item, onClose }) {
 
         {loading && <div style={{ padding: 30, textAlign: 'center' }}><Spinner /></div>}
 
-        {!loading && data && item.kind === 'program' && (
+        {/* Платный продукт без доступа — Paywall */}
+        {!loading && data && !hasAccess && (
+          <div>
+            {(data.desc || data.description || item.desc) && (
+              <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 18, whiteSpace: 'pre-wrap' }}>
+                {data.desc || data.description || item.desc}
+              </div>
+            )}
+
+            {payUrl ? (
+              <div style={{ width: '100%', height: 540, borderRadius: 16, overflow: 'hidden', border: `1px solid ${BD}` }}>
+                <iframe src={payUrl} style={{ width: '100%', height: '100%', border: 'none' }} allow="payment" />
+              </div>
+            ) : (
+              <button onClick={handlePay} disabled={payLoading} style={{
+                width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 28,
+                color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
+                marginTop: 8,
+              }}>
+                {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${item.price} ₽`}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Бесплатный или купленный — открываем контент */}
+        {!loading && data && hasAccess && item.kind === 'program' && (
           <div>
             {data.desc && (
               <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 18, whiteSpace: 'pre-wrap' }}>
@@ -197,11 +252,21 @@ function DetailModal({ item, onClose }) {
                       {i + 1}. {m.title}
                     </div>
                     {m.lectures && m.lectures.length > 0 && (
-                      <div style={{ paddingLeft: 14 }}>
+                      <div style={{ paddingLeft: 0 }}>
                         {m.lectures.map((l, j) => (
-                          <div key={l.id || j} style={{ fontSize: 13, color: INK2, fontFamily: sans, padding: '4px 0' }}>
-                            · {l.title}
-                          </div>
+                          <button
+                            key={l.id || j}
+                            onClick={() => setOpenLecture(l)}
+                            style={{
+                              width: '100%', textAlign: 'left',
+                              background: '#F9F7F4', border: `1px solid ${BD}`, borderRadius: 12,
+                              padding: '12px 14px', marginBottom: 6, cursor: 'pointer',
+                              fontSize: 13, color: INK, fontFamily: sans,
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            }}>
+                            <span>📖 {l.title}</span>
+                            <span style={{ color: INK3 }}>›</span>
+                          </button>
                         ))}
                       </div>
                     )}
@@ -212,7 +277,7 @@ function DetailModal({ item, onClose }) {
           </div>
         )}
 
-        {!loading && data && item.kind === 'protocol' && (
+        {!loading && data && hasAccess && item.kind === 'protocol' && (
           <div>
             {data.description && (
               <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 14, whiteSpace: 'pre-wrap' }}>
@@ -226,7 +291,7 @@ function DetailModal({ item, onClose }) {
           </div>
         )}
 
-        {!loading && data && item.kind === 'scheme' && (
+        {!loading && data && hasAccess && item.kind === 'scheme' && (
           <div>
             {data.desc && (
               <div style={{ fontSize: 14, color: INK2, lineHeight: 1.55, fontFamily: sans, marginBottom: 14 }}>
@@ -244,6 +309,7 @@ function DetailModal({ item, onClose }) {
                   }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: INK, fontFamily: sans }}>{s.name}</div>
                     {s.desc && <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>{s.desc}</div>}
+                    {s.link && <a href={s.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: G, fontFamily: sans, marginTop: 4, display: 'inline-block' }}>Купить ↗</a>}
                   </div>
                 ))}
               </div>
@@ -256,6 +322,39 @@ function DetailModal({ item, onClose }) {
           background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 22,
           color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
         }}>Закрыть</button>
+
+        {/* Подмодалка лекции */}
+        {openLecture && (
+          <div onClick={() => setOpenLecture(null)} style={{
+            position: 'fixed', inset: 0, background: 'rgba(26,26,26,0.7)',
+            zIndex: 600, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: W, width: '100%', maxWidth: 480,
+              borderRadius: '24px 24px 0 0', padding: '24px 22px max(40px, env(safe-area-inset-bottom))',
+              maxHeight: '92vh', overflowY: 'auto',
+            }}>
+              <div style={{ width: 40, height: 4, background: '#E5E1D8', borderRadius: 2, margin: '0 auto 18px' }} />
+              <div style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: INK, marginBottom: 14, lineHeight: 1.25 }}>
+                {openLecture.title}
+              </div>
+              {openLecture.videoUrl && (
+                <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', background: '#000' }}>
+                  <video src={openLecture.videoUrl} controls style={{ width: '100%', display: 'block' }} />
+                </div>
+              )}
+              {openLecture.content && (
+                <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans }}
+                     dangerouslySetInnerHTML={{ __html: openLecture.content }} />
+              )}
+              <button onClick={() => setOpenLecture(null)} style={{
+                width: '100%', padding: '14px', marginTop: 22,
+                background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 22,
+                color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
+              }}>Закрыть</button>
+            </div>
+          </div>
+        )}
       </div>
       <style>{`
         @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
@@ -353,6 +452,7 @@ function FilterDropdown({ label, options, selected, multi, onChange, anchor }) {
 
 // ─── Главная страница ────────────────────────────────────────
 export default function Health() {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [kindFilter, setKindFilter] = useState([]); // multi
@@ -443,7 +543,7 @@ export default function Health() {
         ))}
       </div>
 
-      {openItem && <DetailModal item={openItem} onClose={() => setOpenItem(null)} />}
+      {openItem && <DetailModal item={openItem} user={user} onClose={() => setOpenItem(null)} />}
     </div>
   );
 }
