@@ -59,7 +59,7 @@ export default function Chat() {
     try {
       const oldest = messages.find(m => m.createdAt);
       if (!oldest) return;
-      const r = await fetch(`/api/chat/history?limit=30&before=${encodeURIComponent(oldest.createdAt)}`, {
+      const r = await fetch(`/api/chat/history?limit=10&before=${encodeURIComponent(oldest.createdAt)}`, {
         headers: { Authorization: 'Bearer ' + TOKEN() },
       });
       const data = await r.json();
@@ -178,7 +178,7 @@ export default function Chat() {
               color: INK2, fontFamily: sans, fontSize: 13, fontWeight: 600,
               cursor: loadingMore ? 'default' : 'pointer',
             }}>
-              {loadingMore ? 'Загружаем…' : '↑ Загрузить предыдущие'}
+              {loadingMore ? 'Загружаем…' : '↑ Загрузить предыдущие 10'}
             </button>
           </div>
         )}
