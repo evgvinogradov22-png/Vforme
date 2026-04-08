@@ -18,18 +18,18 @@ import Materials from './pages/Materials';
 import Chat from './pages/Chat';
 import Playground from './pages/Playground';
 import Atlas from './pages/Atlas';
+import Health from './pages/Health';
 import { analytics } from './utils/analytics';
 import { log } from './utils/log';
 import { Toast, Spinner } from './components/UI';
 import { G, GOLD, BD, INK3, W, sans, serif } from './utils/theme';
 
 const TABS = [
-  { id: 'atlas',     icon: '🌿', label: 'Атлас' },
-  { id: 'programs',  icon: '📚', label: 'Программы' },
-  { id: 'materials', icon: '📋', label: 'Протоколы' },
-  { id: 'chat',      icon: '💬', label: 'Чат' },
-  { id: 'tracker',   icon: '✦',  label: 'Трекер' },
-  { id: 'cabinet',   icon: '◎',  label: 'Кабинет' },
+  { id: 'atlas',   icon: '🌿', label: 'Атлас' },
+  { id: 'health',  icon: '🌱', label: 'Здоровье' },
+  { id: 'chat',    icon: '💬', label: 'Чат' },
+  { id: 'tracker', icon: '✦',  label: 'Трекер' },
+  { id: 'cabinet', icon: '◎',  label: 'Кабинет' },
 ];
 
 function AppShell() {
@@ -167,12 +167,11 @@ function AppShell() {
       )}
 
       {/* КОНТЕНТ */}
-      {tab === 'atlas'     && <Atlas onGoChat={() => setTab('chat')} />}
-      {tab === 'programs'  && <Programs flash={flash} user={user} onAccessGranted={(programId) => setUser(u => ({ ...u, programAccess: [...(u.programAccess || []), programId] }))} />}
-      {tab === 'materials' && <Materials flash={flash} user={user} />}
-      {tab === 'chat'      && <Chat />}
-      {tab === 'tracker'   && <Tracker flash={flash} />}
-      {tab === 'cabinet'   && <Cabinet />}
+      {tab === 'atlas'   && <Atlas onGoChat={() => setTab('chat')} />}
+      {tab === 'health'  && <Health />}
+      {tab === 'chat'    && <Chat />}
+      {tab === 'tracker' && <Tracker flash={flash} />}
+      {tab === 'cabinet' && <Cabinet />}
 
       {/* НАВБАР */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: W, borderTop: '1px solid ' + BD, display: 'flex', zIndex: 100, maxWidth: 480, margin: '0 auto' }}>

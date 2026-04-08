@@ -10,5 +10,6 @@ const Program = sequelize.define('Program', {
   available: { type: DataTypes.BOOLEAN, defaultValue: false },
   price:     { type: DataTypes.INTEGER, defaultValue: 0 },
   order:     { type: DataTypes.INTEGER, defaultValue: 0 },
+  tags:      { type: DataTypes.JSONB, defaultValue: [] },
 }, { timestamps: true });
 module.exports = Program;

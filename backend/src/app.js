@@ -69,6 +69,7 @@ app.use('/api/events',      require('./routes/events'));
 app.use('/api/admin/deploy', require('./routes/deploy'));
 app.use('/api/playground',   require('./routes/playground'));
 app.use('/api/atlas',        require('./routes/atlas'));
+app.use('/api/health',       require('./routes/health'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Централизованный error handler — ДОЛЖЕН быть последним
@@ -81,6 +82,17 @@ async function start() {
     // Безопасно создаём только новые таблицы (CREATE IF NOT EXISTS),
     // не трогаем существующие.
     await AtlasResult.sync();
+    // Idempotent ALTER TABLE для полей которые появились после первой схемы.
+    // ADD COLUMN IF NOT EXISTS безопасен и не тронет данные.
+    try {
+      await sequelize.query(`
+        ALTER TABLE "Programs"          ADD COLUMN IF NOT EXISTS "tags" JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE "Protocols"         ADD COLUMN IF NOT EXISTS "tags" JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE "SupplementSchemes" ADD COLUMN IF NOT EXISTS "tags" JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE "SupplementSchemes" ADD COLUMN IF NOT EXISTS "price" INTEGER DEFAULT 0;
+        ALTER TABLE "SupplementSchemes" ADD COLUMN IF NOT EXISTS "available" BOOLEAN DEFAULT true;
+      `);
+    } catch (e) { console.error('Schema migration warning:', e.message); }
     console.log('✅ База данных подключена');
     const PORT = process.env.PORT || 3001;
     const server = http.createServer(app);

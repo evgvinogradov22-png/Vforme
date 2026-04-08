@@ -3,6 +3,7 @@ import {
   ZONES, QUESTIONS, computeLevels,
   BalanceWheel, ZoneSheet, ContentCard, Onboarding,
 } from './Playground';
+import { recipes as recipesApi } from '../api';
 import { G, GL, GLL, GOLD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 
 const TOKEN = () => localStorage.getItem('vforme_token');
@@ -13,11 +14,15 @@ function AtlasMain({ result, onRetake, onGoChat }) {
   const [zoneOpen, setZoneOpen] = useState(null);
   const [content, setContent] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [recipes, setRecipes] = useState([]);
 
   useEffect(() => {
     fetch('/api/atlas/content', { headers: authHeaders() })
       .then(r => r.json())
       .then(items => Array.isArray(items) && setContent(items))
+      .catch(() => {});
+    recipesApi.getAll('Все')
+      .then(r => Array.isArray(r) && setRecipes(r.slice(0, 8)))
       .catch(() => {});
   }, []);
 
@@ -126,6 +131,42 @@ function AtlasMain({ result, onRetake, onGoChat }) {
               </div>
             )}
             {filtered.map(item => <ContentCard key={item.id} item={item} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Рецепты — горизонтальная лента */}
+      {recipes.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ padding: '0 20px', marginBottom: 12 }}>
+            <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: INK }}>Рецепты</div>
+          </div>
+          <div style={{
+            display: 'flex', gap: 12, overflowX: 'auto',
+            padding: '4px 20px 20px', WebkitOverflowScrolling: 'touch',
+          }}>
+            {recipes.map(r => (
+              <div key={r.id} style={{
+                minWidth: 180, background: W, borderRadius: 16,
+                border: `1px solid ${BD}`, overflow: 'hidden', flexShrink: 0,
+              }}>
+                {r.imageUrl && (
+                  <div style={{
+                    width: '100%', height: 100,
+                    backgroundImage: `url(${r.imageUrl})`,
+                    backgroundSize: 'cover', backgroundPosition: 'center',
+                  }} />
+                )}
+                <div style={{ padding: '10px 12px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: G, letterSpacing: 1, marginBottom: 3, fontFamily: sans }}>
+                    {(r.cat || 'РЕЦЕПТ').toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: INK, fontFamily: sans, lineHeight: 1.3 }}>
+                    {r.title}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

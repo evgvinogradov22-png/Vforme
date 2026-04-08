@@ -28,7 +28,7 @@ const ALLOWED_FIELDS = {
   Lecture:  ['title', 'content', 'order', 'moduleId', 'type', 'videoUrl', 'duration'],
   Recipe:   ['title', 'desc', 'content', 'image', 'tags', 'calories', 'available'],
   Supplement: ['name', 'desc', 'image', 'link', 'tags', 'available'],
-  SupplementScheme: ['title', 'desc', 'content', 'available', 'order'],
+  SupplementScheme: ['title', 'desc', 'content', 'available', 'order', 'tags', 'price'],
 };
 
 function pick(obj, fields) {
