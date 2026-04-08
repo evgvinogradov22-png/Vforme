@@ -395,16 +395,20 @@ export function ContentCard({ item }) {
 
 // Отдельный компонент ВНЕ Onboarding — иначе React пересоздаёт его
 // на каждом наборе символа и textarea теряет фокус.
+// Position fixed — чтобы не зависеть от родителя (шапка, баннер telegram,
+// навбар приложения) и не оставлять белую полосу снизу.
 function OnboardingShell({ step, onBack, stepLabel, footer, children }) {
   return (
     <div style={{
+      position: 'fixed',
+      top: 0, left: '50%', transform: 'translateX(-50%)',
+      width: '100%', maxWidth: 480,
+      height: '100dvh',
       background: '#F9F7F4',
-      minHeight: 'calc(100dvh - 148px)', // 68px header + 80px bottom nav
-      maxHeight: 'calc(100dvh - 148px)',
       display: 'flex', flexDirection: 'column',
-      overflow: 'hidden',
+      zIndex: 50,
     }}>
-      <div style={{ padding: '12px 20px 6px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+      <div style={{ padding: '14px 20px 6px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <button onClick={onBack} disabled={step === 1} style={{ background: 'none', border: 'none', fontSize: 22, color: step === 1 ? '#E0DACC' : INK3, cursor: step === 1 ? 'default' : 'pointer', padding: 0 }}>‹</button>
         <div style={{ flex: 1 }}>
           <div style={{ height: 4, background: '#EDE9E2', borderRadius: 2, overflow: 'hidden' }}>
@@ -418,7 +422,7 @@ function OnboardingShell({ step, onBack, stepLabel, footer, children }) {
         {children}
       </div>
 
-      {footer && <div style={{ padding: '10px 22px 14px', flexShrink: 0 }}>{footer}</div>}
+      {footer && <div style={{ padding: '12px 22px max(16px, env(safe-area-inset-bottom))', flexShrink: 0 }}>{footer}</div>}
     </div>
   );
 }
