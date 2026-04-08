@@ -27,8 +27,8 @@ import { G, GOLD, BD, INK3, W, sans, serif } from './utils/theme';
 const TABS = [
   { id: 'atlas',   icon: '🌿', label: 'Атлас' },
   { id: 'health',  icon: '🌱', label: 'Здоровье' },
+  { id: 'recipes', icon: '🥗', label: 'Рецепты' },
   { id: 'chat',    icon: '💬', label: 'Чат' },
-  { id: 'tracker', icon: '✦',  label: 'Трекер' },
   { id: 'cabinet', icon: '◎',  label: 'Кабинет' },
 ];
 
@@ -176,8 +176,8 @@ function AppShell() {
       {/* КОНТЕНТ */}
       {tab === 'atlas'   && <Atlas onGoChat={() => setTab('chat')} />}
       {tab === 'health'  && <Health />}
+      {tab === 'recipes' && <Recipes flash={flash} user={user} />}
       {tab === 'chat'    && <Chat />}
-      {tab === 'tracker' && <Tracker flash={flash} />}
       {tab === 'cabinet' && <Cabinet />}
 
       {/* НАВБАР */}
