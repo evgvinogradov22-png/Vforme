@@ -105,6 +105,214 @@ function FeedCard({ item, onClick }) {
   );
 }
 
+// ─── Полноэкранная страница программы ────────────────────────
+function ProgramPage({ program, user, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [openLecture, setOpenLecture] = useState(null);
+  const [payUrl, setPayUrl] = useState(null);
+  const [payLoading, setPayLoading] = useState(false);
+
+  const free = Number(program.price) === 0;
+  const owned = (user?.programAccess || []).includes(program.id);
+  const hasAccess = free || owned;
+
+  useEffect(() => {
+    fetch(`/api/programs/${program.id}`, { headers: { Authorization: 'Bearer ' + TOKEN() } })
+      .then(r => r.json())
+      .then(d => setData(d && !d.error ? d : program))
+      .catch(() => setData(program))
+      .finally(() => setLoading(false));
+  }, [program.id]);
+
+  const handlePay = async () => {
+    setPayLoading(true);
+    try {
+      const r = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN() },
+        body: JSON.stringify({ programId: program.id }),
+      });
+      const d = await r.json();
+      if (d?.payUrl) setPayUrl(d.payUrl);
+      else alert('Не удалось получить ссылку на оплату');
+    } catch (e) {
+      alert('Ошибка: ' + e.message);
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
+      {/* Шапка с back */}
+      <div style={{ padding: '14px 18px 6px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={onBack} style={{
+          background: W, border: `1px solid ${BD}`, borderRadius: 12,
+          width: 40, height: 40, fontSize: 18, cursor: 'pointer', color: INK,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>‹</button>
+        <div style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
+          color: F_TXT_ACT, background: F_BG, border: `1px solid ${F_BD}`,
+          padding: '6px 12px', borderRadius: 10,
+        }}>ПРОГРАММА</div>
+        <div style={{ flex: 1 }} />
+        <div style={{
+          fontSize: 14, fontWeight: 700, fontFamily: sans,
+          color: F_TXT_ACT, background: F_BG_ACT, border: `1px solid ${F_BD}`,
+          padding: '6px 14px', borderRadius: 10,
+        }}>
+          {free ? 'БЕСПЛАТНО' : owned ? 'ОТКРЫТА' : `${program.price} ₽`}
+        </div>
+      </div>
+
+      {/* Hero */}
+      <div style={{ padding: '14px 22px 8px' }}>
+        <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 700, color: INK, lineHeight: 1.2, marginBottom: 6 }}>
+          {program.title}
+        </div>
+        {program.subtitle && (
+          <div style={{ fontSize: 14, color: INK3, fontFamily: sans, marginBottom: 10 }}>{program.subtitle}</div>
+        )}
+        {program.tags && program.tags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+            {program.tags.map(t => {
+              const tag = TAG_OPTIONS.find(x => x.id === t);
+              if (!tag) return null;
+              return (
+                <div key={t} style={{
+                  fontSize: 11, color: F_TXT, fontFamily: sans, fontWeight: 600,
+                  background: F_BG, border: `1px solid ${F_BD}`,
+                  padding: '4px 10px', borderRadius: 12,
+                }}>
+                  {tag.icon} {tag.label}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
+
+      {!loading && data && (
+        <div style={{ padding: '0 22px' }}>
+          {data.desc && (
+            <div style={{
+              background: W, border: `1px solid ${BD}`, borderRadius: 18,
+              padding: '16px 18px', marginBottom: 16,
+              fontSize: 14, color: INK2, lineHeight: 1.6, fontFamily: sans, whiteSpace: 'pre-wrap',
+            }}>
+              {data.desc}
+            </div>
+          )}
+
+          {/* Платная без доступа — оплата */}
+          {!hasAccess && (
+            <div style={{
+              background: W, border: `1px solid ${BD}`, borderRadius: 18, padding: '20px 18px',
+              marginBottom: 16,
+            }}>
+              {payUrl ? (
+                <div style={{ width: '100%', height: 540, borderRadius: 14, overflow: 'hidden', border: `1px solid ${BD}` }}>
+                  <iframe src={payUrl} style={{ width: '100%', height: '100%', border: 'none' }} allow="payment" />
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: INK, marginBottom: 6 }}>
+                    Открой полный курс
+                  </div>
+                  <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginBottom: 16 }}>
+                    Все модули, лекции и материалы — после оплаты
+                  </div>
+                  <button onClick={handlePay} disabled={payLoading} style={{
+                    width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 28,
+                    color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
+                  }}>
+                    {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${program.price} ₽`}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Модули доступны если бесплатно/куплено */}
+          {hasAccess && data.modules && data.modules.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: INK3, letterSpacing: 1, marginBottom: 12, fontFamily: sans, padding: '0 4px' }}>
+                СОДЕРЖИМОЕ
+              </div>
+              {data.modules.map((m, i) => (
+                <div key={m.id || i} style={{
+                  background: W, border: `1px solid ${BD}`, borderRadius: 18,
+                  padding: '16px 18px', marginBottom: 12,
+                }}>
+                  <div style={{ fontFamily: serif, fontSize: 17, fontWeight: 700, color: INK, marginBottom: 10 }}>
+                    Модуль {i + 1}. {m.title}
+                  </div>
+                  {m.lectures && m.lectures.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {m.lectures.map((l, j) => (
+                        <button
+                          key={l.id || j}
+                          onClick={() => setOpenLecture(l)}
+                          style={{
+                            width: '100%', textAlign: 'left',
+                            background: '#F9F7F4', border: `1px solid ${BD}`, borderRadius: 12,
+                            padding: '12px 14px', cursor: 'pointer',
+                            fontSize: 14, color: INK, fontFamily: sans,
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          }}>
+                          <span>📖 {l.title}</span>
+                          <span style={{ color: INK3 }}>›</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Лекция в bottom-sheet */}
+      {openLecture && (
+        <div onClick={() => setOpenLecture(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(26,26,26,0.7)',
+          zIndex: 600, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: W, width: '100%', maxWidth: 480,
+            borderRadius: '24px 24px 0 0', padding: '24px 22px max(40px, env(safe-area-inset-bottom))',
+            maxHeight: '92vh', overflowY: 'auto',
+          }}>
+            <div style={{ width: 40, height: 4, background: '#E5E1D8', borderRadius: 2, margin: '0 auto 18px' }} />
+            <div style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: INK, marginBottom: 14, lineHeight: 1.25 }}>
+              {openLecture.title}
+            </div>
+            {openLecture.videoUrl && (
+              <div style={{ marginBottom: 14, borderRadius: 12, overflow: 'hidden', background: '#000' }}>
+                <video src={openLecture.videoUrl} controls style={{ width: '100%', display: 'block' }} />
+              </div>
+            )}
+            {openLecture.content && (
+              <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, fontFamily: sans }}
+                   dangerouslySetInnerHTML={{ __html: openLecture.content }} />
+            )}
+            <button onClick={() => setOpenLecture(null)} style={{
+              width: '100%', padding: '14px', marginTop: 22,
+              background: 'transparent', border: `1.5px solid ${BD}`, borderRadius: 22,
+              color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
+            }}>Закрыть</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Модалка с деталями продукта ─────────────────────────────
 function DetailModal({ item, user, onClose }) {
   const [data, setData] = useState(null);
@@ -458,7 +666,8 @@ export default function Health() {
   const [kindFilter, setKindFilter] = useState([]); // multi
   const [onlyFree, setOnlyFree] = useState(false);  // checkbox
   const [tagFilter, setTagFilter] = useState([]);   // multi
-  const [openItem, setOpenItem] = useState(null);   // модалка
+  const [openItem, setOpenItem] = useState(null);          // модалка для protocol/scheme
+  const [openProgram, setOpenProgram] = useState(null);    // полноэкранная страница для program
 
   useEffect(() => {
     fetch('/api/health/feed', { headers: { Authorization: 'Bearer ' + TOKEN() } })
@@ -476,6 +685,11 @@ export default function Health() {
       return true;
     });
   }, [items, kindFilter, onlyFree, tagFilter]);
+
+  // Программа открывается на отдельной странице
+  if (openProgram) {
+    return <ProgramPage program={openProgram} user={user} onBack={() => setOpenProgram(null)} />;
+  }
 
   return (
     <div style={{
@@ -538,7 +752,10 @@ export default function Health() {
           <FeedCard
             key={`${item.kind}-${item.id}`}
             item={item}
-            onClick={() => setOpenItem(item)}
+            onClick={() => {
+              if (item.kind === 'program') setOpenProgram(item);
+              else setOpenItem(item);
+            }}
           />
         ))}
       </div>
