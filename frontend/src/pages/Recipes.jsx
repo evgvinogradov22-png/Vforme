@@ -1,20 +1,107 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { recipes as recipesApi } from '../api';
 import { Spinner, BackHeader } from '../components/UI';
 import { G, GLL, GOLD, BD, INK, INK2, INK3, OW, W, sans, serif } from '../utils/theme';
 
-const CATS = ['Все', 'Завтрак', 'Обед', 'Ужин', 'Перекус', 'Напитки'];
-
-// Доступные диет-тэги (Кристина может ввести любые свои в админке, эти просто дефолт-фильтр)
+const CAT_OPTIONS = [
+  { id: 'Завтрак', label: 'Завтрак' },
+  { id: 'Обед',    label: 'Обед' },
+  { id: 'Ужин',    label: 'Ужин' },
+  { id: 'Перекус', label: 'Перекус' },
+  { id: 'Напитки', label: 'Напитки' },
+];
 const DIET_DEFAULTS = ['без глютена', 'без лактозы', 'кето', 'низкоуглеводное', 'веган', 'высокобелковое', 'детокс'];
+
+// Бежевая палитра фильтров — как в Здоровье
+const F_BG     = '#F3EFE6';
+const F_BG_ACT = '#E8DDC0';
+const F_BD     = '#D9D2C0';
+const F_TXT    = '#5A4D34';
+const F_TXT_ACT = '#3D3217';
+
+// Дропдаун с галочками — копия из Health
+function FilterDropdown({ label, options, selected, multi, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('touchstart', onDocClick);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('touchstart', onDocClick);
+    };
+  }, [open]);
+  const isAll = multi ? selected.length === 0 : !selected;
+  const display = isAll ? label : multi ? `${label} · ${selected.length}` : (options.find(o => o.id === selected)?.label || label);
+  const toggle = (id) => {
+    if (multi) {
+      const next = selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id];
+      onChange(next);
+    } else {
+      onChange(selected === id ? null : id);
+      setOpen(false);
+    }
+  };
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        padding: '9px 16px', borderRadius: 22,
+        background: isAll ? F_BG : F_BG_ACT,
+        color: isAll ? F_TXT : F_TXT_ACT,
+        border: `1px solid ${F_BD}`,
+        fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        {display}
+        <span style={{ fontSize: 10, opacity: 0.6 }}>▼</span>
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+          background: W, border: `1px solid ${F_BD}`, borderRadius: 14,
+          padding: 6, minWidth: 200,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          zIndex: 50,
+        }}>
+          {options.map(opt => {
+            const checked = multi ? selected.includes(opt.id) : selected === opt.id;
+            return (
+              <button key={opt.id} onClick={() => toggle(opt.id)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 12px', borderRadius: 10,
+                background: checked ? F_BG : 'transparent', border: 'none',
+                cursor: 'pointer', textAlign: 'left',
+              }}>
+                <span style={{
+                  width: 18, height: 18, borderRadius: 5,
+                  border: `1.5px solid ${checked ? G : F_BD}`,
+                  background: checked ? G : W,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  {checked && <span style={{ color: W, fontSize: 12, lineHeight: 1 }}>✓</span>}
+                </span>
+                <span style={{ fontSize: 14, color: INK, fontFamily: sans, fontWeight: checked ? 600 : 500 }}>
+                  {opt.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Recipes({ user, flash }) {
   const [recipeList, setRecipeList] = useState([]);
   const [savedList, setSavedList]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cat, setCat] = useState('Все');
+  const [catFilter, setCatFilter] = useState([]); // multi
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('all'); // all | saved
+  const [onlySaved, setOnlySaved] = useState(false);
   const [activeDietTags, setActiveDietTags] = useState([]);
   const [openRecipe, setOpenRecipe] = useState(null);
   const [addingRecipe, setAddingRecipe] = useState(false);
@@ -25,7 +112,7 @@ export default function Recipes({ user, flash }) {
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      recipesApi.getAll(cat),
+      recipesApi.getAll('Все'),
       recipesApi.saved().catch(() => []),
     ])
       .then(([list, saved]) => {
@@ -34,7 +121,7 @@ export default function Recipes({ user, flash }) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [cat]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -43,22 +130,21 @@ export default function Recipes({ user, flash }) {
     return () => window.removeEventListener('vforme:data_updated', h);
   }, [load]);
 
-  // Все доступные diet тэги — собираем из загруженных рецептов
-  const allDietTags = useMemo(() => {
+  // Все доступные diet тэги — собираем из загруженных рецептов + дефолты
+  const dietOptions = useMemo(() => {
     const set = new Set();
     recipeList.forEach(r => (r.dietTags || []).forEach(t => set.add(t)));
     DIET_DEFAULTS.forEach(t => set.add(t));
-    return [...set];
+    return [...set].map(t => ({ id: t, label: t }));
   }, [recipeList]);
 
-  // Применяем поиск, диет-фильтр и вкладку saved/all
+  // Фильтрация
   const visibleList = useMemo(() => {
-    const base = activeTab === 'saved' ? savedList : recipeList;
+    const base = onlySaved ? savedList : recipeList;
     const q = search.trim().toLowerCase();
     return base.filter(r => {
-      // diet
+      if (catFilter.length > 0 && !catFilter.includes(r.cat)) return false;
       if (activeDietTags.length > 0 && !activeDietTags.every(t => (r.dietTags || []).includes(t))) return false;
-      // search в title + ingredients
       if (q) {
         const inTitle = (r.title || '').toLowerCase().includes(q);
         const ings = Array.isArray(r.ingredients) ? r.ingredients.join(' ').toLowerCase() : (r.ingredients || '').toString().toLowerCase();
@@ -66,11 +152,7 @@ export default function Recipes({ user, flash }) {
       }
       return true;
     });
-  }, [activeTab, savedList, recipeList, search, activeDietTags]);
-
-  const toggleDietTag = (t) => {
-    setActiveDietTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
-  };
+  }, [onlySaved, savedList, recipeList, search, activeDietTags, catFilter]);
 
   const handleLike = async (id, e) => {
     if (e) e.stopPropagation();
@@ -323,47 +405,30 @@ export default function Recipes({ user, flash }) {
         }}
       />
 
-      {/* Все / Сохранённые */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        {[
-          { id: 'all', label: 'Все' },
-          { id: 'saved', label: '★ Сохранённые' },
-        ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
-            padding: '8px 16px', borderRadius: 20,
-            background: activeTab === t.id ? G : W,
-            color: activeTab === t.id ? W : INK2,
-            border: '1px solid ' + (activeTab === t.id ? G : BD),
-            fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}>{t.label}</button>
-        ))}
+      {/* Фильтры — dropdown с галочками + переключатель «Сохранённые» */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+        <FilterDropdown label="Категория" options={CAT_OPTIONS} selected={catFilter} multi={true} onChange={setCatFilter} />
+        <FilterDropdown label="Диета" options={dietOptions} selected={activeDietTags} multi={true} onChange={setActiveDietTags} />
+        <button onClick={() => setOnlySaved(v => !v)} style={{
+          padding: '9px 16px', borderRadius: 22,
+          background: onlySaved ? F_BG_ACT : F_BG,
+          color: onlySaved ? F_TXT_ACT : F_TXT,
+          border: `1px solid ${F_BD}`,
+          fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{
+            width: 18, height: 18, borderRadius: 5,
+            border: `1.5px solid ${onlySaved ? G : F_BD}`,
+            background: onlySaved ? G : W,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            {onlySaved && <span style={{ color: W, fontSize: 12, lineHeight: 1 }}>✓</span>}
+          </span>
+          ★ Сохранённые
+        </button>
       </div>
-
-      {/* Категории */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
-        {CATS.map(c => (
-          <button key={c} onClick={() => setCat(c)} style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid ' + (cat === c ? G : BD), background: cat === c ? G : W, color: cat === c ? W : INK2, fontFamily: sans, fontSize: 13, fontWeight: cat === c ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{c}</button>
-        ))}
-      </div>
-
-      {/* Diet тэги */}
-      {allDietTags.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 18, overflowX: 'auto', paddingBottom: 4, flexWrap: 'wrap' }}>
-          {allDietTags.map(t => {
-            const active = activeDietTags.includes(t);
-            return (
-              <button key={t} onClick={() => toggleDietTag(t)} style={{
-                padding: '5px 11px', borderRadius: 14,
-                background: active ? '#5A4D34' : '#F3EFE6',
-                color: active ? W : '#5A4D34',
-                border: '1px solid #D9D2C0',
-                fontFamily: sans, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}>{t}</button>
-            );
-          })}
-        </div>
-      )}
 
       {loading && <Spinner />}
       {!loading && visibleList.length === 0 && (
@@ -377,7 +442,7 @@ export default function Recipes({ user, flash }) {
           {r.imageUrl ? (
             <div style={{ position: 'relative' }}>
               <div style={{
-                width: '100%', aspectRatio: '4 / 3',
+                width: '100%', aspectRatio: '3 / 1',
                 backgroundImage: `url(${r.imageUrl})`,
                 backgroundSize: 'cover', backgroundPosition: 'center',
               }} />
