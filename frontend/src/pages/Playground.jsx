@@ -77,149 +77,134 @@ const DEFAULT_LEVELS = {
   brain: 20, thyroid: 30, heart: 55, lungs: 45, liver: 40, gut: 25, hormones: 35, composition: 50,
 };
 
-// ─── Силуэт SVG ──────────────────────────────────────────────
-// Женский силуэт: голова + шея + торс с талией + бёдра + ноги + руки.
-// Всё собрано из чистых примитивов и одного path для торса с bezier-талией.
-function Silhouette({ levels, focusId, onZoneClick, pulse = true, uid = '' }) {
-  const gid = `glow-${uid}`;
-  const bgid = `body-${uid}`;
+// ─── Колесо баланса ──────────────────────────────────────────
+// 8 зон по 45°. Длина сектора от центра = уровень зоны.
+function Silhouette({ levels, focusId, onZoneClick, pulse = true, uid = '', compact = false }) {
+  const SIZE = 440;
+  const CX = SIZE / 2;
+  const CY = SIZE / 2;
+  const R = compact ? 150 : 170;        // максимальный радиус уровня (100%)
+  const INNER = 16;                      // пустота в центре
+  const SLICE_DEG = 360 / ZONES.length;  // 45°
+  const STEP = SLICE_DEG * Math.PI / 180;
+
+  // точка на окружности
+  const pt = (r, a) => [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+
+  // sector path от innerR до outerR, от углов a1..a2
+  const sectorPath = (innerR, outerR, a1, a2) => {
+    const [x1, y1] = pt(outerR, a1);
+    const [x2, y2] = pt(outerR, a2);
+    const [x3, y3] = pt(innerR, a2);
+    const [x4, y4] = pt(innerR, a1);
+    const large = a2 - a1 > Math.PI ? 1 : 0;
+    return `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 ${large} 0 ${x4} ${y4} Z`;
+  };
+
+  // метка снаружи сектора
+  const label = (zone, i) => {
+    const a = (-90 + (i + 0.5) * SLICE_DEG) * Math.PI / 180;
+    const [lx, ly] = pt(R + 28, a);
+    return { x: lx, y: ly, a };
+  };
+
+  const glowId = `glow-${uid}`;
+
   return (
-    <svg viewBox="0 0 320 720" style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
+    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible', fontFamily: sans }}>
       <defs>
-        <filter id={gid} x="-50%" y="-50%" width="200%" height="200%">
+        <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
-        <linearGradient id={bgid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#F4F0E8" />
-          <stop offset="55%"  stopColor="#EAE3D5" />
-          <stop offset="100%" stopColor="#DFD6C3" />
-        </linearGradient>
-        <radialGradient id={`shine-${uid}`} cx="35%" cy="25%" r="70%">
-          <stop offset="0%"  stopColor="rgba(255,255,255,0.55)" />
-          <stop offset="60%" stopColor="rgba(255,255,255,0)" />
+        <radialGradient id={`bg-${uid}`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="#F9F7F4" />
+          <stop offset="100%" stopColor="#EDE9E2" />
         </radialGradient>
       </defs>
 
-      {/* Мягкая тень под фигурой */}
-      <ellipse cx="160" cy="700" rx="80" ry="8" fill="rgba(45, 74, 45, 0.08)" />
+      {/* Фон */}
+      <circle cx={CX} cy={CY} r={R + 6} fill={`url(#bg-${uid})`} />
 
-      <g>
-        {/* Голова */}
-        <ellipse cx="160" cy="70" rx="36" ry="44" fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2" />
+      {/* Кольца-градация 25/50/75/100 */}
+      {[0.25, 0.5, 0.75, 1].map(p => (
+        <circle key={p} cx={CX} cy={CY} r={R * p}
+          fill="none" stroke="#DAD3C3" strokeWidth="0.8"
+          strokeDasharray={p === 1 ? 'none' : '2 4'} />
+      ))}
 
-        {/* Шея */}
-        <path d="M 148 108 Q 148 126, 140 136 L 180 136 Q 172 126, 172 108 Z"
-              fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2" />
+      {/* Спицы-разделители */}
+      {ZONES.map((_, i) => {
+        const a = (-90 + i * SLICE_DEG) * Math.PI / 180;
+        const [x1, y1] = pt(INNER, a);
+        const [x2, y2] = pt(R, a);
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#D9D2C2" strokeWidth="1" />;
+      })}
 
-        {/* Торс + талия (женская форма с cinched waist) */}
-        <path d="
-          M 96 140
-          Q 86 145, 88 158
-          L 100 220
-          Q 108 262, 116 300
-          Q 108 320, 112 350
-          L 124 410
-          L 196 410
-          L 208 350
-          Q 212 320, 204 300
-          Q 212 262, 220 220
-          L 232 158
-          Q 234 145, 224 140
-          Q 205 132, 190 132
-          L 130 132
-          Q 115 132, 96 140 Z"
-          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
-        />
-
-        {/* Бёдра */}
-        <path d="
-          M 112 340
-          Q 96 380, 100 430
-          Q 106 470, 120 480
-          L 200 480
-          Q 214 470, 220 430
-          Q 224 380, 208 340 Z"
-          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
-        />
-
-        {/* Левая нога */}
-        <path d="
-          M 118 470
-          Q 114 560, 118 640
-          Q 120 680, 130 690
-          L 154 692
-          Q 160 680, 156 620
-          Q 154 540, 152 470 Z"
-          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
-        />
-
-        {/* Правая нога */}
-        <path d="
-          M 168 470
-          Q 166 540, 164 620
-          Q 160 680, 166 692
-          L 190 690
-          Q 200 680, 202 640
-          Q 206 560, 202 470 Z"
-          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
-        />
-
-        {/* Левая рука */}
-        <path d="
-          M 92 150
-          Q 74 162, 68 200
-          Q 62 250, 64 310
-          Q 66 345, 76 352
-          L 92 350
-          Q 96 340, 94 310
-          Q 94 250, 100 200
-          Q 102 175, 102 155 Z"
-          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
-        />
-
-        {/* Правая рука */}
-        <path d="
-          M 228 150
-          Q 246 162, 252 200
-          Q 258 250, 256 310
-          Q 254 345, 244 352
-          L 228 350
-          Q 224 340, 226 310
-          Q 226 250, 220 200
-          Q 218 175, 218 155 Z"
-          fill={`url(#${bgid})`} stroke="#CFC7B3" strokeWidth="1.2"
-        />
-
-        {/* Свет сверху-слева — объём */}
-        <ellipse cx="160" cy="280" rx="140" ry="360" fill={`url(#shine-${uid})`} pointerEvents="none" />
-      </g>
-
-      {/* Зоны */}
-      {ZONES.map(z => {
+      {/* Сами зоны — заполнение до уровня */}
+      {ZONES.map((z, i) => {
         const level = levels[z.id] ?? 0;
         const active = z.id === focusId;
+        const a1 = (-90 + i * SLICE_DEG) * Math.PI / 180;
+        const a2 = (-90 + (i + 1) * SLICE_DEG - 1) * Math.PI / 180;
+        const outer = INNER + (R - INNER) * (level / 100);
+        const d = sectorPath(INNER, outer, a1, a2);
+
         return (
           <g key={z.id} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
-            <ellipse
-              cx={z.shape.cx}
-              cy={z.shape.cy}
-              rx={z.shape.rx}
-              ry={z.shape.ry}
+            {/* "пустой" сектор-фон для кликов на полную высоту */}
+            <path d={sectorPath(INNER, R, a1, a2)} fill="rgba(0,0,0,0.01)" />
+            <path
+              d={d}
               fill={zoneFill(level)}
               stroke={zoneColor(level)}
-              strokeWidth={active ? 2.4 : 1}
-              filter={active && pulse ? `url(#${gid})` : undefined}
-              style={active && pulse ? { animation: 'pulse 2.8s ease-in-out infinite', transformOrigin: `${z.shape.cx}px ${z.shape.cy}px` } : undefined}
+              strokeWidth={active ? 2 : 0.8}
+              filter={active && pulse ? `url(#${glowId})` : undefined}
+              style={active && pulse ? { animation: 'pulseWheel 2.8s ease-in-out infinite', transformOrigin: `${CX}px ${CY}px` } : undefined}
             />
           </g>
         );
       })}
 
+      {/* Центр — круг с суммарным % */}
+      <circle cx={CX} cy={CY} r={INNER} fill="#FFFFFF" stroke="#DAD3C3" strokeWidth="1" />
+
+      {/* Метки зон */}
+      {ZONES.map((z, i) => {
+        const { x, y } = label(z, i);
+        const level = levels[z.id] ?? 0;
+        const active = z.id === focusId;
+        return (
+          <g key={z.id + '-l'} style={{ cursor: 'pointer' }} onClick={() => onZoneClick?.(z)}>
+            <text
+              x={x} y={y - 6}
+              textAnchor="middle"
+              fontSize="17"
+              style={{ pointerEvents: 'none' }}
+            >{z.icon}</text>
+            <text
+              x={x} y={y + 12}
+              textAnchor="middle"
+              fontSize="10"
+              fontWeight={active ? 700 : 600}
+              fill={active ? zoneColor(level) : INK2}
+              style={{ pointerEvents: 'none' }}
+            >{z.label}</text>
+            <text
+              x={x} y={y + 24}
+              textAnchor="middle"
+              fontSize="9"
+              fill={INK3}
+              style={{ pointerEvents: 'none' }}
+            >{level}%</text>
+          </g>
+        );
+      })}
+
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.85; transform: scale(1); }
-          50%      { opacity: 1;    transform: scale(1.05); }
+        @keyframes pulseWheel {
+          0%, 100% { opacity: 0.9; }
+          50%      { opacity: 1;   }
         }
       `}</style>
     </svg>
