@@ -74,10 +74,10 @@ function ProtocolModal({ protocol, supplements, onClose, onSave }) {
       </div>
       <ImageUpload
         label="Обложка"
-        hint="Рекомендуемый размер: 1200×400 px (соотношение 3:1)"
+        hint="Рекомендуемый размер: 1200×400 px (соотношение 4:1)"
         value={coverImage}
         onChange={setCoverImage}
-        ratio="3/1"
+        ratio="4/1"
       />
       <Textarea label="Краткое описание" value={description} onChange={setDescription} placeholder="Что включает протокол..." rows={2} />
 

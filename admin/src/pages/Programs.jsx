@@ -176,10 +176,10 @@ function ProgramModal({ prog, onClose, onSave }) {
       <Input label="Подзаголовок" value={data.subtitle || ''} onChange={v => setData(d => ({ ...d, subtitle: v }))} placeholder="V Форме" />
       <ImageUpload
         label="Обложка"
-        hint="Рекомендуемый размер: 1200×400 px (соотношение 3:1)"
+        hint="Рекомендуемый размер: 1200×400 px (соотношение 4:1)"
         value={data.coverImage || ''}
         onChange={v => setData(d => ({ ...d, coverImage: v }))}
-        ratio="3/1"
+        ratio="4/1"
       />
       <Textarea label="Описание" value={data.desc || ''} onChange={v => setData(d => ({ ...d, desc: v }))} placeholder="Описание программы..." />
       <div style={{ display: 'flex', gap: 12 }}>

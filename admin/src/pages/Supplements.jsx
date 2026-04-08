@@ -74,10 +74,10 @@ function SchemeModal({ scheme, programs, onClose, onSave }) {
       <Input label="Название" value={data.title} onChange={v => setData(d => ({ ...d, title: v }))} placeholder="Базовая схема — кишечник" />
       <ImageUpload
         label="Обложка"
-        hint="Рекомендуемый размер: 1200×400 px (соотношение 3:1)"
+        hint="Рекомендуемый размер: 1200×400 px (соотношение 4:1)"
         value={data.coverImage || ''}
         onChange={v => setData(d => ({ ...d, coverImage: v }))}
-        ratio="3/1"
+        ratio="4/1"
       />
       <Textarea label="Описание" value={data.desc || ''} onChange={v => setData(d => ({ ...d, desc: v }))} placeholder="Описание схемы..." rows={2} />
       <div style={{ marginBottom: 16 }}>

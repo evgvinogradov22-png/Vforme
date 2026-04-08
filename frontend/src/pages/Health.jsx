@@ -61,13 +61,13 @@ function PageHeader({ onBack, kindLabel, statusLabel }) {
   );
 }
 
-// ─── Cover image (опционально) ───────────────────────────────
+// ─── Cover image (опционально) — узкая баннер-полоса 4:1 ─────
 function Cover({ src }) {
   if (!src) return null;
   return (
     <div style={{
       width: '100%',
-      height: 160,
+      aspectRatio: '4 / 1',
       backgroundImage: `url(${src})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
