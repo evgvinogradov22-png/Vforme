@@ -38,8 +38,9 @@ function Paywall({ prog, user, onClose }) {
         user.id, user.email,
         promoResult?.promoId || null
       );
-      const orderId = result?.orderId;
-      if (typeof window.prodamusPay === 'function') {
+      if (result?.payUrl) {
+        setPayUrl(result.payUrl);
+      } else if (typeof window.prodamusPay === 'function') {
         window.prodamusPay(Number(finalPrice));
       } else {
         alert('Платёжный виджет не загружен. Обновите страницу.');

@@ -16,14 +16,21 @@ async function req(method, path, body) {
 function Paywall({ proto, onClose, onPaid }) {
   const [paying, setPaying] = useState(false);
 
+  const [payUrl, setPayUrl] = useState(null);
+
   const handlePay = async () => {
     try {
       const TOKEN = localStorage.getItem('vforme_token');
-      await fetch('/api/payment/create-protocol', {
+      const r = await fetch('/api/payment/create-protocol', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
         body: JSON.stringify({ protocolId: proto.id }),
       });
+      const data = await r.json();
+      if (data?.payUrl) {
+        setPayUrl(data.payUrl);
+        return;
+      }
     } catch(e) {}
     if (typeof window.prodamusPay === 'function') {
       window.prodamusPay(proto.price);
@@ -51,14 +58,22 @@ function Paywall({ proto, onClose, onPaid }) {
         <div style={{ background: GLL, borderRadius: 16, padding: '16px 20px', marginBottom: 20, textAlign: 'center' }}>
           <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 700, color: G }}>{proto.price} ₽</div>
         </div>
-        <button onClick={handlePay}
-          style={{ width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 12, letterSpacing: 1 }}>
-          ОПЛАТИТЬ {proto.price} ₽
-        </button>
-        <button onClick={onClose}
-          style={{ width: '100%', padding: '14px', background: 'transparent', border: `1px solid ${BD}`, borderRadius: 30, color: INK2, fontFamily: sans, fontSize: 15, cursor: 'pointer' }}>
-          Закрыть
-        </button>
+        {payUrl ? (
+          <div style={{ position: 'relative', width: '100%', height: 500, borderRadius: 16, overflow: 'hidden', border: `1px solid ${BD}` }}>
+            <iframe src={payUrl} style={{ width: '100%', height: '100%', border: 'none' }} allow="payment" />
+          </div>
+        ) : (
+          <>
+            <button onClick={handlePay}
+              style={{ width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 12, letterSpacing: 1 }}>
+              ОПЛАТИТЬ {proto.price} ₽
+            </button>
+            <button onClick={onClose}
+              style={{ width: '100%', padding: '14px', background: 'transparent', border: `1px solid ${BD}`, borderRadius: 30, color: INK2, fontFamily: sans, fontSize: 15, cursor: 'pointer' }}>
+              Закрыть
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

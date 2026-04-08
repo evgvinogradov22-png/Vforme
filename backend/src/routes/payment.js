@@ -32,6 +32,23 @@ router.post('/free', auth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Построить полный URL на форму оплаты Prodamus
+function buildPayUrl({ orderId, amount, productName, userEmail }) {
+  const domain = process.env.PRODAMUS_DOMAIN || 'nutrikris.payform.ru';
+  const params = new URLSearchParams();
+  params.set('do', 'pay');
+  params.set('order_id', orderId);
+  params.set('customer_extra', orderId);
+  if (userEmail) params.set('customer_email', userEmail);
+  params.set('products[0][name]', productName);
+  params.set('products[0][price]', String(amount));
+  params.set('products[0][quantity]', '1');
+  params.set('urlSuccess', 'https://app.nutrikris.ru/?payment=success');
+  params.set('urlReturn', 'https://app.nutrikris.ru/?payment=fail');
+  params.set('sys', 'app.nutrikris.ru');
+  return `https://${domain}/?${params.toString()}`;
+}
+
 // Создать pending-заказ перед оплатой
 async function createOrder(req, res) {
   try {
@@ -51,8 +68,10 @@ async function createOrder(req, res) {
     }
 
     const orderId = `${req.user.id}_${programId}_${Date.now()}`;
+    const user = await User.findByPk(req.user.id);
     await Order.create({ orderId, userId: req.user.id, programId, amount: finalPrice, promoId: promoId || null });
-    res.json({ orderId, amount: finalPrice });
+    const payUrl = buildPayUrl({ orderId, amount: finalPrice, productName: program.title, userEmail: user?.email });
+    res.json({ orderId, amount: finalPrice, payUrl });
   } catch (e) { res.status(500).json({ error: e.message }); }
 }
 
@@ -79,8 +98,10 @@ router.post('/create-protocol', auth, async (req, res) => {
     }
 
     const orderId = `protocol_${req.user.id}_${protocolId}_${Date.now()}`;
+    const user = await User.findByPk(req.user.id);
     await Order.create({ orderId, userId: req.user.id, programId: protocolId, amount: finalPrice, promoId: promoId || null, type: 'protocol' });
-    res.json({ orderId, amount: finalPrice });
+    const payUrl = buildPayUrl({ orderId, amount: finalPrice, productName: protocol.title, userEmail: user?.email });
+    res.json({ orderId, amount: finalPrice, payUrl });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
