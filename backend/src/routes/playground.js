@@ -161,7 +161,7 @@ router.post('/analyze', async (req, res) => {
     const userPrompt = buildUserPrompt(answers, complaints, levels, weakest, catalog);
 
     const response = await openrouter({
-      model: 'openai/gpt-4o-mini',
+      model: 'openai/gpt-4o',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: userPrompt },
