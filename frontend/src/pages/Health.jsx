@@ -78,7 +78,7 @@ function Cover({ src }) {
 // ─── Hero (заголовок + теги) ─────────────────────────────────
 function Hero({ title, subtitle, tags }) {
   return (
-    <div style={{ padding: '14px 22px 8px' }}>
+    <div style={{ padding: '26px 22px 8px' }}>
       <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 700, color: INK, lineHeight: 1.2, marginBottom: 6 }}>
         {title}
       </div>
@@ -172,11 +172,34 @@ const VC_STYLES = `
 function FeedCard({ item, onClick }) {
   const free = Number(item.price) === 0;
   const kindLabel = KIND_LABELS[item.kind] || 'ПРОДУКТ';
+  const hasCover = !!item.coverImage;
+
+  // Glass-плашка для overlay поверх обложки
+  const glassPill = (extra = {}) => ({
+    fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
+    color: '#1A1A1A',
+    background: 'rgba(255,255,255,0.78)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255,255,255,0.6)',
+    padding: '7px 13px', borderRadius: 12,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+    ...extra,
+  });
+
+  // Обычная плашка (когда нет обложки)
+  const flatPill = (active = false) => ({
+    fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
+    color: F_TXT_ACT,
+    background: active ? F_BG_ACT : F_BG,
+    border: `1px solid ${F_BD}`,
+    padding: '6px 12px', borderRadius: 10,
+  });
 
   return (
     <div onClick={onClick} style={{
       background: W, border: `1px solid ${BD}`, borderRadius: 20,
-      padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10,
+      overflow: 'hidden',
       boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
       cursor: 'pointer',
       transition: 'transform .12s',
@@ -185,53 +208,69 @@ function FeedCard({ item, onClick }) {
       onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+      {/* Обложка с glass-плашками поверх */}
+      {hasCover && (
         <div style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
-          color: F_TXT_ACT, background: F_BG, border: `1px solid ${F_BD}`,
-          padding: '6px 12px', borderRadius: 10,
-        }}>{kindLabel}</div>
-        <div style={{
-          fontSize: 14, fontWeight: 700, fontFamily: sans,
-          color: F_TXT_ACT, background: F_BG_ACT, border: `1px solid ${F_BD}`,
-          padding: '6px 14px', borderRadius: 10,
+          position: 'relative',
+          width: '100%',
+          aspectRatio: '4 / 1',
+          backgroundImage: `url(${item.coverImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}>
-          {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
-        </div>
-      </div>
-
-      <div style={{ fontSize: 19, fontWeight: 700, color: INK, fontFamily: serif, lineHeight: 1.3 }}>
-        {item.title}
-      </div>
-
-      {(item.desc || item.subtitle) && (
-        <div style={{
-          fontSize: 13, color: INK2, fontFamily: sans,
-          lineHeight: 1.45,
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}>
-          {item.subtitle || item.desc}
+          <div style={{ position: 'absolute', top: 12, left: 12, ...glassPill() }}>
+            {kindLabel}
+          </div>
+          <div style={{ position: 'absolute', top: 12, right: 12, ...glassPill({ fontSize: 13, padding: '7px 14px' }) }}>
+            {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
+          </div>
         </div>
       )}
 
-      {item.tags && item.tags.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
-          {item.tags.map(t => {
-            const tag = TAG_OPTIONS.find(x => x.id === t);
-            if (!tag) return null;
-            return (
-              <div key={t} style={{
-                fontSize: 11, color: F_TXT, fontFamily: sans, fontWeight: 600,
-                background: F_BG, border: `1px solid ${F_BD}`,
-                padding: '4px 10px', borderRadius: 12,
-              }}>
-                {tag.icon} {tag.label}
-              </div>
-            );
-          })}
+      <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Плашки только если нет обложки */}
+        {!hasCover && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div style={flatPill()}>{kindLabel}</div>
+            <div style={{ ...flatPill(true), fontSize: 14, padding: '6px 14px' }}>
+              {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
+            </div>
+          </div>
+        )}
+
+        <div style={{ fontSize: 19, fontWeight: 700, color: INK, fontFamily: serif, lineHeight: 1.3 }}>
+          {item.title}
         </div>
-      )}
+
+        {(item.desc || item.subtitle) && (
+          <div style={{
+            fontSize: 13, color: INK2, fontFamily: sans,
+            lineHeight: 1.45,
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
+            {item.subtitle || item.desc}
+          </div>
+        )}
+
+        {item.tags && item.tags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+            {item.tags.map(t => {
+              const tag = TAG_OPTIONS.find(x => x.id === t);
+              if (!tag) return null;
+              return (
+                <div key={t} style={{
+                  fontSize: 11, color: F_TXT, fontFamily: sans, fontWeight: 600,
+                  background: F_BG, border: `1px solid ${F_BD}`,
+                  padding: '4px 10px', borderRadius: 12,
+                }}>
+                  {tag.icon} {tag.label}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
