@@ -251,7 +251,7 @@ export function BalanceWheel({ levels, focusId, onZoneClick, uid = 'w' }) {
         const active = z.id === focusId;
         const c = zoneColor(level);
 
-        const w = Math.max(92, z.label.length * 8 + 42);
+        const w = Math.max(96, z.label.length * 10 + 50);
         const h = 46;
 
         return (
