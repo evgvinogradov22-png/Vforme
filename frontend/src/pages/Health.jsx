@@ -1,10 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 import { Spinner } from '../components/UI';
 
 const TOKEN = () => localStorage.getItem('vforme_token');
 
-// Тэги зон — те же что в атласе
+// Бежевая палитра для фильтров
+const F_BG     = '#F3EFE6';
+const F_BG_ACT = '#E8DDC0';
+const F_BD     = '#D9D2C0';
+const F_TXT    = '#5A4D34';
+const F_TXT_ACT = '#3D3217';
+
 const TAG_OPTIONS = [
   { id: 'brain',       label: 'Сон и нервы', icon: '🧠' },
   { id: 'thyroid',     label: 'Энергия',     icon: '⚡' },
@@ -13,12 +19,24 @@ const TAG_OPTIONS = [
   { id: 'composition', label: 'Тело',        icon: '💪' },
 ];
 
+const KIND_OPTIONS = [
+  { id: 'program',  label: 'Программы' },
+  { id: 'protocol', label: 'Протоколы' },
+  { id: 'scheme',   label: 'Схемы БАД' },
+];
+
+const PRICE_OPTIONS = [
+  { id: 'free', label: 'Бесплатно' },
+  { id: 'paid', label: 'Платно' },
+];
+
 const KIND_LABELS = {
   program:  { label: 'ПРОГРАММА', color: G },
   protocol: { label: 'ПРОТОКОЛ',  color: GOLDD },
   scheme:   { label: 'СХЕМА БАД', color: '#7E4EB8' },
 };
 
+// ─── Карточка ────────────────────────────────────────────────
 function FeedCard({ item }) {
   const free = Number(item.price) === 0;
   const kind = KIND_LABELS[item.kind] || { label: 'ПРОДУКТ', color: INK2 };
@@ -26,75 +44,155 @@ function FeedCard({ item }) {
   return (
     <div style={{
       background: W, border: `1px solid ${BD}`, borderRadius: 20,
-      padding: '16px 18px', display: 'flex', gap: 14, alignItems: 'flex-start',
+      padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8,
       boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
     }}>
-      <div style={{
-        width: 56, height: 56, borderRadius: 16, background: GLL,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 28, flexShrink: 0,
-      }}>
-        {item.icon}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
+          color: kind.color,
+          background: kind.color + '15',
+          padding: '5px 11px', borderRadius: 8,
+        }}>{kind.label}</div>
+        <div style={{
+          fontSize: 13, fontWeight: 700, fontFamily: sans,
+          background: free ? '#E7F0E7' : '#FBF2DB',
+          color: free ? G : GOLDD,
+          padding: '5px 12px', borderRadius: 8,
+        }}>
+          {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
+        </div>
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
-          <div style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: 1, fontFamily: sans,
-            color: kind.color,
-          }}>{kind.label}</div>
-          <div style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: 0.5, fontFamily: sans,
-            background: free ? '#E7F0E7' : '#FBF2DB',
-            color: free ? G : GOLDD,
-            padding: '2px 7px', borderRadius: 6,
-          }}>
-            {free ? 'БЕСПЛАТНО' : `${item.price} ₽`}
-          </div>
-        </div>
-
-        <div style={{ fontSize: 16, fontWeight: 700, color: INK, fontFamily: serif, lineHeight: 1.3, marginBottom: 3 }}>
-          {item.title}
-        </div>
-
-        {(item.desc || item.subtitle) && (
-          <div style={{
-            fontSize: 12, color: INK3, fontFamily: sans, marginBottom: 8,
-            lineHeight: 1.4,
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}>
-            {item.subtitle || item.desc}
-          </div>
-        )}
-
-        {item.tags && item.tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
-            {item.tags.map(t => {
-              const tag = TAG_OPTIONS.find(x => x.id === t);
-              if (!tag) return null;
-              return (
-                <div key={t} style={{
-                  fontSize: 10, color: INK2, fontFamily: sans, fontWeight: 600,
-                  background: '#F3EFE6', padding: '3px 8px', borderRadius: 10,
-                }}>
-                  {tag.icon} {tag.label}
-                </div>
-              );
-            })}
-          </div>
-        )}
+      <div style={{ fontSize: 18, fontWeight: 700, color: INK, fontFamily: serif, lineHeight: 1.3 }}>
+        {item.title}
       </div>
+
+      {(item.desc || item.subtitle) && (
+        <div style={{
+          fontSize: 13, color: INK2, fontFamily: sans,
+          lineHeight: 1.45,
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}>
+          {item.subtitle || item.desc}
+        </div>
+      )}
+
+      {item.tags && item.tags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+          {item.tags.map(t => {
+            const tag = TAG_OPTIONS.find(x => x.id === t);
+            if (!tag) return null;
+            return (
+              <div key={t} style={{
+                fontSize: 11, color: F_TXT, fontFamily: sans, fontWeight: 600,
+                background: F_BG, border: `1px solid ${F_BD}`,
+                padding: '4px 10px', borderRadius: 12,
+              }}>
+                {tag.icon} {tag.label}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
+// ─── Дропдаун-фильтр с галочками ─────────────────────────────
+function FilterDropdown({ label, options, selected, multi, onChange, anchor }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('touchstart', onDocClick);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('touchstart', onDocClick);
+    };
+  }, [open]);
+
+  const isAll = multi ? selected.length === 0 : !selected;
+  const display = isAll
+    ? label
+    : multi
+      ? `${label} · ${selected.length}`
+      : (options.find(o => o.id === selected)?.label || label);
+
+  const toggle = (id) => {
+    if (multi) {
+      const next = selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id];
+      onChange(next);
+    } else {
+      onChange(selected === id ? null : id);
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        padding: '9px 16px', borderRadius: 22,
+        background: isAll ? F_BG : F_BG_ACT,
+        color: isAll ? F_TXT : F_TXT_ACT,
+        border: `1px solid ${F_BD}`,
+        fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        {display}
+        <span style={{ fontSize: 10, opacity: 0.6 }}>▼</span>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)',
+          [anchor === 'right' ? 'right' : 'left']: 0,
+          background: W, border: `1px solid ${F_BD}`, borderRadius: 14,
+          padding: 6, minWidth: 180,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          zIndex: 50,
+        }}>
+          {options.map(opt => {
+            const checked = multi ? selected.includes(opt.id) : selected === opt.id;
+            return (
+              <button key={opt.id} onClick={() => toggle(opt.id)} style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 12px', borderRadius: 10,
+                background: checked ? F_BG : 'transparent', border: 'none',
+                cursor: 'pointer', textAlign: 'left',
+              }}>
+                <span style={{
+                  width: 18, height: 18, borderRadius: 5,
+                  border: `1.5px solid ${checked ? G : F_BD}`,
+                  background: checked ? G : W,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  {checked && <span style={{ color: W, fontSize: 12, lineHeight: 1 }}>✓</span>}
+                </span>
+                <span style={{ fontSize: 14, color: INK, fontFamily: sans, fontWeight: checked ? 600 : 500 }}>
+                  {opt.icon ? `${opt.icon} ` : ''}{opt.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Главная страница ────────────────────────────────────────
 export default function Health() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [kindFilter, setKindFilter] = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all');
-  const [tagFilter, setTagFilter] = useState('all');
+  const [kindFilter, setKindFilter] = useState(null);    // single
+  const [priceFilter, setPriceFilter] = useState(null);  // single
+  const [tagFilter, setTagFilter] = useState([]);        // multi
 
   useEffect(() => {
     fetch('/api/health/feed', { headers: { Authorization: 'Bearer ' + TOKEN() } })
@@ -106,16 +204,20 @@ export default function Health() {
 
   const filtered = useMemo(() => {
     return items.filter(it => {
-      if (kindFilter !== 'all' && it.kind !== kindFilter) return false;
+      if (kindFilter && it.kind !== kindFilter) return false;
       if (priceFilter === 'free' && Number(it.price) > 0) return false;
       if (priceFilter === 'paid' && Number(it.price) === 0) return false;
-      if (tagFilter !== 'all' && !(it.tags || []).includes(tagFilter)) return false;
+      if (tagFilter.length > 0 && !tagFilter.some(t => (it.tags || []).includes(t))) return false;
       return true;
     });
   }, [items, kindFilter, priceFilter, tagFilter]);
 
   return (
-    <div style={{ background: '#F9F7F4', minHeight: '100%', paddingBottom: 40 }}>
+    <div style={{
+      background: '#F9F7F4',
+      minHeight: 'calc(100dvh - 60px)',
+      paddingBottom: 100,
+    }}>
       {/* Заголовок */}
       <div style={{ padding: '18px 20px 10px' }}>
         <div style={{ fontFamily: serif, fontSize: 26, fontWeight: 700, color: INK }}>Здоровье</div>
@@ -124,59 +226,23 @@ export default function Health() {
         </div>
       </div>
 
-      {/* Фильтр по типу */}
-      <div style={{ padding: '6px 20px 10px', display: 'flex', gap: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        {[
-          { id: 'all',      label: 'Всё' },
-          { id: 'program',  label: 'Программы' },
-          { id: 'protocol', label: 'Протоколы' },
-          { id: 'scheme',   label: 'Схемы БАД' },
-        ].map(f => (
-          <button key={f.id} onClick={() => setKindFilter(f.id)} style={{
-            padding: '8px 16px', borderRadius: 20, flexShrink: 0,
-            background: kindFilter === f.id ? G : W,
-            color: kindFilter === f.id ? W : INK2,
-            border: `1px solid ${kindFilter === f.id ? G : BD}`,
-            fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}>{f.label}</button>
-        ))}
-      </div>
-
-      {/* Фильтр по цене */}
-      <div style={{ padding: '4px 20px 10px', display: 'flex', gap: 8 }}>
-        {[
-          { id: 'all',  label: 'Цена: всё' },
-          { id: 'free', label: 'Бесплатно' },
-          { id: 'paid', label: 'Платно' },
-        ].map(f => (
-          <button key={f.id} onClick={() => setPriceFilter(f.id)} style={{
-            padding: '7px 14px', borderRadius: 18,
-            background: priceFilter === f.id ? GOLD : W,
-            color: priceFilter === f.id ? W : INK2,
-            border: `1px solid ${priceFilter === f.id ? GOLD : BD}`,
-            fontFamily: sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>{f.label}</button>
-        ))}
-      </div>
-
-      {/* Фильтр по тэгу-зоне */}
-      <div style={{ padding: '4px 20px 14px', display: 'flex', gap: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <button onClick={() => setTagFilter('all')} style={{
-          padding: '7px 14px', borderRadius: 18, flexShrink: 0,
-          background: tagFilter === 'all' ? INK : W,
-          color: tagFilter === 'all' ? W : INK2,
-          border: `1px solid ${tagFilter === 'all' ? INK : BD}`,
-          fontFamily: sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-        }}>Все зоны</button>
-        {TAG_OPTIONS.map(t => (
-          <button key={t.id} onClick={() => setTagFilter(t.id)} style={{
-            padding: '7px 14px', borderRadius: 18, flexShrink: 0,
-            background: tagFilter === t.id ? INK : W,
-            color: tagFilter === t.id ? W : INK2,
-            border: `1px solid ${tagFilter === t.id ? INK : BD}`,
-            fontFamily: sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>{t.icon} {t.label}</button>
-        ))}
+      {/* Фильтры */}
+      <div style={{ padding: '8px 20px 14px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <FilterDropdown
+          label="Тип" options={KIND_OPTIONS}
+          selected={kindFilter} multi={false}
+          onChange={setKindFilter}
+        />
+        <FilterDropdown
+          label="Цена" options={PRICE_OPTIONS}
+          selected={priceFilter} multi={false}
+          onChange={setPriceFilter}
+        />
+        <FilterDropdown
+          label="Зоны" options={TAG_OPTIONS}
+          selected={tagFilter} multi={true}
+          onChange={setTagFilter}
+        />
       </div>
 
       {/* Лента */}
