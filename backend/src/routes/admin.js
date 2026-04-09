@@ -137,7 +137,7 @@ router.post('/recipes', A, upload.single('image'), async (req, res) => {
     res.json(row);
   } catch(e) { res.status(500).json({error:e.message}); }
 });
-router.put('/recipes/:id', A, async (req,res) => { try { await Recipe.update(req.body,{where:{id:req.params.id}}); emitUpdate('Recipe'); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
+router.put('/recipes/:id', A, async (req,res) => { try { await Recipe.update(pick(req.body, ALLOWED_FIELDS.Recipe),{where:{id:req.params.id}}); emitUpdate('Recipe'); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
 
 // AI: посчитать калории/КБЖУ/факт по ингредиентам и шагам
 router.post('/recipes/ai-generate', A, async (req, res) => {
@@ -280,8 +280,6 @@ router.get('/atlas/:id', A, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-module.exports = router;
-
 // Баллы пользователей
 const Points = require('../models/Points');
 router.get('/users/:id/points', A, async (req, res) => {
@@ -306,13 +304,14 @@ const Promo = require('../models/Promo');
 router.get('/promos', A, async (req, res) => { res.json(await Promo.findAll({ order: [['createdAt','DESC']] })); });
 router.post('/promos', A, async (req, res) => {
   try {
-    const data = { ...req.body, code: req.body.code.toUpperCase() };
+    if (!req.body.code || typeof req.body.code !== 'string') return res.status(400).json({ error: 'Код обязателен' });
+    const data = pick({ ...req.body, code: req.body.code.toUpperCase() }, ['code','type','value','active','programId','desc','maxUses']);
     const row = await Promo.create(data);
     broadcast({ type: 'data_updated', entity: 'promos' });
     res.json(row);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-router.put('/promos/:id', A, async (req, res) => { try { await Promo.update(req.body, { where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'promos' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.put('/promos/:id', A, async (req, res) => { try { const f = pick(req.body, ['code','type','value','active','programId','desc','maxUses']); await Promo.update(f, { where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'promos' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 router.delete('/promos/:id', A, async (req, res) => { try { await Promo.destroy({ where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'promos' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 
 // Протоколы
@@ -321,7 +320,7 @@ const ProtocolAccess = require('../models/ProtocolAccess');
 
 router.get('/protocols', A, async (req, res) => { res.json(await Protocol.findAll({ order: [['order','ASC']] })); });
 router.post('/protocols', A, async (req, res) => { try { const row = await Protocol.create(req.body); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json(row); } catch(e) { res.status(500).json({ error: e.message }); } });
-router.put('/protocols/:id', A, async (req, res) => { try { await Protocol.update(req.body, { where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.put('/protocols/:id', A, async (req, res) => { try { const f = pick(req.body, ['title','desc','content','supplements','price','available','order','tags','coverImage']); await Protocol.update(f, { where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 router.delete('/protocols/:id', A, async (req, res) => { try { await Protocol.destroy({ where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 
 // Открыть доступ к протоколу вручную
@@ -345,7 +344,7 @@ router.put('/chat-settings', A, async (req, res) => {
   try {
     let s = await ChatSettings.findOne();
     if (!s) s = await ChatSettings.create({});
-    await s.update(req.body);
+    await s.update(pick(req.body, ['enabled','systemPrompt','model','temperature']));
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -415,3 +414,5 @@ router.delete('/orders/:id', SA, async (req, res) => {
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+module.exports = router;

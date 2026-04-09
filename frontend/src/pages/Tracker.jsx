@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import HabitsTab from './tracker/HabitsTab';
 import SupplementsTab from './tracker/SupplementsTab';
 import ShoppingTab from './tracker/ShoppingTab';
+import { tracker as trackerApi } from '../api';
 import { G, GL, GLL, BD, INK, INK2, INK3, OW, W, sans, serif } from '../utils/theme';
 
 const TABS = [
@@ -74,8 +75,7 @@ function StatsCalendar({ onClose }) {
   useEffect(() => {
     (async () => {
       try {
-        const { tracker } = await import('../api');
-        const r = await tracker.getHabits();
+        const r = await trackerApi.getHabits();
         setHabits(r.habits || []);
         const map = {};
         (r.logs || []).forEach(e => { map[e.date] = e.log || {}; });

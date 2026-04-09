@@ -166,7 +166,6 @@ export default function Chat() {
 
   const send = async () => {
     if (!input.trim() || loading) return;
-    try { analytics.chatMessage(); } catch {}
     try { analytics.chatMessage?.(); } catch {}
     const text = input.trim();
     setMessages(prev => [...prev, { role: 'user', content: text }]);

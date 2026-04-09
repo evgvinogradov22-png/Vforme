@@ -156,14 +156,9 @@ export default function RichEditor({ value, onChange, placeholder = 'Начни 
           onPaste={e => {
             e.preventDefault();
             const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text/plain');
-            const clean = text
-              .replace(/<[^>]+style="[^"]*"[^>]*>/gi, m => m.replace(/\s*style="[^"]*"/gi, ''))
-              .replace(/<[^>]+class="[^"]*"[^>]*>/gi, m => m.replace(/\s*class="[^"]*"/gi, ''))
-              .replace(/<font[^>]*>/gi, '').replace(/<\/font>/gi, '')
-              .replace(/<span[^>]*color[^>]*>(.*?)<\/span>/gi, '$1')
-              .replace(/<span>/gi, '').replace(/<\/span>/gi, '');
+            const clean = DOMPurify.sanitize(text, { ALLOWED_TAGS: ['b','i','u','strong','em','br','p','h1','h2','h3','ul','ol','li','a','img','blockquote'], ALLOWED_ATTR: ['href','src','alt','target'] });
             document.execCommand('insertHTML', false, clean);
-            setTimeout(() => { onChange(e.target.innerHTML || document.querySelector('.rich-editor')?.innerHTML); }, 10);
+            setTimeout(() => { onChange(DOMPurify.sanitize(editorRef.current?.innerHTML || '')); }, 10);
           }}
           style={{
             border: `1px solid ${C.border}`,

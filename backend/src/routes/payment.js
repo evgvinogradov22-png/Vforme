@@ -22,12 +22,16 @@ router.post('/free', auth, async (req, res) => {
     if (!program) return res.status(404).json({ error: 'Программа не найдена' });
     if (!program.available) return res.status(403).json({ error: 'Программа недоступна' });
     if (program.price > 0) return res.status(403).json({ error: 'Программа платная' });
-    const user = await User.findByPk(req.user.id);
-    const current = user.programAccess || [];
-    if (!current.includes(programId)) {
-      await user.update({ programAccess: [...current, programId] });
-      await Points.create({ userId: user.id, amount: 10, reason: 'free_program', refId: programId, refType: 'program' });
-    }
+    const t = await sequelize.transaction();
+    try {
+      const user = await User.findByPk(req.user.id, { lock: true, transaction: t });
+      const current = user.programAccess || [];
+      if (!current.includes(programId)) {
+        await user.update({ programAccess: [...current, programId] }, { transaction: t });
+        await Points.create({ userId: user.id, amount: 10, reason: 'free_program', refId: programId, refType: 'program' }, { transaction: t });
+      }
+      await t.commit();
+    } catch (txErr) { await t.rollback(); throw txErr; }
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -155,10 +159,11 @@ router.post('/webhook', async (req, res) => {
     }
 
     if (!order) {
+      const { Op } = require('sequelize');
       const amount = parseFloat(data.sum || data.amount || 0);
       if (amount > 0) {
         order = await Order.findOne({
-          where: { userId: user.id, status: 'pending', amount },
+          where: { userId: user.id, status: 'pending', amount, createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
           order: [['createdAt', 'DESC']],
         });
       }

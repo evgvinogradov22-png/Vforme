@@ -94,7 +94,8 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
-    const data = JSON.parse(req.body.data || '{}');
+    let data;
+    try { data = JSON.parse(req.body.data || '{}'); } catch { return res.status(400).json({ error: 'Невалидный JSON' }); }
     let imageUrl = null;
     if (req.file) {
       const filename = `recipe_${Date.now()}.jpg`;
