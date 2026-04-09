@@ -41,7 +41,7 @@ router.post('/link-token', auth, async (req, res) => {
     const token = crypto.randomBytes(16).toString('hex');
     await User.update({ linkToken: token, linkTokenAt: new Date() }, { where: { id: req.user.id } });
     const botUsername = process.env.MAX_BOT_USERNAME || 'vforme_bot';
-    res.json({ url: `https://max.ru/${botUsername}` });
+    res.json({ url: `https://max.ru/${botUsername}?payload=${token}` });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -63,30 +63,28 @@ router.post('/webhook', async (req, res) => {
       return res.json({ ok: true });
     }
 
-    // bot_started — ищем юзера который только что нажал "Подключить MAX" в приложении (linkToken за последние 2 минуты)
-    if (update.update_type === 'bot_started' && !existing) {
-      const { Op } = require('sequelize');
-      const user = await User.findOne({
-        where: {
-          linkToken: { [Op.ne]: null },
-          linkTokenAt: { [Op.gte]: new Date(Date.now() - 2 * 60 * 1000) },
-          maxId: null,
-        },
-        order: [['linkTokenAt', 'DESC']],
-      });
-      if (user) {
-        await user.update({ maxId: String(maxUserId || chatId), maxUsername: username, linkToken: null });
-        let bonusGiven = false;
-        if (!user.maxBonusGiven) {
-          await Points.create({ userId: user.id, amount: 100, reason: 'max_link', refType: 'max' });
-          await user.update({ maxBonusGiven: true });
-          bonusGiven = true;
+    // bot_started с payload — надёжная привязка по уникальному токену
+    if (update.update_type === 'bot_started') {
+      const payload = update.payload;
+      if (payload) {
+        const { Op } = require('sequelize');
+        const user = await User.findOne({
+          where: { linkToken: payload, linkTokenAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+        });
+        if (user) {
+          await user.update({ maxId: String(maxUserId || chatId), maxUsername: username, linkToken: null });
+          let bonusGiven = false;
+          if (!user.maxBonusGiven) {
+            await Points.create({ userId: user.id, amount: 100, reason: 'max_link', refType: 'max' });
+            await user.update({ maxBonusGiven: true });
+            bonusGiven = true;
+          }
+          await sendMessage(chatId, `Аккаунт привязан!\n\nПривет, ${firstName}! Вам начислено +100 баллов.\n\nДобро пожаловать в V Форме!`);
+          sendToUser(user.id, { type: 'max_linked', bonusGiven, points: bonusGiven ? 100 : 0 });
+          return res.json({ ok: true });
         }
-        await sendMessage(chatId, `Аккаунт привязан!\n\nПривет, ${firstName}! Вам начислено +100 баллов.\n\nДобро пожаловать в V Форме!`);
-        sendToUser(user.id, { type: 'max_linked', bonusGiven, points: bonusGiven ? 100 : 0 });
-      } else {
-        await sendMessage(chatId, `Привет, ${firstName}!\n\nОткройте приложение V Форме → Аккаунт → нажмите "Подключить MAX", затем вернитесь сюда.`);
       }
+      await sendMessage(chatId, `Привет, ${firstName}!\n\nОткройте приложение V Форме → Аккаунт → нажмите "Подключить MAX", затем вернитесь сюда.`);
     }
     res.json({ ok: true });
   } catch (e) {
