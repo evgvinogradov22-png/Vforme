@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import { useAuth } from '../hooks/useAuth';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 import { Spinner } from '../components/UI';
@@ -124,7 +125,7 @@ function PlainHtml({ html }) {
     <div
       className="vc-content"
       style={{ padding: '6px 24px 22px' }}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
     />
   );
 }

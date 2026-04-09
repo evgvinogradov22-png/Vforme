@@ -339,7 +339,7 @@ router.put('/chat-settings', A, async (req, res) => {
 });
 
 // Деплой
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const VERSIONS_FILE = '/var/www/vforme_versions.json';
 
 router.get('/deploy/versions', A, (req, res) => {
@@ -353,7 +353,8 @@ router.get('/deploy/versions', A, (req, res) => {
 router.post('/deploy/test', A, (req, res) => {
   try {
     const { changelog } = req.body;
-    const log = execSync(`bash /var/www/deploy.sh test "${changelog}"`, { timeout: 300000 }).toString();
+    const safeLog = String(changelog || '').replace(/[^a-zA-Zа-яёА-ЯЁ0-9 .,!?()_\-]/g, '').slice(0, 200);
+    const log = execFileSync('bash', ['/var/www/deploy.sh', 'test', safeLog], { timeout: 300000 }).toString();
     const fs = require('fs');
     const versions = JSON.parse(fs.readFileSync(VERSIONS_FILE, 'utf8'));
     res.json({ ok: true, log, version: versions[0] });
@@ -362,7 +363,7 @@ router.post('/deploy/test', A, (req, res) => {
 
 router.post('/deploy/promote', A, (req, res) => {
   try {
-    const log = execSync(`bash /var/www/deploy.sh promote`, { timeout: 300000 }).toString();
+    const log = execFileSync('bash', ['/var/www/deploy.sh', 'promote'], { timeout: 300000 }).toString();
     res.json({ ok: true, log });
   } catch(e) { res.status(500).json({ ok: false, error: e.message }); }
 });
@@ -370,7 +371,8 @@ router.post('/deploy/promote', A, (req, res) => {
 router.post('/deploy/rollback', A, (req, res) => {
   try {
     const { num } = req.body;
-    const log = execSync(`bash /var/www/deploy.sh rollback ${num || 1}`, { timeout: 60000 }).toString();
+    const safeNum = Math.max(1, Math.min(10, parseInt(num, 10) || 1));
+    const log = execFileSync('bash', ['/var/www/deploy.sh', 'rollback', String(safeNum)], { timeout: 60000 }).toString();
     res.json({ ok: true, log });
   } catch(e) { res.status(500).json({ ok: false, error: e.message }); }
 });

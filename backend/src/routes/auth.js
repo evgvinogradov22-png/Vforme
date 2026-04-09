@@ -51,8 +51,7 @@ router.post('/login', authLimit, async (req, res) => {
     const email = (req.body.email || '').trim().toLowerCase();
     const { password } = req.body;
     const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(400).json({ error: 'Пользователь не найден' });
-    if (!await bcrypt.compare(password, user.password)) return res.status(400).json({ error: 'Неверный пароль' });
+    if (!user || !await bcrypt.compare(password, user.password)) return res.status(400).json({ error: 'Неверный email или пароль' });
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, emailVerified: user.emailVerified } });
   } catch (e) { res.status(500).json({ error: e.message }); }

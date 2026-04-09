@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import HabitsTab from './tracker/HabitsTab';
 import SupplementsTab from './tracker/SupplementsTab';
 import ShoppingTab from './tracker/ShoppingTab';
@@ -71,7 +71,7 @@ function StatsCalendar({ onClose }) {
 
   const today = dateKey(new Date());
 
-  useState(() => {
+  useEffect(() => {
     (async () => {
       try {
         const { tracker } = await import('../api');
