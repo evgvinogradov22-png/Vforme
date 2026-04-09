@@ -26,7 +26,7 @@ export default function Tracker() {
         </div>
         <button onClick={() => setShowStats(s => !s)}
           style={{ padding: '8px 14px', background: showStats ? G : GLL, color: showStats ? W : G, border: '1px solid ' + G + '33', borderRadius: 10, fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          📊 Статистика
+          Статистика
         </button>
       </div>
 
