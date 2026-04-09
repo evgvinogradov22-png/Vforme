@@ -84,7 +84,7 @@ export default function Cabinet() {
           <div style={{ fontSize: 28, fontWeight: 700, color: GOLD, fontFamily: serif }}>{totalPoints}</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontFamily: sans, letterSpacing: 1 }}>БАЛЛОВ</div>
         </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontFamily: sans, marginTop: 8, maxWidth: 260 }}>Скоро тут появится магазин, где можно будет потратить баллы</div>
+        <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontFamily: sans, marginTop: 12, textAlign: 'center', lineHeight: 1.5 }}>Скоро тут появится магазин,<br/>где можно будет потратить баллы</div>
       </div>
 
       <div style={{ padding: '24px 20px' }}>
@@ -108,45 +108,36 @@ export default function Cabinet() {
           </div>
         </div>
 
-        {/* TELEGRAM */}
-        <div style={{ marginBottom: 12, background: user?.telegramId ? '#EBF0EB' : OW, border: `1px solid ${user?.telegramId ? G : BD}`, borderRadius: 16, padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: INK, fontFamily: sans }}>
-                {user?.telegramId ? 'Telegram подключён' : 'Подключи Telegram'}
+        {/* МЕССЕНДЖЕРЫ */}
+        <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12, fontFamily: sans }}>МЕССЕНДЖЕРЫ</div>
+        {[
+          { id: 'telegram', linked: !!user?.telegramId, name: 'Telegram', username: user?.telegramUsername, color: '#2AABEE', bonusGiven: user?.telegramBonusGiven,
+            action: connectTelegram, loading: tgLoading,
+            desc: user?.telegramId ? 'Уведомления о новых материалах и акциях' : 'Подключи для получения уведомлений и +100 баллов' },
+          { id: 'max', linked: !!user?.maxId, name: 'MAX', username: user?.maxUsername, color: '#5B6CEA', bonusGiven: user?.maxBonusGiven,
+            action: () => { window.location.href = 'https://max.ru/id440131784034_bot'; },
+            desc: user?.maxId ? 'Уведомления о новых материалах и акциях' : 'Подключи для получения уведомлений и +100 баллов' },
+        ].map(m => (
+          <div key={m.id} style={{ marginBottom: 10, background: m.linked ? W : OW, border: `1px solid ${m.linked ? m.color + '44' : BD}`, borderRadius: 16, padding: '16px 18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: m.linked ? m.color : m.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ color: m.linked ? W : m.color, fontSize: 15, fontWeight: 700, fontFamily: sans }}>{m.name[0]}</span>
               </div>
-              {user?.telegramId && <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>@{user.telegramUsername || 'подключён'}</div>}
-            </div>
-            {user?.telegramId ? (
-              <div style={{ padding: '6px 12px', background: GLL, borderRadius: 10, color: G, fontFamily: sans, fontSize: 12, fontWeight: 600 }}>Привязан</div>
-            ) : (
-              <button onClick={connectTelegram} disabled={tgLoading}
-                style={{ padding: '10px 18px', background: GOLD, border: 'none', borderRadius: 12, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                {tgLoading ? '...' : user?.telegramBonusGiven ? 'Подключить' : '+100'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* MAX */}
-        <div style={{ marginBottom: 20, background: user?.maxId ? '#EBF0EB' : OW, border: `1px solid ${user?.maxId ? G : BD}`, borderRadius: 16, padding: '16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: INK, fontFamily: sans }}>
-                {user?.maxId ? 'MAX подключён' : 'Подключи MAX'}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 15, color: INK, fontFamily: sans }}>{m.name} {m.linked && <span style={{ color: G, fontSize: 13 }}>&#10003;</span>}</div>
+                <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans, lineHeight: 1.4 }}>
+                  {m.linked && m.username ? `@${m.username} · ` : ''}{m.desc}
+                </div>
               </div>
-              {user?.maxId && <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>{user.maxUsername ? '@' + user.maxUsername : 'подключён'}</div>}
+              {!m.linked && (
+                <button onClick={m.action} disabled={m.loading}
+                  style={{ padding: '10px 16px', background: m.color, border: 'none', borderRadius: 12, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap', opacity: m.loading ? 0.5 : 1 }}>
+                  {m.loading ? '...' : m.bonusGiven ? 'Связать' : '+100'}
+                </button>
+              )}
             </div>
-            {user?.maxId ? (
-              <div style={{ padding: '6px 12px', background: GLL, borderRadius: 10, color: G, fontFamily: sans, fontSize: 12, fontWeight: 600 }}>Привязан</div>
-            ) : (
-              <button onClick={() => { window.location.href = 'https://max.ru/id440131784034_bot'; }}
-                style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 12, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                {user?.maxBonusGiven ? 'Подключить' : '+100'}
-              </button>
-            )}
           </div>
-        </div>
+        ))}
 
       {pointsHistory.length > 0 && (
           <div style={{ marginBottom: 24 }}>
@@ -253,7 +244,12 @@ export default function Cabinet() {
           </div>
         )}
 
-        <button onClick={logout} style={{ width: '100%', padding: '16px', background: W, border: '1px solid ' + BD, borderRadius: 30, color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 15, cursor: 'pointer', marginTop: 8 }}>
+        <button onClick={() => { window.location.href = 'https://t.me/vforme_bot'; }}
+          style={{ width: '100%', padding: '16px', background: G, border: 'none', borderRadius: 30, color: W, fontFamily: sans, fontWeight: 700, fontSize: 15, cursor: 'pointer', marginTop: 8 }}>
+          Служба поддержки
+        </button>
+
+        <button onClick={logout} style={{ width: '100%', padding: '16px', background: W, border: '1px solid ' + BD, borderRadius: 30, color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 15, cursor: 'pointer', marginTop: 10 }}>
           Выйти из аккаунта
         </button>
 

@@ -301,9 +301,9 @@ export default function Recipes({ user, flash }) {
             </div>
           )}
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-            {r.time && <span style={{ background: GLL, color: G, fontSize: 13, borderRadius: 20, padding: '6px 14px', fontFamily: sans, lineHeight: 1 }}>⏱ {r.time}</span>}
-            {r.kcal != null && <span style={{ background: '#FBF5EB', color: GOLD, fontSize: 13, borderRadius: 20, padding: '6px 14px', fontFamily: sans, lineHeight: 1 }}>~{r.kcal} ккал</span>}
-            <span style={{ background: '#F9F7F4', color: INK3, fontSize: 13, borderRadius: 20, padding: '6px 14px', fontFamily: sans, lineHeight: 1 }}>
+            {r.time && <span style={{ background: GLL, color: G, fontSize: 14, borderRadius: 20, padding: '7px 16px', fontFamily: sans, lineHeight: 1 }}>⏱ {r.time}</span>}
+            {r.kcal != null && <span style={{ background: '#FBF5EB', color: GOLD, fontSize: 14, borderRadius: 20, padding: '7px 16px', fontFamily: sans, lineHeight: 1 }}>~{r.kcal} ккал</span>}
+            <span style={{ background: '#F9F7F4', color: INK3, fontSize: 14, borderRadius: 20, padding: '7px 16px', fontFamily: sans, lineHeight: 1 }}>
               {r.authorName === 'Кристина' ? 'Кристина' : 'Участница'}
             </span>
           </div>
@@ -342,7 +342,7 @@ export default function Recipes({ user, flash }) {
               {r.ingredients.map((ing, i) => (
                 <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: 10, borderBottom: '1px solid ' + BD, marginBottom: 10, alignItems: 'center' }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: G, flexShrink: 0 }} />
-                  <div style={{ flex: 1, fontSize: 15, color: INK, lineHeight: 1.5, fontFamily: sans }}>{ing}</div>
+                  <div style={{ flex: 1, fontSize: 16, color: INK, lineHeight: 1.5, fontFamily: sans }}>{ing}</div>
                   <button onClick={async () => {
                     try { await trackerApi.addShopping({ name: ing, category: 'ingredient', source: r.title, sourceId: r.id }); }
                     catch (e) { alert(e.message); }
@@ -357,7 +357,7 @@ export default function Recipes({ user, flash }) {
               {r.steps.map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: G, color: W, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: sans }}>{i + 1}</div>
-                  <div style={{ fontSize: 15, color: INK, lineHeight: 1.6, paddingTop: 4, fontFamily: sans }}>{step}</div>
+                  <div style={{ fontSize: 16, color: INK, lineHeight: 1.6, paddingTop: 4, fontFamily: sans }}>{step}</div>
                 </div>
               ))}
             </div>

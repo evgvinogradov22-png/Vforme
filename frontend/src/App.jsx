@@ -254,8 +254,8 @@ function AppShell() {
                 transition: 'color .18s ease',
                 minWidth: 0,
               }}>
-              <TabIcon name={t.icon} size={30} />
-              <span style={{ lineHeight: 1 }}>{t.label}</span>
+              <TabIcon name={t.icon} size={28} style={{ marginTop: -2 }} />
+              <span style={{ lineHeight: 1, marginTop: -1 }}>{t.label}</span>
             </button>
           );
         })}

@@ -149,11 +149,11 @@ function StatsCalendar({ onClose }) {
           const isToday = dateKey(d) === today;
           return (
             <div key={i} style={{
-              height: 36, borderRadius: 8,
+              height: 40, borderRadius: 9,
               background: c > 0 ? `rgba(45, 74, 45, ${0.15 + c * 0.75})` : OW,
               border: isToday ? '2px solid ' + G : '1px solid transparent',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontFamily: sans, fontWeight: isToday ? 700 : 400,
+              fontSize: 13, fontFamily: sans, fontWeight: isToday ? 700 : 400,
               color: c > 0.5 ? W : INK2,
             }}>{d.getDate()}</div>
           );

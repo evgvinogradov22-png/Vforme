@@ -87,7 +87,7 @@ function AtlasMain({ result, onRetake, onGoChat }) {
             </div>
           </div>
 
-          <div style={{ fontFamily: sans, fontSize: 16, color: INK, lineHeight: 1.7, marginBottom: 18 }}>
+          <div style={{ fontFamily: sans, fontSize: 17, color: INK, lineHeight: 1.75, marginBottom: 20 }}>
             {renderMarkdown(result.message || '—', 'kr')}
           </div>
 

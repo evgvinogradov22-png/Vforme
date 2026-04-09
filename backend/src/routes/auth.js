@@ -41,6 +41,8 @@ router.post('/register', authLimit, async (req, res) => {
     await EmailToken.create({ userId: user.id, tokenHash: codeHash, type: 'verify', expiresAt: new Date(Date.now() + 15 * 60 * 1000) }, { transaction: t });
     await t.commit();
     try { await loggedSend(sendVerification, 'verify', email, user.id, name, code); } catch (e) { console.error('Email error:', e.message); }
+    // Уведомление админу
+    try { require('../utils/notify').sendTgNotification(`📱 <b>Новая регистрация</b>\n${name || '—'} (${email})`); } catch {}
     const jwtToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token: jwtToken, user: { id: user.id, email: user.email, name: user.name, role: user.role, emailVerified: false } });
   } catch (e) { await t.rollback(); res.status(500).json({ error: e.message }); }

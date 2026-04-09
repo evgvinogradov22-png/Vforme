@@ -246,6 +246,11 @@ router.post('/message', auth, chatLimit, async (req, res) => {
 
     const userMsg = await ChatMessage.create({ userId: req.user.id, role: 'user', content: message, isAi: false });
     broadcast({ type: 'chat_admin_update', userId: req.user.id, message: userMsg });
+    // Уведомление админу
+    try {
+      const u = await User.findByPk(req.user.id, { attributes: ['name', 'email'] });
+      require('../utils/notify').sendTgNotification(`💬 <b>Сообщение в чат</b>\n${u?.name || u?.email || 'Пользователь'}: ${message.slice(0, 100)}`);
+    } catch {}
 
     // 1) Откат старых сообщений в summary, если их накопилось много
     const user = await User.findByPk(req.user.id);
