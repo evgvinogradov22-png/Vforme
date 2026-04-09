@@ -29,7 +29,7 @@ router.get('/', auth, async (req, res) => {
 
     const result = protocols.map(p => {
       const proto = p.toJSON();
-      proto.hasAccess = proto.price === 0 || accessIds.includes(proto.id) || isClub || pickIds.includes(proto.id);
+      proto.hasAccess = accessIds.includes(proto.id) || isClub || pickIds.includes(proto.id);
       if (proto.supplements?.length) {
         proto.supplements = proto.supplements.map(s => ({
           ...s,
@@ -52,7 +52,7 @@ router.get('/:id', auth, async (req, res) => {
     const access = await ProtocolAccess.findOne({ where: { userId: req.user.id, protocolId: proto.id } });
     const isClub2 = await isClubSubscriber(req.user.id);
     const pick = await require('../models/FreeProductPick').findOne({ where: { userId: req.user.id, productId: proto.id, productType: 'protocol' } });
-    const hasAccess = proto.price === 0 || !!access || isClub2 || !!pick;
+    const hasAccess = !!access || isClub2 || !!pick;
 
     const data = proto.toJSON();
     data.hasAccess = hasAccess;

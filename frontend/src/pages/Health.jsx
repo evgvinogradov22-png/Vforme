@@ -799,18 +799,18 @@ export default function Health() {
   const ownedPrograms = user?.programAccess || [];
 
   function isItemAccessible(item) {
+    if (item.kind === 'program') return true; // programs have their own paywall
     if (isClub) return true;
-    if (Number(item.price) === 0) return true;
-    if (item.kind === 'program' && ownedPrograms.includes(item.id)) return true;
     if (freePickIds.includes(item.id)) return true;
+    if (item.kind === 'program' && ownedPrograms.includes(item.id)) return true;
     return false;
   }
 
   function isItemLocked(item) {
+    if (item.kind === 'program') return false;
     if (isItemAccessible(item)) return false;
-    if (item.kind === 'program') return false; // programs always clickable (paywall inside)
-    if (freePicksLeft > 0) return false; // can still pick
-    return true; // no picks left, not accessible
+    if (freePicksLeft > 0) return false;
+    return true;
   }
 
   const handleOpen = async (item) => {
