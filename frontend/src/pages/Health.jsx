@@ -199,11 +199,11 @@ function FeedCard({ item, onClick, locked }) {
   });
 
   return (
-    <div onClick={locked ? undefined : onClick} style={{
+    <div onClick={locked ? () => window.dispatchEvent(new Event('vforme:open-subscription')) : onClick} style={{
       background: locked ? '#F0EFED' : W, border: `1px solid ${BD}`, borderRadius: 20,
       overflow: 'hidden',
       boxShadow: locked ? 'none' : '0 2px 10px rgba(0,0,0,0.04)',
-      cursor: locked ? 'default' : 'pointer',
+      cursor: 'pointer',
       transition: 'transform .12s',
       opacity: locked ? 0.5 : 1,
       filter: locked ? 'grayscale(0.6)' : 'none',
@@ -850,8 +850,8 @@ export default function Health() {
             </div>
           </div>
           {!isClub && (
-            <button onClick={() => window.dispatchEvent(new Event('vforme:open-subscription'))} style={{ padding: '8px 14px', background: GOLD, color: W, border: 'none', borderRadius: 10, fontFamily: sans, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              Клуб 399₽
+            <button onClick={() => window.dispatchEvent(new Event('vforme:open-subscription'))} style={{ padding: '10px 16px', background: GOLD, color: W, border: 'none', borderRadius: 12, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              Вступить в клуб
             </button>
           )}
         </div>
