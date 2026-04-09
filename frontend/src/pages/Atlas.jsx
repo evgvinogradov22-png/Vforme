@@ -19,7 +19,7 @@ function AtlasMain({ result, onRetake, onGoChat }) {
     fetch('/api/atlas/content', { headers: authHeaders() })
       .then(r => r.json())
       .then(items => Array.isArray(items) && setContent(items))
-      .catch(() => {});
+      .catch(e => console.error(e));
   }, []);
 
   const focusZoneId = result.focusZoneIds?.[0]
@@ -162,7 +162,7 @@ export default function Atlas({ onGoChat }) {
     fetch('/api/atlas/me', { headers: authHeaders() })
       .then(r => r.ok ? r.json() : null)
       .then(data => setResult(data || null))
-      .catch(() => {})
+      .catch(e => console.error(e))
       .finally(() => setLoading(false));
   }, []);
 

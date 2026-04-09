@@ -8,5 +8,5 @@ const Module = sequelize.define('Module', {
   num:       { type: DataTypes.STRING },
   color:     { type: DataTypes.STRING },
   order:     { type: DataTypes.INTEGER, defaultValue: 0 },
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ fields: ['programId'] }] });
 module.exports = Module;

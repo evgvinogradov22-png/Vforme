@@ -11,7 +11,7 @@ export default function Supplements() {
   useEffect(() => {
     supplementsApi.getAll()
       .then(setSchemes)
-      .catch(() => {})
+      .catch(e => console.error(e))
       .finally(() => setLoading(false));
   }, []);
 

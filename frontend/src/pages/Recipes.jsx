@@ -119,7 +119,7 @@ export default function Recipes({ user, flash }) {
         setRecipeList(Array.isArray(list) ? list : []);
         setSavedList(Array.isArray(saved) ? saved : []);
       })
-      .catch(() => {})
+      .catch(e => console.error(e))
       .finally(() => setLoading(false));
   }, []);
 

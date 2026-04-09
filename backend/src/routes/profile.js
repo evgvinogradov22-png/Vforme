@@ -14,7 +14,7 @@ router.post('/', auth, async (req, res) => {
     let p = await UserProfile.findOne({ where: { userId: req.user.id } });
     const snap = { date: new Date(), answers };
     if (!p) p = await UserProfile.create({ userId: req.user.id, answers, history: [snap] });
-    else await p.update({ answers, history: [...(p.history || []), snap] });
+    else await p.update({ answers, history: [...(p.history || []), snap].slice(-50) });
     res.json(p);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

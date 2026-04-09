@@ -156,10 +156,12 @@ router.post('/webhook', async (req, res) => {
 
     if (!order) {
       const amount = parseFloat(data.sum || data.amount || 0);
-      order = await Order.findOne({
-        where: { userId: user.id, status: 'pending', ...(amount > 0 ? { amount } : {}) },
-        order: [['createdAt', 'DESC']],
-      });
+      if (amount > 0) {
+        order = await Order.findOne({
+          where: { userId: user.id, status: 'pending', amount },
+          order: [['createdAt', 'DESC']],
+        });
+      }
     }
 
     if (!order) {

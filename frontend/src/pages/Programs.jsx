@@ -131,7 +131,7 @@ function LecturePage({ prog, mod, lec, progress, onBack, onComplete, flash, hasA
       if (allDone && !saved) {
         setSaved(true);
         const pts = lec.points || 10;
-        await pointsApi.award(pts, 'lecture_complete', lec.id, 'lecture').catch(() => {});
+        await pointsApi.award(pts, 'lecture_complete', lec.id, 'lecture').catch(e => console.error(e));
         flash(`✓ Этап завершён +${pts} баллов`);
         onComplete(lec.id);
       }
@@ -256,7 +256,7 @@ export default function Programs({ flash, user }) {
   const loadPrograms = () => {
     Promise.all([programsApi.getAll(), profileApi.getProgress()])
       .then(([progs, prog]) => { setProgramList(progs); setProgress(prog); })
-      .catch(() => {})
+      .catch(e => console.error(e))
       .finally(() => setLoading(false));
   };
   useEffect(() => { loadPrograms(); }, []);

@@ -95,12 +95,12 @@ function AppShell() {
   useWebSocket((msg) => {
     if (!msg || !msg.type) return;
     if (msg.type === 'telegram_linked') {
-      authApi.me().then(u => { if (u) setUser(u); }).catch(() => {});
+      authApi.me().then(u => { if (u) setUser(u); }).catch(e => console.error(e));
       flash(msg.bonusGiven ? '✈️ Telegram подключён! +100 баллов' : '✈️ Telegram подключён');
       return;
     }
     if (msg.type === 'telegram_unlinked') {
-      authApi.me().then(u => { if (u) setUser(u); }).catch(() => {});
+      authApi.me().then(u => { if (u) setUser(u); }).catch(e => console.error(e));
       flash('✈️ Telegram отключён');
       return;
     }

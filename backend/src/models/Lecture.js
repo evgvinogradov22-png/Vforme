@@ -10,5 +10,5 @@ const Lecture = sequelize.define('Lecture', {
   tasks:    { type: DataTypes.JSONB },
   points:   { type: DataTypes.INTEGER, defaultValue: 10 },
   order:    { type: DataTypes.INTEGER, defaultValue: 0 },
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ fields: ['moduleId'] }] });
 module.exports = Lecture;

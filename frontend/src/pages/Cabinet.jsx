@@ -54,7 +54,7 @@ export default function Cabinet() {
         setTotalPoints(pts.total || 0);
         setPointsHistory(pts.history || []);
       })
-      .catch(() => {})
+      .catch(e => console.error(e))
       .finally(() => setLoading(false));
   }, []);
 

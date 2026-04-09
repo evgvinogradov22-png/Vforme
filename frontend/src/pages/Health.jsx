@@ -748,7 +748,7 @@ export default function Health() {
     fetch('/api/health/feed', { headers: authHeaders() })
       .then(r => r.json())
       .then(data => setItems(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .catch(e => console.error(e))
       .finally(() => setLoading(false));
   }, []);
 

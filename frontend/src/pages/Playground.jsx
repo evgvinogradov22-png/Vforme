@@ -604,7 +604,7 @@ function MainScreen({ state, onZoneClick, onReset }) {
       .then(items => {
         if (Array.isArray(items)) setContent(items);
       })
-      .catch(() => {});
+      .catch(e => console.error(e));
   }, []);
 
   const focusZoneId = analysis?.focusZoneIds?.[0] || [...Object.entries(state.levels || {})].sort((a, b) => a[1] - b[1])[0]?.[0];
@@ -786,7 +786,7 @@ export default function Playground() {
         });
         setContent(tagged);
       })
-      .catch(() => {});
+      .catch(e => console.error(e));
   }, []);
 
   useEffect(() => { if (state) saveState(state); }, [state]);

@@ -1,6 +1,9 @@
 const router = require('express').Router();
+const rateLimit = require('express-rate-limit');
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
+
+const adminLimit = rateLimit({ windowMs: 60000, max: 100, message: { error: 'Too many requests' } });
 const { broadcast } = require('../ws');
 const Program = require('../models/Program');
 const Module = require('../models/Module');
@@ -17,9 +20,18 @@ const path = require('path');
 const sharp = require('sharp');
 const fs = require('fs');
 
-const A = [auth, role('admin','superadmin')];
-const SA = [auth, role('superadmin')];
+const A = [adminLimit, auth, role('admin','superadmin')];
+const SA = [adminLimit, auth, role('superadmin')];
 const upload = multer({ dest: '/tmp/' });
+
+// Audit log для admin-действий
+router.use((req, res, next) => {
+  if (['POST','PUT','PATCH','DELETE'].includes(req.method)) {
+    const user = req.user || {};
+    console.log(`[ADMIN] ${req.method} ${req.originalUrl} by ${user.email || user.id || 'unknown'}`);
+  }
+  next();
+});
 
 // Whitelist полей для каждой модели
 const ALLOWED_FIELDS = {
@@ -107,7 +119,7 @@ router.put('/lectures/:id', A, l.update);
 router.delete('/lectures/:id', A, l.remove);
 
 // Recipes
-router.get('/recipes', A, async (req, res) => { res.json(await Recipe.findAll({order:[['createdAt','DESC']]})); });
+router.get('/recipes', A, async (req, res) => { res.json(await Recipe.findAll({order:[['createdAt','DESC']], limit: 500})); });
 router.post('/recipes', A, upload.single('image'), async (req, res) => {
   try {
     const data = JSON.parse(req.body.data || '{}');
