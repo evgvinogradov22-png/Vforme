@@ -16,6 +16,7 @@ import VerifyCode from './pages/VerifyCode';
 import PaymentSuccess from './pages/PaymentSuccess';
 // import Materials from './pages/Materials'; // unused
 import Chat from './pages/Chat';
+import Subscription from './pages/Subscription';
 import Playground from './pages/Playground';
 import Atlas from './pages/Atlas';
 import Health from './pages/Health';
@@ -59,6 +60,7 @@ function AppShell() {
   const [screen, setScreen] = useState('landing');
   const [tab, setTab] = useState('atlas');
   const [toast, setToast] = useState(null);
+  const [showSubscription, setShowSubscription] = useState(false);
   const [justRegistered, setJustRegistered] = useState(() => sessionStorage.getItem('justRegistered') === 'true');
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(() => {
     const p = new URLSearchParams(window.location.search).get('payment');
@@ -83,6 +85,13 @@ function AppShell() {
   useEffect(() => {
     if (user) log.sessionStart();
   }, [user?.id]);
+
+  // Открытие подписки из любого места
+  useEffect(() => {
+    const h = () => setShowSubscription(true);
+    window.addEventListener('vforme:open-subscription', h);
+    return () => window.removeEventListener('vforme:open-subscription', h);
+  }, []);
 
   // Слушаем запрос на открытие продукта из чата → переключаемся на вкладку Здоровье
   useEffect(() => {
@@ -195,6 +204,13 @@ function AppShell() {
             <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, fontFamily: sans }}>Получи +100 баллов и уведомления</div>
           </div>
           <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 20 }}>›</span>
+        </div>
+      )}
+
+      {/* ПОДПИСКА — fullscreen overlay */}
+      {showSubscription && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, background: '#F9F7F4', overflow: 'auto', maxWidth: 480, margin: '0 auto' }}>
+          <Subscription onClose={() => setShowSubscription(false)} />
         </div>
       )}
 

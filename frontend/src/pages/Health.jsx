@@ -780,7 +780,6 @@ function injectVcStyles() {
 // ─── Главная страница Здоровье ───────────────────────────────
 export default function Health() {
   const { user, refreshUser } = useAuth();
-  const [showSubscription, setShowSubscription] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [kindFilter, setKindFilter] = useState([]);
@@ -863,11 +862,6 @@ export default function Health() {
     } catch (e) { alert(e.message); }
   };
 
-  if (showSubscription) {
-    const Subscription = require('./Subscription').default;
-    return <Subscription onClose={() => setShowSubscription(false)} />;
-  }
-
   return (
     <div style={{
       background: '#F9F7F4',
@@ -883,7 +877,7 @@ export default function Health() {
             </div>
           </div>
           {!isClub && (
-            <button onClick={() => setShowSubscription(true)} style={{ padding: '8px 14px', background: GOLD, color: W, border: 'none', borderRadius: 10, fontFamily: sans, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            <button onClick={() => window.dispatchEvent(new Event('vforme:open-subscription'))} style={{ padding: '8px 14px', background: GOLD, color: W, border: 'none', borderRadius: 10, fontFamily: sans, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               Клуб 399₽
             </button>
           )}
