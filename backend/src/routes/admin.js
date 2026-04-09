@@ -230,7 +230,7 @@ router.post('/users', SA, async (req,res) => {
     res.json({ id: user.id, email: user.email, name: user.name, role: user.role });
   } catch(e) { res.status(500).json({error:e.message}); }
 });
-router.put('/users/:id/role', SA, async (req,res) => { try { await User.update({role:req.body.role},{where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
+router.put('/users/:id/role', SA, async (req,res) => { try { const r = req.body.role; if (!['user','admin','superadmin'].includes(r)) return res.status(400).json({error:'Invalid role'}); await User.update({role:r},{where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
 router.delete('/users/:id', SA, async (req,res) => { try { await User.destroy({where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
 
 // Клуб — активировать/деактивировать подписку

@@ -6,6 +6,7 @@ const Promo = require('../models/Promo');
 router.post('/check', auth, async (req, res) => {
   try {
     const { code, programId, price } = req.body;
+    if (!code || typeof code !== 'string') return res.status(400).json({ error: 'Код не указан' });
     const promo = await Promo.findOne({ where: { code: code.toUpperCase(), active: true } });
 
     if (!promo) return res.status(404).json({ error: 'Промокод не найден' });

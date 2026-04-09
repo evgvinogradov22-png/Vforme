@@ -95,15 +95,7 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
-// Отключить Telegram (ID сохраняется для защиты от повторного использования)
-router.post('/unlink', auth, async (req, res) => {
-  try {
-    // Не удаляем telegramId — чтобы нельзя было перепривязать к другому аккаунту
-    await User.update({ linkToken: null }, { where: { id: req.user.id } });
-    sendToUser(req.user.id, { type: 'telegram_unlinked' });
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+// Отключение не поддерживается — привязка постоянная
 
 router.get('/set-webhook', async (req, res) => {
   try {

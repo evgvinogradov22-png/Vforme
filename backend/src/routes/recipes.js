@@ -64,7 +64,7 @@ router.get('/random/one', async (req, res) => {
     if (count === 0) return res.json(null);
     const offset = Math.floor(Math.random() * count);
     const r = await Recipe.findOne({ offset });
-    res.json(r);
+    res.json(r || null);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
