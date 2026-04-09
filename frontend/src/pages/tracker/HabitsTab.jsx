@@ -94,28 +94,21 @@ export default function HabitsTab() {
 
       {/* Add */}
       {adding ? (
-        <div style={{ border: '1px solid ' + GOLD, borderRadius: 16, padding: 14, marginTop: 8 }}>
+        <div style={{ marginTop: 8 }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             <input value={newIcon} onChange={e => setNewIcon(e.target.value)} maxLength={3}
-              style={{ width: 50, textAlign: 'center', border: '1px solid ' + BD, borderRadius: 10, padding: 10, fontSize: 18, fontFamily: sans }} />
+              style={{ width: 54, textAlign: 'center', border: '1px solid ' + BD, borderRadius: 12, padding: '12px 8px', fontSize: 20, fontFamily: sans, background: OW }} />
             <input autoFocus placeholder="Название привычки" value={newName} onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && addManual()}
-              style={{ flex: 1, border: '1px solid ' + BD, borderRadius: 10, padding: 10, fontSize: 14, fontFamily: sans, color: INK, outline: 'none' }} />
+              style={{ flex: 1, border: '1px solid ' + BD, borderRadius: 12, padding: '14px 16px', fontSize: 15, fontFamily: sans, color: INK, outline: 'none', background: OW }} />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={addManual} style={{ flex: 1, padding: 12, background: G, border: 'none', borderRadius: 10, color: W, fontFamily: sans, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Добавить</button>
-            <button onClick={() => { setAdding(false); setNewName(''); }} style={{ padding: '12px 16px', background: OW, border: '1px solid ' + BD, borderRadius: 10, color: INK2, fontFamily: sans, fontSize: 14, cursor: 'pointer' }}>Отмена</button>
+            <button onClick={addManual} style={{ flex: 1, padding: 14, background: G, border: 'none', borderRadius: 12, color: W, fontFamily: sans, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Добавить</button>
+            <button onClick={() => { setAdding(false); setNewName(''); }} style={{ padding: '14px 18px', background: OW, border: 'none', borderRadius: 12, color: INK3, fontFamily: sans, fontSize: 14, cursor: 'pointer' }}>Отмена</button>
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-          <button onClick={() => setAdding(true)} style={{ flex: 1, padding: 14, background: W, border: '1px dashed ' + BD, borderRadius: 14, color: INK2, fontFamily: sans, fontSize: 14, cursor: 'pointer' }}>+ Добавить</button>
-          {habits.length > 0 && (
-            <button onClick={aiGenerate} disabled={aiBusy} style={{ padding: '14px 16px', background: GLL, border: '1px solid ' + G + '33', borderRadius: 14, color: G, fontFamily: sans, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: aiBusy ? 0.5 : 1 }}>
-              ✨ {aiBusy ? '…' : 'AI'}
-            </button>
-          )}
-        </div>
+        <button onClick={() => setAdding(true)} style={{ width: '100%', padding: 14, background: W, border: '1px dashed ' + BD, borderRadius: 14, color: INK2, fontFamily: sans, fontSize: 14, cursor: 'pointer', marginTop: 10 }}>+ Добавить</button>
       )}
     </div>
   );

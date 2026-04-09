@@ -94,12 +94,12 @@ export default function ShoppingTab() {
       )}
 
       {adding ? (
-        <div style={{ border: '1px solid ' + GOLD, borderRadius: 14, padding: 12, marginTop: 8, display: 'flex', gap: 8 }}>
+        <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
           <input autoFocus placeholder="Что купить" value={newName} onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addManual()}
-            style={{ flex: 1, border: '1px solid ' + BD, borderRadius: 10, padding: 10, fontSize: 14, fontFamily: sans, color: INK, outline: 'none' }} />
-          <button onClick={addManual} style={{ padding: '10px 14px', background: G, border: 'none', borderRadius: 10, color: W, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>OK</button>
-          <button onClick={() => { setAdding(false); setNewName(''); }} style={{ padding: '10px 12px', background: OW, border: '1px solid ' + BD, borderRadius: 10, color: INK2, fontFamily: sans, fontSize: 13, cursor: 'pointer' }}>×</button>
+            style={{ flex: 1, border: '1px solid ' + BD, borderRadius: 12, padding: '14px 16px', fontSize: 15, fontFamily: sans, color: INK, outline: 'none', background: OW }} />
+          <button onClick={addManual} style={{ padding: '14px 18px', background: G, border: 'none', borderRadius: 12, color: W, fontFamily: sans, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>OK</button>
+          <button onClick={() => { setAdding(false); setNewName(''); }} style={{ padding: '14px 14px', background: OW, border: 'none', borderRadius: 12, color: INK3, fontFamily: sans, fontSize: 16, cursor: 'pointer' }}>×</button>
         </div>
       ) : (
         <button onClick={() => setAdding(true)} style={{ width: '100%', padding: 14, background: W, border: '1px dashed ' + BD, borderRadius: 14, color: INK2, fontFamily: sans, fontSize: 14, cursor: 'pointer', marginTop: 10 }}>

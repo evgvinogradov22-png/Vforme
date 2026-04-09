@@ -112,7 +112,7 @@ function StatsCalendar({ onClose }) {
   const WD = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 
   return (
-    <div style={{ background: W, border: '1px solid ' + BD, borderRadius: 18, padding: 16, marginBottom: 18 }}>
+    <div style={{ background: W, borderRadius: 18, padding: 18, marginBottom: 18 }}>
       {/* Stats row */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <div style={{ flex: 1, background: GLL, borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
@@ -149,7 +149,7 @@ function StatsCalendar({ onClose }) {
           const isToday = dateKey(d) === today;
           return (
             <div key={i} style={{
-              height: 30, borderRadius: 7,
+              height: 36, borderRadius: 8,
               background: c > 0 ? `rgba(45, 74, 45, ${0.15 + c * 0.75})` : OW,
               border: isToday ? '2px solid ' + G : '1px solid transparent',
               display: 'flex', alignItems: 'center', justifyContent: 'center',

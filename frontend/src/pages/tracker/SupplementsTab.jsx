@@ -107,20 +107,20 @@ export default function SupplementsTab() {
       ))}
 
       {adding ? (
-        <div style={{ border: '1px solid ' + GOLD, borderRadius: 16, padding: 16, marginTop: 12, background: W }}>
+        <div style={{ borderRadius: 16, padding: 0, marginTop: 12 }}>
           <input autoFocus placeholder="Название (Магний B6)" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 10, padding: 12, fontSize: 15, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
+            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 12, padding: '14px 16px', fontSize: 16, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, boxSizing: 'border-box', background: OW }} />
           <input placeholder="Дозировка (1 капсула)" value={form.dose} onChange={e => setForm({ ...form, dose: e.target.value })}
-            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 10, padding: 12, fontSize: 14, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
+            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 12, padding: '14px 16px', fontSize: 15, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, boxSizing: 'border-box', background: OW }} />
           <select value={form.time} onChange={e => setForm({ ...form, time: e.target.value })}
-            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 10, padding: 12, fontSize: 14, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, background: W, boxSizing: 'border-box' }}>
+            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 12, padding: '14px 16px', fontSize: 15, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, background: OW, boxSizing: 'border-box' }}>
             <option value="">Когда принимать…</option>
             {TIME_OPTIONS.map(o => <option key={o.v} value={o.v}>{o.label}</option>)}
           </select>
           <input placeholder="Курс (30 дней / постоянно)" value={form.course} onChange={e => setForm({ ...form, course: e.target.value })}
-            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 10, padding: 12, fontSize: 14, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
-          <textarea placeholder="Рекомендация (или нажми ✨)" value={form.recommendation} onChange={e => setForm({ ...form, recommendation: e.target.value })} rows={3}
-            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 10, padding: 12, fontSize: 13, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, resize: 'vertical', boxSizing: 'border-box' }} />
+            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 12, padding: '14px 16px', fontSize: 15, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, boxSizing: 'border-box', background: OW }} />
+          <textarea placeholder="Рекомендация (или нажми AI)" value={form.recommendation} onChange={e => setForm({ ...form, recommendation: e.target.value })} rows={3}
+            style={{ width: '100%', border: '1px solid ' + BD, borderRadius: 12, padding: '14px 16px', fontSize: 14, fontFamily: sans, color: INK, outline: 'none', marginBottom: 10, resize: 'vertical', boxSizing: 'border-box', background: OW }} />
           <button onClick={getAiRec} disabled={aiBusy} style={{ width: '100%', padding: 12, background: GLL, color: G, border: '1px solid ' + G + '33', borderRadius: 10, fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 10, opacity: aiBusy ? 0.5 : 1 }}>
             ✨ {aiBusy ? 'AI думает…' : 'AI-рекомендация по приёму'}
           </button>

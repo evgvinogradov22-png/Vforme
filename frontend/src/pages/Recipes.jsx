@@ -300,11 +300,11 @@ export default function Recipes({ user, flash }) {
               </div>
             </div>
           )}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-            {r.time && <span style={{ background: GLL, color: G, fontSize: 13, borderRadius: 20, padding: '5px 14px', fontFamily: sans }}>⏱ {r.time}</span>}
-            {r.kcal != null && <span style={{ background: '#FBF5EB', color: GOLD, fontSize: 13, borderRadius: 20, padding: '5px 14px', border: '1px solid #EDD9B0', fontFamily: sans }}>~{r.kcal} ккал</span>}
-            <span style={{ background: '#F9F7F4', color: INK3, fontSize: 13, borderRadius: 20, padding: '5px 14px', fontFamily: sans }}>
-              {r.authorName === 'Кристина' ? '👩‍⚕️ Кристина' : '👤 Участница'}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            {r.time && <span style={{ background: GLL, color: G, fontSize: 13, borderRadius: 20, padding: '6px 14px', fontFamily: sans, lineHeight: 1 }}>⏱ {r.time}</span>}
+            {r.kcal != null && <span style={{ background: '#FBF5EB', color: GOLD, fontSize: 13, borderRadius: 20, padding: '6px 14px', fontFamily: sans, lineHeight: 1 }}>~{r.kcal} ккал</span>}
+            <span style={{ background: '#F9F7F4', color: INK3, fontSize: 13, borderRadius: 20, padding: '6px 14px', fontFamily: sans, lineHeight: 1 }}>
+              {r.authorName === 'Кристина' ? 'Кристина' : 'Участница'}
             </span>
           </div>
           {r.dietTags?.length > 0 && (

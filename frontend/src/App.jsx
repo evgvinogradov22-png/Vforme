@@ -202,7 +202,7 @@ function AppShell() {
 
       {/* ПЛАШКА: подключи мессенджер */}
       {!user.telegramId && !user.maxId && (
-        <div onClick={() => setTab('cabinet')} style={{ background: G, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+        <div onClick={() => setTab('cabinet')} style={{ background: '#3478F6', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
           <div style={{ flex: 1, color: W, fontSize: 14, fontWeight: 600, fontFamily: sans }}>
             Подключи Telegram или MAX
           </div>
