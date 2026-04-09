@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
+const { encrypt, decrypt } = require('../utils/crypto');
 
 // Результат прохождения атласа здоровья (анкета + AI-анализ).
 // Храним каждый submit — у одного пользователя может быть история.
@@ -18,6 +19,15 @@ const AtlasResult = sequelize.define('AtlasResult', {
     { fields: ['userId'] },
     { fields: ['createdAt'] },
   ],
+});
+
+// Encrypt health data at rest
+const SENSITIVE = ['complaints', 'aiMessage'];
+AtlasResult.addHook('beforeCreate', (inst) => { SENSITIVE.forEach(f => { if (inst[f]) inst[f] = encrypt(inst[f]); }); });
+AtlasResult.addHook('beforeUpdate', (inst) => { SENSITIVE.forEach(f => { if (inst.changed(f)) inst[f] = encrypt(inst[f]); }); });
+AtlasResult.addHook('afterFind', (results) => {
+  const list = Array.isArray(results) ? results : results ? [results] : [];
+  list.forEach(r => { SENSITIVE.forEach(f => { if (r[f]) r[f] = decrypt(r[f]); }); });
 });
 
 module.exports = AtlasResult;

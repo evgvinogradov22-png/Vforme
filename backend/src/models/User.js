@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
+const { encrypt, decrypt } = require('../utils/crypto');
 const User = sequelize.define('User', {
   id:            { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   email:         { type: DataTypes.STRING, unique: true, allowNull: false },
@@ -18,4 +19,13 @@ const User = sequelize.define('User', {
   lastSeenAt:        { type: DataTypes.DATE },
   chatSummary:       { type: DataTypes.TEXT },
 }, { timestamps: true });
+
+// Encrypt sensitive fields at rest
+User.addHook('beforeCreate', (inst) => { if (inst.chatSummary) inst.chatSummary = encrypt(inst.chatSummary); });
+User.addHook('beforeUpdate', (inst) => { if (inst.changed('chatSummary') && inst.chatSummary) inst.chatSummary = encrypt(inst.chatSummary); });
+User.addHook('afterFind', (results) => {
+  const list = Array.isArray(results) ? results : results ? [results] : [];
+  list.forEach(r => { if (r.chatSummary) r.chatSummary = decrypt(r.chatSummary); });
+});
+
 module.exports = User;
