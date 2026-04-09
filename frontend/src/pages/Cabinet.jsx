@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { profile as profileApi, points as pointsApi } from '../api';
+import Privacy from './Privacy';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from '../components/UI';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, OW, W, RED, REDBG, sans, serif } from '../utils/theme';
@@ -29,6 +30,7 @@ export default function Cabinet() {
   const [loading, setLoading] = useState(true);
   const [tgLoading, setTgLoading] = useState(false);
   const [maxLoading, setMaxLoading] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const unlinkTelegram = async () => {
     if (!confirm('Отключить Telegram от аккаунта?')) return;
@@ -59,6 +61,7 @@ export default function Cabinet() {
       .finally(() => setLoading(false));
   }, []);
 
+  if (showPrivacy) return <Privacy onClose={() => setShowPrivacy(false)} />;
   if (loading) return <Spinner />;
 
   const a = answers;
@@ -266,6 +269,37 @@ export default function Cabinet() {
         <button onClick={logout} style={{ width: '100%', padding: '16px', background: W, border: '1px solid ' + BD, borderRadius: 30, color: INK2, fontFamily: sans, fontWeight: 600, fontSize: 15, cursor: 'pointer', marginTop: 8 }}>
           Выйти из аккаунта
         </button>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button onClick={async () => {
+            try {
+              const r = await fetch('/api/auth/export', { headers: { Authorization: 'Bearer ' + localStorage.getItem('vforme_token') } });
+              const data = await r.json();
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = 'vforme-data.json'; a.click();
+              URL.revokeObjectURL(url);
+            } catch (e) { alert('Ошибка: ' + e.message); }
+          }} style={{ flex: 1, padding: 12, background: OW, border: '1px solid ' + BD, borderRadius: 14, color: INK2, fontFamily: sans, fontSize: 13, cursor: 'pointer' }}>
+            Скачать мои данные
+          </button>
+          <button onClick={async () => {
+            if (!confirm('Удалить аккаунт и ВСЕ данные безвозвратно?')) return;
+            if (!confirm('Точно? Это нельзя отменить.')) return;
+            try {
+              await fetch('/api/auth/account', { method: 'DELETE', headers: { Authorization: 'Bearer ' + localStorage.getItem('vforme_token') } });
+              localStorage.removeItem('vforme_token'); window.location.reload();
+            } catch (e) { alert('Ошибка: ' + e.message); }
+          }} style={{ flex: 1, padding: 12, background: '#FFF0F0', border: '1px solid #FFCCCC', borderRadius: 14, color: RED, fontFamily: sans, fontSize: 13, cursor: 'pointer' }}>
+            Удалить аккаунт
+          </button>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <span onClick={() => setShowPrivacy(true)} style={{ fontSize: 13, color: INK3, fontFamily: sans, cursor: 'pointer', textDecoration: 'underline' }}>
+            Политика конфиденциальности
+          </span>
+        </div>
       </div>
     </div>
   );

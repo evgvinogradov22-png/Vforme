@@ -119,7 +119,7 @@ router.post('/create-protocol', auth, async (req, res) => {
 router.post('/webhook', async (req, res) => {
   try {
     const data = req.body;
-    console.log('Prodamus webhook:', JSON.stringify(data));
+    console.log('Prodamus webhook received, status:', data.payment_status, 'orderId:', data.order_id);
 
     // Проверка подписи
     const secret = process.env.PRODAMUS_SECRET;
@@ -162,7 +162,7 @@ router.post('/webhook', async (req, res) => {
           const ord = await Order.findOne({ where: { orderId: orderId_raw, status: 'pending' } });
           if (ord) await ord.update({ status: 'paid' });
         }
-        console.log(`✅ Подписка Club активирована для ${email} до ${end.toISOString().slice(0,10)}`);
+        console.log(`✅ Подписка Club активирована, userId: ${user.id}, до ${end.toISOString().slice(0,10)}`);
       }
       return res.json({ ok: true });
     }
@@ -172,7 +172,7 @@ router.post('/webhook', async (req, res) => {
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      console.error('Webhook: пользователь не найден по email:', email);
+      console.error('Webhook: пользователь не найден');
       return res.json({ ok: true });
     }
 
@@ -202,7 +202,7 @@ router.post('/webhook', async (req, res) => {
     }
 
     if (!order) {
-      console.error('Webhook: заказ не найден для', email);
+      console.error('Webhook: заказ не найден, userId:', user.id);
       return res.json({ ok: true });
     }
 
@@ -230,7 +230,7 @@ router.post('/webhook', async (req, res) => {
       }
 
       await t.commit();
-      console.log(`✅ ${isProtocol ? 'Протокол' : 'Программа'} ${itemId} открыта для ${email}`);
+      console.log(`✅ ${isProtocol ? 'Протокол' : 'Программа'} ${itemId} открыта, userId: ${user.id}`);
 
       // Письмо об оплате
       try {

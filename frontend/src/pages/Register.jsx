@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { profile as profileApi } from '../api';
 import { ScoreSlider } from '../components/UI';
 import { G, GOLD, BD, INK, INK2, INK3, GLL, W, sans, serif } from '../utils/theme';
+import Privacy from './Privacy';
 
 const QUESTIONNAIRE = [
   { id: 'basics', title: 'О себе', fields: [
@@ -58,6 +59,8 @@ export default function Register({ onBack, onSwitchToLogin, onRegistered }) {
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
   const validateName = (n) => n.trim().length >= 2 && /^[a-zA-Zа-яёА-ЯЁ\s\-]+$/.test(n.trim());
@@ -100,6 +103,8 @@ export default function Register({ onBack, onSwitchToLogin, onRegistered }) {
     color: INK, background: W, outline: 'none', boxSizing: 'border-box',
   };
 
+  if (showPrivacy) return <Privacy onClose={() => setShowPrivacy(false)} />;
+
   if (step === 'form') return (
     <div style={{ fontFamily: sans, background: W, minHeight: '100vh', color: INK }}>
       <div style={{ background: G, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -128,8 +133,21 @@ export default function Register({ onBack, onSwitchToLogin, onRegistered }) {
 
         {error && <div style={{ background: '#FFF0F0', border: '1px solid #FFCCCC', borderRadius: 12, padding: '12px 16px', fontSize: 14, color: '#CC4444', marginBottom: 16 }}>{error}</div>}
 
-        <button onClick={handleRegister} disabled={!email || !password || loading}
-          style={{ width: '100%', padding: '18px', background: email && password && !loading ? GOLD : '#EDE8E0', border: 'none', borderRadius: 30, color: email && password && !loading ? W : INK3, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: email && password && !loading ? 'pointer' : 'not-allowed', marginTop: 8 }}>
+        <div onClick={() => setConsent(c => !c)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16, cursor: 'pointer' }}>
+          <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${consent ? G : BD}`, background: consent ? G : W, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+            {consent && <span style={{ color: W, fontSize: 13 }}>✓</span>}
+          </div>
+          <div style={{ fontSize: 13, color: INK2, fontFamily: sans, lineHeight: 1.5 }}>
+            Я соглашаюсь с{' '}
+            <span onClick={e => { e.stopPropagation(); setShowPrivacy(true); }} style={{ color: G, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
+              политикой конфиденциальности
+            </span>
+            {' '}и даю согласие на обработку персональных данных, включая данные о здоровье
+          </div>
+        </div>
+
+        <button onClick={handleRegister} disabled={!email || !password || !consent || loading}
+          style={{ width: '100%', padding: '18px', background: email && password && consent && !loading ? GOLD : '#EDE8E0', border: 'none', borderRadius: 30, color: email && password && consent && !loading ? W : INK3, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: email && password && consent && !loading ? 'pointer' : 'not-allowed', marginTop: 8 }}>
           {loading ? 'СОЗДАЁМ АККАУНТ...' : 'ЗАРЕГИСТРИРОВАТЬСЯ'}
         </button>
 

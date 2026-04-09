@@ -41,7 +41,7 @@ router.post('/register', authLimit, async (req, res) => {
     await EmailToken.create({ userId: user.id, tokenHash: codeHash, type: 'verify', expiresAt: new Date(Date.now() + 15 * 60 * 1000) }, { transaction: t });
     await t.commit();
     try { await loggedSend(sendVerification, 'verify', email, user.id, name, code); } catch (e) { console.error('Email error:', e.message); }
-    const jwtToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const jwtToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token: jwtToken, user: { id: user.id, email: user.email, name: user.name, role: user.role, emailVerified: false } });
   } catch (e) { await t.rollback(); res.status(500).json({ error: e.message }); }
 });
@@ -52,7 +52,7 @@ router.post('/login', authLimit, async (req, res) => {
     const { password } = req.body;
     const user = await User.findOne({ where: { email } });
     if (!user || !await bcrypt.compare(password, user.password)) return res.status(400).json({ error: 'Неверный email или пароль' });
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, emailVerified: user.emailVerified } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -132,6 +132,83 @@ router.post('/reset-password', async (req, res) => {
     const user = await User.findByPk(emailToken.userId);
     await user.update({ password: await bcrypt.hash(password, 12) });
     res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Экспорт данных пользователя
+router.get('/export', require('../middleware/auth'), async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, { attributes: { exclude: ['password', 'linkToken'] } });
+    if (!user) return res.status(404).json({ error: 'Не найден' });
+    const UserProfile = require('../models/UserProfile');
+    const AtlasResult = require('../models/AtlasResult');
+    const ChatMessage = require('../models/ChatMessage');
+    const Order = require('../models/Order');
+    const Points = require('../models/Points');
+    const Habit = require('../models/Habit');
+    const HabitLog = require('../models/HabitLog');
+    const FreeProductPick = require('../models/FreeProductPick');
+    const [profile, atlas, messages, orders, points, habits, habitLogs, picks] = await Promise.all([
+      UserProfile.findOne({ where: { userId: req.user.id } }),
+      AtlasResult.findAll({ where: { userId: req.user.id } }),
+      ChatMessage.findAll({ where: { userId: req.user.id }, order: [['createdAt', 'ASC']] }),
+      Order.findAll({ where: { userId: req.user.id } }),
+      Points.findAll({ where: { userId: req.user.id } }),
+      Habit.findAll({ where: { userId: req.user.id } }),
+      HabitLog.findAll({ where: { userId: req.user.id } }),
+      FreeProductPick.findAll({ where: { userId: req.user.id } }),
+    ]);
+    res.json({
+      exportDate: new Date().toISOString(),
+      user: user.toJSON(),
+      profile: profile?.toJSON() || null,
+      atlasResults: atlas.map(a => a.toJSON()),
+      chatMessages: messages.map(m => ({ role: m.role, content: m.content, date: m.createdAt })),
+      orders: orders.map(o => o.toJSON()),
+      points: points.map(p => p.toJSON()),
+      habits: habits.map(h => h.toJSON()),
+      habitLogs: habitLogs.map(l => l.toJSON()),
+      freeProductPicks: picks.map(p => p.toJSON()),
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Удаление аккаунта и всех данных
+router.delete('/account', require('../middleware/auth'), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const sequelize = require('../db');
+    const t = await sequelize.transaction();
+    try {
+      const models = [
+        require('../models/UserProfile'),
+        require('../models/AtlasResult'),
+        require('../models/ChatMessage'),
+        require('../models/Order'),
+        require('../models/Points'),
+        require('../models/Habit'),
+        require('../models/HabitLog'),
+        require('../models/UserProgress'),
+        require('../models/UserEvent'),
+        require('../models/EmailLog'),
+        require('../models/EmailToken'),
+        require('../models/Task'),
+        require('../models/Comment'),
+        require('../models/RecipeLike'),
+        require('../models/RecipeSave'),
+        require('../models/Subscription'),
+        require('../models/FreeProductPick'),
+        require('../models/UserSupplement'),
+        require('../models/ShoppingItem'),
+        require('../models/ProtocolAccess'),
+      ];
+      for (const M of models) {
+        await M.destroy({ where: { userId }, transaction: t });
+      }
+      await User.destroy({ where: { id: userId }, transaction: t });
+      await t.commit();
+      res.json({ ok: true, message: 'Аккаунт и все данные удалены' });
+    } catch (txErr) { await t.rollback(); throw txErr; }
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

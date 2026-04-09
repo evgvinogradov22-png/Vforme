@@ -42,7 +42,7 @@ router.post('/link-token', auth, async (req, res) => {
 
 router.post('/webhook', async (req, res) => {
   try {
-    console.log('TG webhook received:', JSON.stringify(req.body));
+    // Не логируем payload — содержит PII
     const { message } = req.body;
     if (!message) return res.json({ ok: true });
 

@@ -28,7 +28,7 @@ const upload = multer({ dest: '/tmp/' });
 router.use((req, res, next) => {
   if (['POST','PUT','PATCH','DELETE'].includes(req.method)) {
     const user = req.user || {};
-    console.log(`[ADMIN] ${req.method} ${req.originalUrl} by ${user.email || user.id || 'unknown'}`);
+    console.log(`[ADMIN] ${req.method} ${req.originalUrl} by ${user.id || 'unknown'}`);
   }
   next();
 });

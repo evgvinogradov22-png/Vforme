@@ -22,7 +22,7 @@ const AtlasResult = sequelize.define('AtlasResult', {
 });
 
 // Encrypt health data at rest
-const SENSITIVE = ['complaints', 'aiMessage'];
+const SENSITIVE = ['complaints', 'aiMessage', 'gender'];
 AtlasResult.addHook('beforeCreate', (inst) => { SENSITIVE.forEach(f => { if (inst[f]) inst[f] = encrypt(inst[f]); }); });
 AtlasResult.addHook('beforeUpdate', (inst) => { SENSITIVE.forEach(f => { if (inst.changed(f)) inst[f] = encrypt(inst[f]); }); });
 AtlasResult.addHook('afterFind', (results) => {
