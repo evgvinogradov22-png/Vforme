@@ -382,7 +382,7 @@ function PaywallCard({ price, payUrl, payLoading, onPay, ctaTitle = 'Откро�
       window.payformWidget(payUrl);
     } else {
       // fallback — открываем в новом окне
-      window.open(payUrl, '_blank');
+      window.location.href = payUrl;
     }
   }, [payUrl]);
 

@@ -208,7 +208,7 @@ function AppShell() {
             const res = await fetch('/api/telegram/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
             const data = await res.json();
             if (data.url) {
-              window.open(data.url, '_blank');
+              window.location.href = data.url;
               let attempts = 0;
               const poll = setInterval(async () => {
                 attempts++;

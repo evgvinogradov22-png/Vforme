@@ -19,7 +19,7 @@ export default function Subscription({ onClose }) {
     try {
       const r = await subApi.subscribe();
       if (r?.payUrl && typeof window.payformWidget === 'function') window.payformWidget(r.payUrl);
-      else if (r?.payUrl) window.open(r.payUrl, '_blank');
+      else if (r?.payUrl) window.location.href = r.payUrl;
     } catch (e) { alert(e.message); }
     finally { setLoading(false); }
   }

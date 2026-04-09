@@ -45,7 +45,7 @@ export default function Cabinet() {
     try {
       const res = await fetch('/api/telegram/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
       const data = await res.json();
-      if (data.url) window.open(data.url, '_blank');
+      if (data.url) window.location.href = data.url;
     } catch(e) {}
     setTgLoading(false);
   };
@@ -153,7 +153,7 @@ export default function Cabinet() {
               Привязан
             </div>
           ) : (
-            <button onClick={() => window.open('https://max.ru/id440131784034_bot', '_blank')}
+            <button onClick={() => { window.location.href = 'https://max.ru/id440131784034_bot'; }}
               style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               {user?.maxBonusGiven ? 'Подключить' : '+100'}
             </button>
