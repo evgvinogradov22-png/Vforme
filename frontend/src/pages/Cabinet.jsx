@@ -158,17 +158,9 @@ export default function Cabinet() {
               Отключить
             </button>
           ) : (
-            <button onClick={async () => {
-              setMaxLoading(true);
-              try {
-                const res = await fetch('/api/max/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
-                const data = await res.json();
-                if (data.url) window.open(data.url, '_blank');
-              } catch {}
-              setMaxLoading(false);
-            }} disabled={maxLoading}
+            <button onClick={() => window.open('https://max.ru/id440131784034_bot', '_blank')}
               style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              {maxLoading ? '...' : user?.maxBonusGiven ? 'Подключить' : '+100'}
+              {user?.maxBonusGiven ? 'Подключить' : '+100'}
             </button>
           )}
         </div>

@@ -1,12 +1,10 @@
 const router = require('express').Router();
-const crypto = require('crypto');
 const https = require('https');
 const User = require('../models/User');
 const Points = require('../models/Points');
 const auth = require('../middleware/auth');
 const { sendToUser } = require('../ws');
 
-// MAX Bot API: https://platform-api.max.ru
 function maxApi(method, path, data) {
   return new Promise((resolve, reject) => {
     const token = process.env.MAX_BOT_TOKEN;
@@ -35,44 +33,41 @@ async function sendMessage(chatId, text) {
   return maxApi('POST', '/messages', { chat_id: chatId, text });
 }
 
-// Генерация токена для привязки
-router.post('/link-token', auth, async (req, res) => {
-  try {
-    const token = crypto.randomBytes(16).toString('hex');
-    await User.update({ linkToken: token, linkTokenAt: new Date() }, { where: { id: req.user.id } });
-    const botUsername = process.env.MAX_BOT_USERNAME || 'vforme_bot';
-    res.json({ url: `https://max.ru/${botUsername}?payload=${token}` });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
 // Webhook от MAX
 router.post('/webhook', async (req, res) => {
   try {
-    console.log('MAX webhook:', JSON.stringify(req.body));
     const update = req.body;
-
     const chatId = update.chat_id || update.message?.recipient?.chat_id;
     const maxUserId = update.user_id || update.user?.user_id || update.message?.sender?.user_id;
     const username = update.user?.username || update.message?.sender?.username || '';
     const firstName = update.user?.first_name || update.user?.name || update.message?.sender?.name || '';
 
-    // Проверяем — может уже привязан
-    const existing = maxUserId ? await User.findOne({ where: { maxId: String(maxUserId) } }) : null;
-    if (existing && update.update_type === 'bot_started') {
-      await sendMessage(chatId, `Привет, ${firstName}! Ваш аккаунт V Форме привязан.`);
-      return res.json({ ok: true });
+    // bot_started — приветствие
+    if (update.update_type === 'bot_started') {
+      const existing = maxUserId ? await User.findOne({ where: { maxId: String(maxUserId) } }) : null;
+      if (existing) {
+        await sendMessage(chatId, `Привет, ${firstName}! Ваш аккаунт V Форме уже привязан.`);
+      } else {
+        await sendMessage(chatId, `Привет, ${firstName}!\n\nОтправьте email, который вы использовали при регистрации в V Форме, и я привяжу ваш аккаунт.`);
+      }
     }
 
-    // bot_started с payload — надёжная привязка по уникальному токену
-    if (update.update_type === 'bot_started') {
-      const payload = update.payload;
-      if (payload) {
-        const { Op } = require('sequelize');
-        const user = await User.findOne({
-          where: { linkToken: payload, linkTokenAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
-        });
+    // message — проверяем email
+    if (update.update_type === 'message_created' && update.message) {
+      const text = (update.message.body?.text || '').trim().toLowerCase();
+
+      // Проверяем — уже привязан?
+      const already = maxUserId ? await User.findOne({ where: { maxId: String(maxUserId) } }) : null;
+      if (already) {
+        await sendMessage(chatId, 'Ваш аккаунт уже привязан!');
+        return res.json({ ok: true });
+      }
+
+      // Похоже на email?
+      if (text.includes('@') && text.includes('.')) {
+        const user = await User.findOne({ where: { email: text } });
         if (user) {
-          await user.update({ maxId: String(maxUserId || chatId), maxUsername: username, linkToken: null });
+          await user.update({ maxId: String(maxUserId || chatId), maxUsername: username });
           let bonusGiven = false;
           if (!user.maxBonusGiven) {
             await Points.create({ userId: user.id, amount: 100, reason: 'max_link', refType: 'max' });
@@ -81,11 +76,14 @@ router.post('/webhook', async (req, res) => {
           }
           await sendMessage(chatId, `Аккаунт привязан!\n\nПривет, ${firstName}! Вам начислено +100 баллов.\n\nДобро пожаловать в V Форме!`);
           sendToUser(user.id, { type: 'max_linked', bonusGiven, points: bonusGiven ? 100 : 0 });
-          return res.json({ ok: true });
+        } else {
+          await sendMessage(chatId, 'Аккаунт с таким email не найден. Проверьте правильность или зарегистрируйтесь в приложении V Форме.');
         }
+      } else {
+        await sendMessage(chatId, 'Отправьте ваш email для привязки аккаунта V Форме.');
       }
-      await sendMessage(chatId, `Привет, ${firstName}!\n\nОткройте приложение V Форме → Аккаунт → нажмите "Подключить MAX", затем вернитесь сюда.`);
     }
+
     res.json({ ok: true });
   } catch (e) {
     console.error('MAX webhook error:', e.message);
@@ -96,7 +94,7 @@ router.post('/webhook', async (req, res) => {
 // Отключить MAX
 router.post('/unlink', auth, async (req, res) => {
   try {
-    await User.update({ maxId: null, maxUsername: null, linkToken: null }, { where: { id: req.user.id } });
+    await User.update({ maxId: null, maxUsername: null }, { where: { id: req.user.id } });
     sendToUser(req.user.id, { type: 'max_unlinked' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
