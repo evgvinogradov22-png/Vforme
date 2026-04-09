@@ -47,7 +47,7 @@ export function Card({ children, style }) {
 }
 
 export function Btn({ children, onClick, variant = 'primary', size = 'md', disabled, style }) {
-  const base = { border: 'none', borderRadius: 10, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, transition: 'opacity .15s', fontFamily: 'Arial, sans-serif', ...style };
+  const base = { border: 'none', borderRadius: 10, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, transition: 'opacity .15s', fontFamily: 'Arial, sans-serif' };
   const sizes = { sm: { padding: '6px 12px', fontSize: 13 }, md: { padding: '10px 18px', fontSize: 14 }, lg: { padding: '14px 24px', fontSize: 15 } };
   const variants = {
     primary: { background: C.green, color: '#fff' },
@@ -56,7 +56,7 @@ export function Btn({ children, onClick, variant = 'primary', size = 'md', disab
     ghost: { background: 'transparent', color: C.ink2, border: `1px solid ${C.border}` },
     outline: { background: 'transparent', color: C.green, border: `1px solid ${C.green}` },
   };
-  return <button onClick={onClick} disabled={disabled} style={{ ...base, ...sizes[size], ...variants[variant] }}>{children}</button>;
+  return <button onClick={onClick} disabled={disabled} style={{ ...base, ...sizes[size], ...variants[variant], ...style }}>{children}</button>;
 }
 
 export function Badge({ children, color = 'green' }) {
