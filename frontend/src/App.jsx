@@ -236,7 +236,7 @@ function AppShell() {
         justifyContent: 'space-around',
         zIndex: 100,
         maxWidth: 480, margin: '0 auto',
-        padding: '10px 8px max(6px, env(safe-area-inset-bottom)) 8px',
+        padding: '8px 8px env(safe-area-inset-bottom) 8px',
       }}>
         {TABS.map(t => {
           const active = tab === t.id;
@@ -254,8 +254,8 @@ function AppShell() {
                 transition: 'color .18s ease',
                 minWidth: 0,
               }}>
-              <TabIcon name={t.icon} size={28} style={{ marginTop: -2 }} />
-              <span style={{ lineHeight: 1, marginTop: -1 }}>{t.label}</span>
+              <TabIcon name={t.icon} size={28} />
+              <span style={{ lineHeight: 1 }}>{t.label}</span>
             </button>
           );
         })}
