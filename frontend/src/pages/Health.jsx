@@ -366,7 +366,7 @@ function FilterDropdown({ label, options, selected, multi, onChange }) {
 }
 
 // ─── Paywall карточка с виджетом Prodamus ────────────────────
-function PaywallCard({ price, payUrl, payLoading, onPay, onFreePick, freePickAvail, ctaTitle = 'Открой полный курс', ctaHint = 'После оплаты материалы откроются автоматически' }) {
+function PaywallCard({ price, payUrl, payLoading, onPay, ctaTitle = 'Открой полный курс', ctaHint = 'После оплаты материалы откроются автоматически' }) {
   function openWidget() {
     // Сначала создаём заказ на бэке, потом открываем виджет с полученным payUrl
     onPay();
@@ -399,14 +399,6 @@ function PaywallCard({ price, payUrl, payLoading, onPay, onFreePick, freePickAva
       }}>
         {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${price} руб.`}
       </button>
-      {onFreePick && freePickAvail && (
-        <button onClick={onFreePick} style={{
-          width: '100%', marginTop: 10, padding: 14, background: GLL, border: '1px solid ' + G + '33', borderRadius: 14,
-          color: G, fontFamily: sans, fontWeight: 600, fontSize: 14, cursor: 'pointer',
-        }}>
-          Выбрать бесплатно
-        </button>
-      )}
     </div>
   );
 }
@@ -582,17 +574,6 @@ function ProtocolPage({ protocol, onBack }) {
                 price={protocol.price} payUrl={payUrl} payLoading={payLoading} onPay={handlePay}
                 ctaTitle="Получи доступ к протоколу"
                 ctaHint="После оплаты материалы откроются автоматически"
-                freePickAvail={(user?.subscription?.plan || 'free') === 'free' && (user?.freePicks || []).length < 3}
-                onFreePick={async () => {
-                  try {
-                    await subApi.addFreePick(protocol.id, 'protocol');
-                    await refreshUser();
-                    // Перезагрузить данные протокола чтобы hasAccess обновился
-                    const r = await fetch(`/api/protocols/${protocol.id}`, { headers: authHeaders() });
-                    const d = await r.json();
-                    if (d && !d.error) setData(d);
-                  } catch (e) { alert(e.message); }
-                }}
               />
             </div>
           )}
@@ -709,24 +690,7 @@ function SchemePage({ scheme, onBack }) {
 
       {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
 
-      {!loading && data && !hasAccess && (
-        <div style={{ padding: '0 22px' }}>
-          {canPick && (
-            <button onClick={async () => {
-              try { await subApi.addFreePick(scheme.id, 'scheme'); await refreshUser(); } catch (e) { alert(e.message); }
-            }} style={{ width: '100%', padding: 16, background: G, color: W, border: 'none', borderRadius: 14, fontFamily: sans, fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>
-              Выбрать бесплатно ({(user?.freePicks || []).length}/3)
-            </button>
-          )}
-          {!canPick && (
-            <div style={{ textAlign: 'center', padding: 20, color: INK3, fontFamily: sans, fontSize: 14 }}>
-              Лимит бесплатных продуктов исчерпан. Оформи подписку Клуб для доступа.
-            </div>
-          )}
-        </div>
-      )}
-
-      {!loading && data && hasAccess && (
+      {!loading && data && (
         <div style={{ padding: '0 22px' }}>
           {data.items && data.items.length > 0 && (
             <div>
@@ -849,17 +813,30 @@ export default function Health() {
     return true; // no picks left, not accessible
   }
 
-  const handleOpen = (item) => {
-    if (item.kind === 'program')  setOpenProgram(item);
-    if (item.kind === 'protocol') setOpenProtocol(item);
-    if (item.kind === 'scheme')   setOpenScheme(item);
-  };
+  const handleOpen = async (item) => {
+    // Программы всегда открываются (у них свой paywall внутри)
+    if (item.kind === 'program') { setOpenProgram(item); return; }
 
-  const handleFreePick = async (item) => {
-    try {
-      await subApi.addFreePick(item.id, item.kind);
-      refreshUser();
-    } catch (e) { alert(e.message); }
+    // Если уже есть доступ — просто открываем
+    if (isItemAccessible(item)) {
+      if (item.kind === 'protocol') setOpenProtocol(item);
+      if (item.kind === 'scheme')   setOpenScheme(item);
+      return;
+    }
+
+    // Нет доступа — автоматически добавляем как free pick (если есть слоты)
+    if (freePicksLeft > 0) {
+      try {
+        await subApi.addFreePick(item.id, item.kind);
+        await refreshUser();
+        if (item.kind === 'protocol') setOpenProtocol(item);
+        if (item.kind === 'scheme')   setOpenScheme(item);
+      } catch (e) { alert(e.message); }
+      return;
+    }
+
+    // Лимит исчерпан — предлагаем подписку
+    window.dispatchEvent(new Event('vforme:open-subscription'));
   };
 
   return (
