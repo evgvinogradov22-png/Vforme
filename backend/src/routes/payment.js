@@ -111,19 +111,21 @@ router.post('/webhook', async (req, res) => {
     const data = req.body;
     console.log('Prodamus webhook:', JSON.stringify(data));
 
-    // Проверка подписи (если секрет задан)
-    // Пока только логируем — формат подписи Prodamus не верифицирован до конца
+    // Проверка подписи
     const secret = process.env.PRODAMUS_SECRET;
     if (secret) {
       const sign = req.headers['x-signature'] || req.headers['sign'] || data.sign;
-      if (sign) {
-        const body = { ...data };
-        delete body.sign;
-        const str = Object.keys(body).sort().map(k => `${k}=${body[k]}`).join('&');
-        const expected = crypto.createHmac('sha256', secret).update(str).digest('hex');
-        if (sign !== expected) {
-          console.error('Webhook: подпись не совпала. Received:', sign, 'Expected:', expected);
-        }
+      if (!sign) {
+        console.error('Webhook: подпись отсутствует');
+        return res.status(401).json({ error: 'No signature' });
+      }
+      const body = { ...data };
+      delete body.sign;
+      const str = Object.keys(body).sort().map(k => `${k}=${body[k]}`).join('&');
+      const expected = crypto.createHmac('sha256', secret).update(str).digest('hex');
+      if (sign !== expected) {
+        console.error('Webhook: неверная подпись. Received:', sign, 'Expected:', expected);
+        return res.status(401).json({ error: 'Invalid signature' });
       }
     }
 
