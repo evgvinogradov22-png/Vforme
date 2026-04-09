@@ -236,29 +236,33 @@ function AppShell() {
         justifyContent: 'space-around',
         zIndex: 100,
         maxWidth: 480, margin: '0 auto',
-        padding: '8px 8px env(safe-area-inset-bottom) 8px',
+        padding: 0,
+        flexDirection: 'column',
       }}>
-        {TABS.map(t => {
-          const active = tab === t.id;
-          return (
-            <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
-              style={{
-                flex: 1, padding: '8px 4px',
-                background: 'none', border: 'none',
-                color: active ? G : '#8E8E93',
-                cursor: 'pointer',
-                fontSize: 11, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
-                fontWeight: active ? 600 : 500,
-                letterSpacing: -0.1,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-                transition: 'color .18s ease',
-                minWidth: 0,
-              }}>
-              <TabIcon name={t.icon} size={28} />
-              <span style={{ lineHeight: 1 }}>{t.label}</span>
-            </button>
-          );
-        })}
+        <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 8px 4px' }}>
+          {TABS.map(t => {
+            const active = tab === t.id;
+            return (
+              <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
+                style={{
+                  flex: 1, padding: '4px',
+                  background: 'none', border: 'none',
+                  color: active ? G : '#8E8E93',
+                  cursor: 'pointer',
+                  fontSize: 11, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+                  fontWeight: active ? 600 : 500,
+                  letterSpacing: -0.1,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  transition: 'color .18s ease',
+                  minWidth: 0,
+                }}>
+                <TabIcon name={t.icon} size={28} />
+                <span style={{ lineHeight: 1 }}>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
       </div>
 
       <Toast message={toast} />
