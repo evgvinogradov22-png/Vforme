@@ -180,7 +180,8 @@ export default function Chat() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const err = data?.error || `Ошибка сервера (${res.status})`;
-        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${err}` }]);
+        const limitMsg = data?.limitReached ? `\n\n[Оформить подписку Клуб →]` : '';
+        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${err}${limitMsg}` }]);
       } else if (data.reply) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
       } else {

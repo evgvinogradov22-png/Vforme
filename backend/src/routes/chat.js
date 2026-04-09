@@ -229,6 +229,17 @@ router.post('/message', auth, async (req, res) => {
     if (!s) s = await ChatSettings.create({});
     if (!s.enabled) return res.status(503).json({ error: 'Чат временно недоступен' });
 
+    // Лимит 10 сообщений/день для free пользователей
+    const { isClubSubscriber } = require('../utils/access');
+    if (!(await isClubSubscriber(req.user.id))) {
+      const { Op } = require('sequelize');
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const todayCount = await ChatMessage.count({ where: { userId: req.user.id, role: 'user', createdAt: { [Op.gte]: todayStart } } });
+      if (todayCount >= 10) {
+        return res.status(429).json({ error: 'Лимит 10 сообщений в день. Оформи подписку Клуб для безлимитного чата.', limitReached: true, count: todayCount, max: 10 });
+      }
+    }
+
     const userMsg = await ChatMessage.create({ userId: req.user.id, role: 'user', content: message, isAi: false });
     broadcast({ type: 'chat_admin_update', userId: req.user.id, message: userMsg });
 

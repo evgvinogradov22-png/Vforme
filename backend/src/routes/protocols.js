@@ -4,6 +4,7 @@ const Protocol = require('../models/Protocol');
 const ProtocolAccess = require('../models/ProtocolAccess');
 const Supplement = require('../models/Supplement');
 const Points = require('../models/Points');
+const { isClubSubscriber, getUserFreePicks } = require('../utils/access');
 
 // GET all protocols (public list)
 router.get('/', auth, async (req, res) => {
@@ -22,9 +23,13 @@ router.get('/', auth, async (req, res) => {
     const suppMap = {};
     supps.forEach(s => { suppMap[s.id] = s; });
 
+    const isClub = await isClubSubscriber(req.user.id);
+    const picks = await getUserFreePicks(req.user.id);
+    const pickIds = picks.map(p => p.productId);
+
     const result = protocols.map(p => {
       const proto = p.toJSON();
-      proto.hasAccess = proto.price === 0 || accessIds.includes(proto.id);
+      proto.hasAccess = proto.price === 0 || accessIds.includes(proto.id) || isClub || pickIds.includes(proto.id);
       if (proto.supplements?.length) {
         proto.supplements = proto.supplements.map(s => ({
           ...s,
@@ -45,7 +50,9 @@ router.get('/:id', auth, async (req, res) => {
     if (!proto) return res.status(404).json({ error: 'Не найдено' });
 
     const access = await ProtocolAccess.findOne({ where: { userId: req.user.id, protocolId: proto.id } });
-    const hasAccess = proto.price === 0 || !!access;
+    const isClub2 = await isClubSubscriber(req.user.id);
+    const pick = await require('../models/FreeProductPick').findOne({ where: { userId: req.user.id, productId: proto.id, productType: 'protocol' } });
+    const hasAccess = proto.price === 0 || !!access || isClub2 || !!pick;
 
     const data = proto.toJSON();
     data.hasAccess = hasAccess;

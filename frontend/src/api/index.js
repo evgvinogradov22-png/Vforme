@@ -86,6 +86,14 @@ export const payment = {
     req('POST', '/payment/create', { programId, programTitle, price, userId, userEmail, promoId }),
 };
 
+export const subscription = {
+  get: () => req('GET', '/subscription'),
+  subscribe: () => req('POST', '/subscription/subscribe'),
+  cancel: () => req('POST', '/subscription/cancel'),
+  addFreePick: (productId, productType) => req('POST', '/subscription/free-pick', { productId, productType }),
+  removeFreePick: (productId) => req('DELETE', `/subscription/free-pick/${productId}`),
+};
+
 export const promo = {
   check: (code, programId, price) => req('POST', '/promo/check', { code, programId, price }),
 };

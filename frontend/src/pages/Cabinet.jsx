@@ -84,7 +84,25 @@ export default function Cabinet() {
 
       <div style={{ padding: '24px 20px' }}>
 
-        {/* ИСТОРИЯ БАЛЛОВ */}
+        {/* ПОДПИСКА */}
+        <div style={{ margin: '0 0 20px', background: (user?.subscription?.plan === 'club') ? '#FBF5EB' : OW, border: `1px solid ${(user?.subscription?.plan === 'club') ? GOLD : BD}`, borderRadius: 20, padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: INK, fontFamily: sans }}>
+                {user?.subscription?.plan === 'club' ? 'Клуб V Форме' : 'Бесплатный план'}
+              </div>
+              <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>
+                {user?.subscription?.plan === 'club'
+                  ? `Активна до ${new Date(user.subscription.currentPeriodEnd).toLocaleDateString('ru-RU')}`
+                  : `${(user?.freePicks || []).length}/3 бесплатных продукта`}
+              </div>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: user?.subscription?.plan === 'club' ? GOLD : G, fontFamily: sans }}>
+              {user?.subscription?.plan === 'club' ? '399 ₽/мес' : 'Free'}
+            </div>
+          </div>
+        </div>
+
         {/* TELEGRAM */}
       <div style={{ margin: '0 20px 20px', background: user?.telegramId ? '#EBF0EB' : '#F9F7F4', border: `1px solid ${user?.telegramId ? G : BD}`, borderRadius: 20, padding: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

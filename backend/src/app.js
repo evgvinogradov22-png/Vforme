@@ -36,6 +36,8 @@ const DeployHistory = require('./models/DeployHistory');
 const Habit = require('./models/Habit');
 const UserSupplement = require('./models/UserSupplement');
 const ShoppingItem = require('./models/ShoppingItem');
+const Subscription = require('./models/Subscription');
+const FreeProductPick = require('./models/FreeProductPick');
 
 const app = express();
 const ALLOWED_ORIGINS = [
@@ -62,6 +64,7 @@ app.use('/api/programs',    require('./routes/programs'));
 app.use('/api/recipes',     require('./routes/recipes'));
 app.use('/api/supplements', require('./routes/supplements'));
 app.use('/api/tracker',     require('./routes/tracker'));
+app.use('/api/subscription', require('./routes/subscription'));
 app.use('/api/profile',     require('./routes/profile'));
 app.use('/api/admin',       require('./routes/admin'));
 app.use('/api/points',      require('./routes/points'));
@@ -96,6 +99,8 @@ async function start() {
     await Habit.sync();
     await UserSupplement.sync();
     await ShoppingItem.sync();
+    await Subscription.sync();
+    await FreeProductPick.sync();
     // Idempotent ALTER TABLE для полей которые появились после первой схемы.
     // ADD COLUMN IF NOT EXISTS безопасен и не тронет данные.
     try {

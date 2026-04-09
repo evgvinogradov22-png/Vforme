@@ -71,6 +71,12 @@ async function createOrder(req, res) {
       }
     }
 
+    // Скидка 10% для Club подписчиков
+    const { isClubSubscriber } = require('../utils/access');
+    if (await isClubSubscriber(req.user.id)) {
+      finalPrice = Math.round(finalPrice * 0.9);
+    }
+
     const orderId = `${req.user.id}_${programId}_${Date.now()}`;
     const user = await User.findByPk(req.user.id);
     await Order.create({ orderId, userId: req.user.id, programId, amount: finalPrice, promoId: promoId || null });
@@ -134,6 +140,32 @@ router.post('/webhook', async (req, res) => {
     }
 
     if (data.payment_status !== 'success') return res.json({ ok: true });
+
+    // --- Подписка ---
+    const orderId_raw = data.customer_extra || data.order_id || data.orderId || '';
+    const isSubscription = data.subscription_id || orderId_raw.startsWith('sub_');
+    if (isSubscription) {
+      const email = data.customer_email || data.email;
+      const user = email ? await User.findOne({ where: { email } }) : null;
+      if (user) {
+        const Subscription = require('../models/Subscription');
+        const sub = await Subscription.findOne({ where: { userId: user.id } });
+        const now = new Date();
+        const end = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        if (sub) {
+          await sub.update({ plan: 'club', status: 'active', currentPeriodStart: now, currentPeriodEnd: end, prodamusSubId: data.subscription_id || sub.prodamusSubId, cancelledAt: null });
+        } else {
+          await Subscription.create({ userId: user.id, plan: 'club', status: 'active', currentPeriodStart: now, currentPeriodEnd: end, prodamusSubId: data.subscription_id || null });
+        }
+        // Mark order paid
+        if (orderId_raw) {
+          const ord = await Order.findOne({ where: { orderId: orderId_raw, status: 'pending' } });
+          if (ord) await ord.update({ status: 'paid' });
+        }
+        console.log(`✅ Подписка Club активирована для ${email} до ${end.toISOString().slice(0,10)}`);
+      }
+      return res.json({ ok: true });
+    }
 
     const email = data.customer_email || data.email;
     if (!email) return res.json({ ok: true });
