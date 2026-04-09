@@ -194,8 +194,8 @@ function AppShell() {
               <span style={{ color: W, fontSize: 14, fontWeight: 700 }}>V</span>
             </div>
           )}
-          <div style={{ background: GOLD, color: W, fontSize: 13, fontWeight: 700, borderRadius: 30, padding: '7px 16px', letterSpacing: 1, fontFamily: sans }}>
-            {user.name || 'Привет'}
+          <div style={{ background: GOLD, color: W, fontSize: 13, fontWeight: 700, borderRadius: 30, padding: '7px 16px', letterSpacing: 0.5, fontFamily: sans }}>
+            Личный кабинет
           </div>
         </div>
       </div>
@@ -236,7 +236,7 @@ function AppShell() {
         justifyContent: 'space-around',
         zIndex: 100,
         maxWidth: 480, margin: '0 auto',
-        padding: '12px 8px max(12px, env(safe-area-inset-bottom)) 8px',
+        padding: '10px 8px max(6px, env(safe-area-inset-bottom)) 8px',
       }}>
         {TABS.map(t => {
           const active = tab === t.id;
