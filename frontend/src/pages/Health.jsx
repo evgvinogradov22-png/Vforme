@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 import { Spinner } from '../components/UI';
+import { tracker as trackerApi } from '../api';
 
 const TOKEN = () => localStorage.getItem('vforme_token');
 const authHeaders = () => ({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN() });
@@ -616,17 +617,22 @@ function ProtocolPage({ protocol, onBack }) {
                           )}
                         </div>
 
-                        {/* Кнопка «Открыть» справа */}
-                        {link && (
-                          <a href={link} target="_blank" rel="noopener noreferrer" style={{
-                            padding: '10px 16px',
-                            background: F_BG_ACT, color: F_TXT_ACT,
-                            border: `1px solid ${F_BD}`, borderRadius: 18,
-                            fontSize: 13, fontWeight: 700, fontFamily: sans,
-                            textDecoration: 'none', flexShrink: 0,
-                            whiteSpace: 'nowrap',
-                          }}>Открыть ↗</a>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                          <button onClick={async () => {
+                            try { await trackerApi.addShopping({ name, category: 'supplement', source: data.title || 'Протокол' }); alert('Добавлено в список покупок'); } catch (e) { alert(e.message); }
+                          }} style={{ padding: '8px 12px', background: GLL, color: G, border: '1px solid ' + G + '33', borderRadius: 10, fontSize: 11, fontWeight: 700, fontFamily: sans, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            + В список
+                          </button>
+                          {link && (
+                            <a href={link} target="_blank" rel="noopener noreferrer" style={{
+                              padding: '8px 12px', textAlign: 'center',
+                              background: F_BG_ACT, color: F_TXT_ACT,
+                              border: `1px solid ${F_BD}`, borderRadius: 10,
+                              fontSize: 11, fontWeight: 700, fontFamily: sans,
+                              textDecoration: 'none', whiteSpace: 'nowrap',
+                            }}>Открыть ↗</a>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -677,14 +683,24 @@ function SchemePage({ scheme, onBack }) {
                   background: W, border: `1px solid ${BD}`, borderRadius: 16,
                   padding: '14px 16px', marginBottom: 8,
                 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: INK, fontFamily: sans }}>{s.name}</div>
-                  {s.desc && <div style={{ fontSize: 13, color: INK3, marginTop: 4, fontFamily: sans }}>{s.desc}</div>}
-                  {s.link && (
-                    <a href={s.link} target="_blank" rel="noopener noreferrer" style={{
-                      display: 'inline-block', marginTop: 8,
-                      fontSize: 13, color: G, fontFamily: sans, fontWeight: 600,
-                    }}>Купить ↗</a>
-                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: INK, fontFamily: sans }}>{s.name}</div>
+                      {s.desc && <div style={{ fontSize: 13, color: INK3, marginTop: 4, fontFamily: sans }}>{s.desc}</div>}
+                      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                        {s.link && (
+                          <a href={s.link} target="_blank" rel="noopener noreferrer" style={{
+                            fontSize: 13, color: G, fontFamily: sans, fontWeight: 600,
+                          }}>Купить ↗</a>
+                        )}
+                      </div>
+                    </div>
+                    <button onClick={async () => {
+                      try { await trackerApi.addShopping({ name: s.name, category: 'supplement', source: scheme.title || 'Схема' }); alert('Добавлено в список покупок'); } catch (e) { alert(e.message); }
+                    }} style={{ padding: '8px 12px', background: GLL, color: G, border: '1px solid ' + G + '33', borderRadius: 10, fontSize: 11, fontWeight: 700, fontFamily: sans, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      + В список
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

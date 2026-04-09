@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { recipes as recipesApi } from '../api';
+import { recipes as recipesApi, tracker as trackerApi } from '../api';
 import { Spinner, BackHeader } from '../components/UI';
 import { G, GLL, GOLD, BD, INK, INK2, INK3, OW, W, sans, serif } from '../utils/theme';
 
@@ -326,11 +326,27 @@ export default function Recipes({ user, flash }) {
           )}
           {r.ingredients?.length > 0 && (
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 14, fontFamily: sans }}>ИНГРЕДИЕНТЫ</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, fontFamily: sans }}>ИНГРЕДИЕНТЫ</div>
+                <button onClick={async () => {
+                  try {
+                    await trackerApi.addShopping({
+                      items: r.ingredients.map(ing => ({ name: ing, category: 'ingredient', source: r.title, sourceId: r.id }))
+                    });
+                    alert('Добавлено в список покупок');
+                  } catch (e) { alert(e.message); }
+                }} style={{ background: GLL, color: G, border: '1px solid ' + G + '33', borderRadius: 10, padding: '6px 12px', fontSize: 11, fontWeight: 700, fontFamily: sans, cursor: 'pointer', letterSpacing: 0.5 }}>
+                  + В СПИСОК
+                </button>
+              </div>
               {r.ingredients.map((ing, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: 10, borderBottom: '1px solid ' + BD, marginBottom: 10 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: G, flexShrink: 0, marginTop: 7 }} />
-                  <div style={{ fontSize: 15, color: INK, lineHeight: 1.5, fontFamily: sans }}>{ing}</div>
+                <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: 10, borderBottom: '1px solid ' + BD, marginBottom: 10, alignItems: 'center' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: G, flexShrink: 0 }} />
+                  <div style={{ flex: 1, fontSize: 15, color: INK, lineHeight: 1.5, fontFamily: sans }}>{ing}</div>
+                  <button onClick={async () => {
+                    try { await trackerApi.addShopping({ name: ing, category: 'ingredient', source: r.title, sourceId: r.id }); }
+                    catch (e) { alert(e.message); }
+                  }} style={{ background: 'none', border: 'none', color: GOLD, fontSize: 18, cursor: 'pointer', padding: 4, lineHeight: 1 }} title="В список покупок">+</button>
                 </div>
               ))}
             </div>

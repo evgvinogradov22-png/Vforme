@@ -47,11 +47,30 @@ export const supplements = {
 };
 
 export const tracker = {
+  // habits
   getHabits: () => req('GET', '/tracker/habits'),
-  saveHabit: (data) => req('POST', '/tracker/habits', data),
+  createHabit: (data) => req('POST', '/tracker/habits', data),
+  deleteHabit: (id) => req('DELETE', `/tracker/habits/${id}`),
+  logHabit: (data) => req('POST', '/tracker/habits/log', data),
+  aiGenerateHabits: () => req('POST', '/tracker/habits/ai-generate'),
+  // supplements
+  getSupplements: () => req('GET', '/tracker/supplements'),
+  createSupplement: (data) => req('POST', '/tracker/supplements', data),
+  updateSupplement: (id, data) => req('PUT', `/tracker/supplements/${id}`, data),
+  deleteSupplement: (id) => req('DELETE', `/tracker/supplements/${id}`),
+  aiRecommendSupplement: (data) => req('POST', '/tracker/supplements/ai-recommend', data),
+  // shopping
+  getShopping: () => req('GET', '/tracker/shopping'),
+  addShopping: (data) => req('POST', '/tracker/shopping', data),
+  toggleShopping: (id, done) => req('PATCH', `/tracker/shopping/${id}`, { done }),
+  deleteShopping: (id) => req('DELETE', `/tracker/shopping/${id}`),
+  clearShopping: () => req('DELETE', '/tracker/shopping'),
+  // legacy tasks
   getTasks: () => req('GET', '/tracker/tasks'),
   createTask: (data) => req('POST', '/tracker/tasks', data),
   updateTask: (id, data) => req('PATCH', `/tracker/tasks/${id}`, data),
+  // legacy aliases
+  saveHabit: (data) => req('POST', '/tracker/habits/log', data),
 };
 
 export const profile = {
