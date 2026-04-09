@@ -1,24 +1,7 @@
 import { useState, useEffect } from 'react';
 import { subscription as subApi } from '../api';
 import { useAuth } from '../hooks/useAuth';
-import { G, GL, GLL, GOLD, BD, INK, INK2, INK3, OW, W, sans, serif } from '../utils/theme';
-
-const FEATURES_FREE = [
-  '3 продукта на выбор',
-  'Все рецепты',
-  'Трекер привычек',
-  'Атлас здоровья',
-  '10 сообщений/день в чате',
-];
-
-const FEATURES_CLUB = [
-  'Все протоколы и схемы БАД',
-  'Все лекции',
-  'Безлимитный чат с AI Кристиной',
-  'Конструктор схемы добавок',
-  'Скидка 10% на программы',
-  'Все рецепты и трекер',
-];
+import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, OW, W, sans, serif } from '../utils/theme';
 
 export default function Subscription({ onClose }) {
   const { user, refreshUser } = useAuth();
@@ -28,19 +11,14 @@ export default function Subscription({ onClose }) {
   const plan = user?.subscription?.plan || 'free';
   const isClub = plan === 'club';
 
-  useEffect(() => {
-    subApi.get().then(setSubData).catch(console.error);
-  }, []);
+  useEffect(() => { subApi.get().then(setSubData).catch(console.error); }, []);
 
   async function handleSubscribe() {
     setLoading(true);
     try {
       const r = await subApi.subscribe();
-      if (r?.payUrl && typeof window.payformWidget === 'function') {
-        window.payformWidget(r.payUrl);
-      } else if (r?.payUrl) {
-        window.open(r.payUrl, '_blank');
-      }
+      if (r?.payUrl && typeof window.payformWidget === 'function') window.payformWidget(r.payUrl);
+      else if (r?.payUrl) window.open(r.payUrl, '_blank');
     } catch (e) { alert(e.message); }
     finally { setLoading(false); }
   }
@@ -59,81 +37,120 @@ export default function Subscription({ onClose }) {
     : null;
 
   return (
-    <div style={{ padding: '24px 20px 80px' }}>
-      <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 600, color: G, marginBottom: 4 }}>Подписка</div>
-      <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginBottom: 24 }}>Выбери свой тариф</div>
+    <div style={{ background: '#F9F7F4', minHeight: '100dvh', paddingBottom: 100 }}>
 
-      {/* Free card */}
-      <div style={{
-        border: '1px solid ' + (isClub ? BD : G),
-        borderRadius: 18, padding: 20, marginBottom: 14,
-        background: isClub ? W : GLL,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div style={{ fontFamily: serif, fontSize: 20, fontWeight: 700, color: G }}>Бесплатно</div>
-          {!isClub && <div style={{ fontSize: 11, fontWeight: 700, color: G, background: G + '22', padding: '4px 10px', borderRadius: 8 }}>Текущий</div>}
-        </div>
-        {FEATURES_FREE.map((f, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ color: G, fontSize: 14 }}>✓</span>
-            <span style={{ fontSize: 14, color: INK, fontFamily: sans }}>{f}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Club card */}
-      <div style={{
-        border: '2px solid ' + GOLD,
-        borderRadius: 18, padding: 20, marginBottom: 20,
-        background: isClub ? '#FBF5EB' : W,
-        position: 'relative',
-      }}>
-        {isClub && <div style={{ position: 'absolute', top: -10, right: 16, fontSize: 11, fontWeight: 700, color: W, background: GOLD, padding: '4px 12px', borderRadius: 8 }}>Активна</div>}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
-          <div style={{ fontFamily: serif, fontSize: 20, fontWeight: 700, color: GOLD }}>Клуб V Форме</div>
-          <div style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: GOLD }}>399 ₽<span style={{ fontSize: 13, fontWeight: 500, color: INK3 }}>/мес</span></div>
-        </div>
-        {FEATURES_CLUB.map((f, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ color: GOLD, fontSize: 14 }}>★</span>
-            <span style={{ fontSize: 14, color: INK, fontFamily: sans }}>{f}</span>
-          </div>
-        ))}
-
-        {!isClub ? (
-          <button onClick={handleSubscribe} disabled={loading}
-            style={{ width: '100%', marginTop: 16, padding: 16, background: GOLD, border: 'none', borderRadius: 14, color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
-            {loading ? 'Загрузка…' : 'Оформить подписку'}
+      {/* Hero */}
+      <div style={{ background: `linear-gradient(135deg, ${G} 0%, #3D6B3D 100%)`, padding: '40px 24px 48px', borderRadius: '0 0 32px 32px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+        <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+        {onClose && (
+          <button onClick={onClose} style={{ position: 'absolute', top: 16, left: 16, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: '8px 14px', color: W, fontFamily: sans, fontSize: 14, cursor: 'pointer', backdropFilter: 'blur(10px)' }}>
+            ← Назад
           </button>
-        ) : (
-          <div style={{ marginTop: 16 }}>
-            {endDate && <div style={{ fontSize: 13, color: INK2, fontFamily: sans, marginBottom: 10 }}>Следующее продление: {endDate}</div>}
-            <button onClick={handleCancel}
-              style={{ width: '100%', padding: 12, background: 'transparent', border: '1px solid ' + BD, borderRadius: 12, color: INK3, fontFamily: sans, fontSize: 13, cursor: 'pointer' }}>
-              Отменить подписку
-            </button>
-          </div>
         )}
-      </div>
-
-      {/* Free picks info */}
-      {!isClub && subData && (
-        <div style={{ background: OW, borderRadius: 14, padding: 16, textAlign: 'center' }}>
-          <div style={{ fontSize: 13, color: INK2, fontFamily: sans }}>
-            Бесплатных продуктов: <b>{subData.freePicksCount}/{subData.freePicksMax}</b>
+        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1, paddingTop: onClose ? 24 : 0 }}>
+          <div style={{ fontSize: 42, marginBottom: 8 }}>V</div>
+          <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 700, color: W, marginBottom: 8 }}>
+            Клуб V Форме
           </div>
-          <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 4 }}>
-            Выбирай в разделе «Программы»
+          <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.8)', fontFamily: sans, lineHeight: 1.5, maxWidth: 320, margin: '0 auto' }}>
+            Персональный нутрициолог в кармане.{'\n'}Все знания Кристины — в одном месте.
           </div>
         </div>
-      )}
+      </div>
 
-      {onClose && (
-        <button onClick={onClose}
-          style={{ width: '100%', marginTop: 16, padding: 14, background: OW, border: '1px solid ' + BD, borderRadius: 14, color: INK2, fontFamily: sans, fontSize: 14, cursor: 'pointer' }}>
-          Назад
-        </button>
-      )}
+      <div style={{ padding: '0 20px', marginTop: -24, position: 'relative', zIndex: 2 }}>
+
+        {/* Comparison */}
+        <div style={{ background: W, borderRadius: 22, padding: '24px 20px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', marginBottom: 16 }}>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <span style={{ fontFamily: serif, fontSize: 36, fontWeight: 700, color: GOLD }}>399</span>
+            <span style={{ fontSize: 16, color: INK2, fontFamily: sans }}> руб/мес</span>
+          </div>
+
+          <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 14, fontFamily: sans, textAlign: 'center' }}>
+            ЧТО ВХОДИТ В КЛУБ
+          </div>
+
+          {[
+            { icon: '📋', text: 'Все протоколы здоровья', sub: 'Без ограничений по количеству' },
+            { icon: '💊', text: 'Все схемы БАДов', sub: 'Персональные рекомендации' },
+            { icon: '🎙', text: 'Все лекции Кристины', sub: 'Аудио + расшифровка' },
+            { icon: '💬', text: 'Безлимитный AI-чат', sub: 'Вопросы 24/7, персональные ответы' },
+            { icon: '🧪', text: 'Конструктор добавок', sub: 'AI подберёт схему под тебя' },
+            { icon: '💰', text: 'Скидка 10% на программы', sub: 'На все платные курсы' },
+          ].map((f, i) => (
+            <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 0', borderBottom: i < 5 ? '1px solid ' + BD : 'none' }}>
+              <div style={{ fontSize: 22, flexShrink: 0, width: 32, textAlign: 'center' }}>{f.icon}</div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: INK, fontFamily: sans }}>{f.text}</div>
+                <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 2 }}>{f.sub}</div>
+              </div>
+            </div>
+          ))}
+
+          {!isClub ? (
+            <button onClick={handleSubscribe} disabled={loading}
+              style={{
+                width: '100%', marginTop: 20, padding: '18px',
+                background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLDD} 100%)`,
+                border: 'none', borderRadius: 16, color: W,
+                fontFamily: sans, fontWeight: 700, fontSize: 17,
+                cursor: 'pointer', opacity: loading ? 0.6 : 1,
+                boxShadow: '0 4px 16px rgba(196, 162, 107, 0.4)',
+                letterSpacing: 0.5,
+              }}>
+              {loading ? 'Загрузка…' : 'Присоединиться к Клубу'}
+            </button>
+          ) : (
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <div style={{ display: 'inline-block', padding: '10px 20px', background: GLL, borderRadius: 12, marginBottom: 10 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: G, fontFamily: sans }}>Ты в Клубе</span>
+              </div>
+              {endDate && <div style={{ fontSize: 13, color: INK2, fontFamily: sans }}>Следующее продление: {endDate}</div>}
+              <button onClick={handleCancel}
+                style={{ marginTop: 12, padding: '10px 20px', background: 'transparent', border: '1px solid ' + BD, borderRadius: 10, color: INK3, fontFamily: sans, fontSize: 13, cursor: 'pointer' }}>
+                Отменить подписку
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Social proof */}
+        <div style={{ background: W, borderRadius: 18, padding: '18px 20px', marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+          <div style={{ fontSize: 13, color: INK2, fontFamily: sans, textAlign: 'center', lineHeight: 1.6 }}>
+            Одна консультация нутрициолога стоит <b>3 000–5 000 руб.</b>{'\n'}
+            В Клубе ты получаешь доступ к AI-нутрициологу <b>24/7</b> за <b>399 руб/мес</b> — это <b>13 руб/день</b>.
+          </div>
+        </div>
+
+        {/* Free plan */}
+        <div style={{ background: OW, borderRadius: 18, padding: '18px 20px', marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: INK3, fontFamily: sans, marginBottom: 12, letterSpacing: 1 }}>
+            БЕСПЛАТНЫЙ ДОСТУП
+          </div>
+          {[
+            '3 продукта на выбор',
+            'Все рецепты с КБЖУ',
+            'Трекер привычек',
+            'Атлас здоровья',
+            '10 сообщений в чате / день',
+          ].map((f, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ color: INK3, fontSize: 12 }}>✓</span>
+              <span style={{ fontSize: 13, color: INK2, fontFamily: sans }}>{f}</span>
+            </div>
+          ))}
+          {!isClub && subData && (
+            <div style={{ marginTop: 12, padding: '10px 14px', background: W, borderRadius: 10, textAlign: 'center' }}>
+              <span style={{ fontSize: 13, color: G, fontFamily: sans, fontWeight: 600 }}>
+                Использовано: {subData.freePicksCount}/3 продуктов
+              </span>
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }
