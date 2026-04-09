@@ -91,10 +91,10 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
-// Отключить MAX
+// Отключить MAX (ID сохраняется для защиты от повторного использования)
 router.post('/unlink', auth, async (req, res) => {
   try {
-    await User.update({ maxId: null, maxUsername: null }, { where: { id: req.user.id } });
+    // Не удаляем maxId — чтобы нельзя было перепривязать к другому аккаунту
     sendToUser(req.user.id, { type: 'max_unlinked' });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }

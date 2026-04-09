@@ -119,10 +119,9 @@ export default function Cabinet() {
             </div>
           </div>
           {user?.telegramId ? (
-            <button onClick={unlinkTelegram}
-              style={{ padding: '8px 14px', background: 'none', border: '1px solid ' + BD, borderRadius: 20, color: INK3, fontFamily: sans, fontSize: 12, cursor: 'pointer' }}>
-              Отключить
-            </button>
+            <div style={{ padding: '8px 14px', background: GLL, borderRadius: 20, color: G, fontFamily: sans, fontSize: 12, fontWeight: 600 }}>
+              Привязан
+            </div>
           ) : (
             <button onClick={connectTelegram} disabled={tgLoading}
               style={{ padding: '10px 18px', background: GOLD, border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -147,16 +146,9 @@ export default function Cabinet() {
             </div>
           </div>
           {user?.maxId ? (
-            <button onClick={async () => {
-              if (!confirm('Отключить MAX от аккаунта?')) return;
-              try {
-                await fetch('/api/max/unlink', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
-                if (refreshUser) await refreshUser(); else window.location.reload();
-              } catch {}
-            }}
-              style={{ padding: '8px 14px', background: 'none', border: '1px solid ' + BD, borderRadius: 20, color: INK3, fontFamily: sans, fontSize: 12, cursor: 'pointer' }}>
-              Отключить
-            </button>
+            <div style={{ padding: '8px 14px', background: GLL, borderRadius: 20, color: G, fontFamily: sans, fontSize: 12, fontWeight: 600 }}>
+              Привязан
+            </div>
           ) : (
             <button onClick={() => window.open('https://max.ru/id440131784034_bot', '_blank')}
               style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
