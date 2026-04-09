@@ -46,7 +46,7 @@ router.post('/webhook', async (req, res) => {
     if (update.update_type === 'bot_started') {
       const existing = maxUserId ? await User.findOne({ where: { maxId: String(maxUserId) } }) : null;
       if (existing) {
-        await sendMessage(chatId, `Привет, ${firstName}! Ваш аккаунт V Форме уже привязан.`);
+        await sendMessage(chatId, `Привет, ${firstName}! Этот MAX уже привязан к аккаунту V Форме.`);
       } else {
         await sendMessage(chatId, `Привет, ${firstName}!\n\nОтправьте email, который вы использовали при регистрации в V Форме, и я привяжу ваш аккаунт.`);
       }
@@ -56,10 +56,10 @@ router.post('/webhook', async (req, res) => {
     if (update.update_type === 'message_created' && update.message) {
       const text = (update.message.body?.text || '').trim().toLowerCase();
 
-      // Проверяем — уже привязан?
+      // Проверяем — этот MAX уже привязан к какому-то аккаунту?
       const already = maxUserId ? await User.findOne({ where: { maxId: String(maxUserId) } }) : null;
       if (already) {
-        await sendMessage(chatId, 'Ваш аккаунт уже привязан!');
+        await sendMessage(chatId, 'Этот аккаунт MAX уже привязан к аккаунту V Форме. Использовать один мессенджер для нескольких аккаунтов нельзя.');
         return res.json({ ok: true });
       }
 

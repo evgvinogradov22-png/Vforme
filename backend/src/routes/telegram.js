@@ -60,8 +60,14 @@ router.post('/webhook', async (req, res) => {
         });
         if (user) {
           if (user.telegramId && user.telegramId === String(chatId)) {
-            await sendMessage(chatId, '✅ Ваш аккаунт уже привязан!');
+            await sendMessage(chatId, 'Ваш аккаунт уже привязан!');
           } else {
+            // Проверяем — не использовался ли этот Telegram ранее
+            const existingTg = await User.findOne({ where: { telegramId: String(chatId) } });
+            if (existingTg && existingTg.id !== user.id) {
+              await sendMessage(chatId, 'Этот Telegram уже привязан к другому аккаунту V Форме. Использовать один мессенджер для нескольких аккаунтов нельзя.');
+              return res.json({ ok: true });
+            }
             await user.update({ telegramId: String(chatId), telegramUsername: username, linkToken: null });
             // Начисляем баллы только если первый раз привязывает
             let bonusGiven = false;
