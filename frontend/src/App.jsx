@@ -239,24 +239,24 @@ function AppShell() {
         padding: 0,
         flexDirection: 'column',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 8px 4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-around', paddingTop: 10, paddingBottom: 6, paddingLeft: 4, paddingRight: 4 }}>
           {TABS.map(t => {
             const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
                 style={{
-                  flex: 1, padding: '4px',
+                  flex: 1, padding: 0,
                   background: 'none', border: 'none',
                   color: active ? G : '#8E8E93',
                   cursor: 'pointer',
-                  fontSize: 11, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
-                  fontWeight: active ? 600 : 500,
-                  letterSpacing: -0.1,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  fontSize: 10, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+                  fontWeight: active ? 600 : 400,
+                  letterSpacing: 0.2,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                   transition: 'color .18s ease',
                   minWidth: 0,
                 }}>
-                <TabIcon name={t.icon} size={28} />
+                <TabIcon name={t.icon} size={32} />
                 <span style={{ lineHeight: 1 }}>{t.label}</span>
               </button>
             );
