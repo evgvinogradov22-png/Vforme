@@ -71,15 +71,16 @@ router.post('/free-pick', auth, async (req, res) => {
   try {
     const { productId, productType } = req.body;
     if (!productId || !productType) return res.status(400).json({ error: 'productId и productType обязательны' });
-    if (!['protocol', 'scheme'].includes(productType)) return res.status(400).json({ error: 'Тип: protocol или scheme' });
+    if (!['protocol', 'scheme', 'program'].includes(productType)) return res.status(400).json({ error: 'Тип: protocol, scheme или program' });
 
     // Проверка что продукт существует
     if (productType === 'protocol') {
-      const p = await Protocol.findByPk(productId);
-      if (!p) return res.status(404).json({ error: 'Продукт не найден' });
+      if (!(await Protocol.findByPk(productId))) return res.status(404).json({ error: 'Продукт не найден' });
+    } else if (productType === 'scheme') {
+      if (!(await SupplementScheme.findByPk(productId))) return res.status(404).json({ error: 'Продукт не найден' });
     } else {
-      const s = await SupplementScheme.findByPk(productId);
-      if (!s) return res.status(404).json({ error: 'Продукт не найден' });
+      const Program = require('../models/Program');
+      if (!(await Program.findByPk(productId))) return res.status(404).json({ error: 'Продукт не найден' });
     }
 
     if (!(await canAddFreePick(req.user.id))) return res.status(403).json({ error: 'Лимит 3 бесплатных продукта' });

@@ -799,7 +799,6 @@ export default function Health() {
   const ownedPrograms = user?.programAccess || [];
 
   function isItemAccessible(item) {
-    if (item.kind === 'program') return true; // programs have their own paywall
     if (isClub) return true;
     if (freePickIds.includes(item.id)) return true;
     if (item.kind === 'program' && ownedPrograms.includes(item.id)) return true;
@@ -807,35 +806,32 @@ export default function Health() {
   }
 
   function isItemLocked(item) {
-    if (item.kind === 'program') return false;
     if (isItemAccessible(item)) return false;
     if (freePicksLeft > 0) return false;
     return true;
   }
 
+  const openItem = (item) => {
+    if (item.kind === 'program')  setOpenProgram(item);
+    if (item.kind === 'protocol') setOpenProtocol(item);
+    if (item.kind === 'scheme')   setOpenScheme(item);
+  };
+
   const handleOpen = async (item) => {
-    // Программы всегда открываются (у них свой paywall внутри)
-    if (item.kind === 'program') { setOpenProgram(item); return; }
+    // Уже есть доступ (club, куплено, или free pick) — открываем
+    if (isItemAccessible(item)) { openItem(item); return; }
 
-    // Если уже есть доступ — просто открываем
-    if (isItemAccessible(item)) {
-      if (item.kind === 'protocol') setOpenProtocol(item);
-      if (item.kind === 'scheme')   setOpenScheme(item);
-      return;
-    }
-
-    // Нет доступа — автоматически добавляем как free pick (если есть слоты)
+    // Нет доступа — добавляем как free pick (если слоты есть)
     if (freePicksLeft > 0) {
       try {
         await subApi.addFreePick(item.id, item.kind);
         await refreshUser();
-        if (item.kind === 'protocol') setOpenProtocol(item);
-        if (item.kind === 'scheme')   setOpenScheme(item);
+        openItem(item);
       } catch (e) { alert(e.message); }
       return;
     }
 
-    // Лимит исчерпан — предлагаем подписку
+    // Лимит исчерпан — подписка
     window.dispatchEvent(new Event('vforme:open-subscription'));
   };
 
