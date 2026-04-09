@@ -213,11 +213,14 @@ router.delete('/supplements/:id', A, sp.remove);
 // Users — только суперадмин
 router.get('/users', SA, async (req, res) => {
   try {
-    const users = await User.findAll({ attributes: { exclude: ['password'] } });
+    const users = await User.findAll({ attributes: { exclude: ['password'] }, limit: 500 });
     const profiles = await UserProfile.findAll();
+    const subs = await Subscription.findAll();
     const profileMap = {};
     profiles.forEach(p => { profileMap[p.userId] = p; });
-    res.json(users.map(u => ({ ...u.toJSON(), profile: profileMap[u.id] || null })));
+    const subMap = {};
+    subs.forEach(s => { subMap[s.userId] = { plan: s.plan, status: s.status, currentPeriodEnd: s.currentPeriodEnd }; });
+    res.json(users.map(u => ({ ...u.toJSON(), profile: profileMap[u.id] || null, subscription: subMap[u.id] || null })));
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 router.post('/users', SA, async (req,res) => {
@@ -229,6 +232,29 @@ router.post('/users', SA, async (req,res) => {
 });
 router.put('/users/:id/role', SA, async (req,res) => { try { await User.update({role:req.body.role},{where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
 router.delete('/users/:id', SA, async (req,res) => { try { await User.destroy({where:{id:req.params.id}}); res.json({ok:true}); } catch(e) { res.status(500).json({error:e.message}); } });
+
+// Клуб — активировать/деактивировать подписку
+const Subscription = require('../models/Subscription');
+router.post('/users/:id/club', SA, async (req, res) => {
+  try {
+    const { active, days } = req.body; // active: true/false, days: number (default 30)
+    const userId = req.params.id;
+    if (active) {
+      const period = (days || 30) * 24 * 60 * 60 * 1000;
+      const now = new Date();
+      const end = new Date(now.getTime() + period);
+      const [sub] = await Subscription.findOrCreate({ where: { userId }, defaults: { userId, plan: 'club', status: 'active', currentPeriodStart: now, currentPeriodEnd: end } });
+      if (sub.plan !== 'club' || sub.status !== 'active') {
+        await sub.update({ plan: 'club', status: 'active', currentPeriodStart: now, currentPeriodEnd: end, cancelledAt: null });
+      }
+      res.json({ ok: true, until: end });
+    } else {
+      const sub = await Subscription.findOne({ where: { userId } });
+      if (sub) await sub.update({ plan: 'free', status: 'cancelled', cancelledAt: new Date() });
+      res.json({ ok: true });
+    }
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // Доступ к программам
 router.post('/users/:id/access', SA, async (req, res) => {

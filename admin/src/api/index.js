@@ -45,6 +45,7 @@ export const users = {
   delete: (id) => req('DELETE', `/admin/users/${id}`),
   // access to programs
   setAccess: (userId, programId, granted) => req('POST', `/admin/users/${userId}/access`, { programId, granted }),
+  setClub: (userId, active, days) => req('POST', `/admin/users/${userId}/club`, { active, days }),
 };
 
 export const programs = {

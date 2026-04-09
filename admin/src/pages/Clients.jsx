@@ -12,6 +12,8 @@ function ClientModal({ client, programs, onClose, onUpdate, flash }) {
   const [role, setRole] = useState(client.role);
   const [access, setAccess] = useState(client.programAccess || []);
   const [saving, setSaving] = useState(false);
+  const [clubActive, setClubActive] = useState(client.subscription?.plan === 'club' && client.subscription?.status === 'active');
+  const [clubLoading, setClubLoading] = useState(false);
   const a = client.profile?.answers || {};
 
   const toggleAccess = async (programId) => {
@@ -145,6 +147,35 @@ function ClientModal({ client, programs, onClose, onUpdate, flash }) {
           </div>
         </div>
       )}
+
+      {/* КЛУБ V ФОРМЕ */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.ink3, letterSpacing: 0.5, marginBottom: 12 }}>КЛУБ V ФОРМЕ</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', border: `1px solid ${clubActive ? C.gold + '66' : C.border}`, borderRadius: 14, background: clubActive ? '#FBF5EB' : C.white }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: clubActive ? C.gold : C.ink }}>
+              {clubActive ? 'Клуб активен' : 'Клуб не активен'}
+            </div>
+            {clubActive && client.subscription?.currentPeriodEnd && (
+              <div style={{ fontSize: 12, color: C.ink3, marginTop: 2 }}>
+                до {new Date(client.subscription.currentPeriodEnd).toLocaleDateString('ru')}
+              </div>
+            )}
+          </div>
+          <div onClick={async () => {
+            setClubLoading(true);
+            try {
+              await usersApi.setClub(client.id, !clubActive, 30);
+              setClubActive(!clubActive);
+              flash(clubActive ? 'Клуб деактивирован' : 'Клуб активирован на 30 дней');
+            } catch (e) { flash('Ошибка: ' + e.message, 'error'); }
+            finally { setClubLoading(false); }
+          }}
+            style={{ width: 50, height: 28, borderRadius: 14, background: clubActive ? C.gold : C.border, position: 'relative', cursor: clubLoading ? 'wait' : 'pointer', transition: 'background .2s', opacity: clubLoading ? 0.5 : 1 }}>
+            <div style={{ position: 'absolute', top: 3, left: clubActive ? 25 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+          </div>
+        </div>
+      </div>
 
       {/* ДОСТУП К ПРОГРАММАМ */}
       <div style={{ marginBottom: 24 }}>
