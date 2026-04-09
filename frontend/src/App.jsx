@@ -110,7 +110,17 @@ function AppShell() {
     }
     if (msg.type === 'telegram_unlinked') {
       authApi.me().then(u => { if (u) setUser(u); }).catch(e => console.error(e));
-      flash('✈️ Telegram отключён');
+      flash('Telegram отключён');
+      return;
+    }
+    if (msg.type === 'max_linked') {
+      authApi.me().then(u => { if (u) setUser(u); }).catch(e => console.error(e));
+      flash(msg.bonusGiven ? 'MAX подключён! +100 баллов' : 'MAX подключён');
+      return;
+    }
+    if (msg.type === 'max_unlinked') {
+      authApi.me().then(u => { if (u) setUser(u); }).catch(e => console.error(e));
+      flash('MAX отключён');
       return;
     }
     if (msg.type === 'data_updated') {

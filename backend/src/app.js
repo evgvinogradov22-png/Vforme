@@ -74,6 +74,7 @@ app.use('/api/stats',       require('./routes/stats'));
 app.use('/api/protocols',   require('./routes/protocols'));
 app.use('/api/upload',      require('./routes/upload'));
 app.use('/api/telegram',    require('./routes/telegram'));
+app.use('/api/max',         require('./routes/max'));
 app.use('/api/broadcast',   require('./routes/broadcast'));
 app.use('/api/chat',        require('./routes/chat'));
 app.use('/api/events',      require('./routes/events'));

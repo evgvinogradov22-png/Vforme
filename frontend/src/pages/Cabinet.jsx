@@ -28,6 +28,7 @@ export default function Cabinet() {
   const [pointsHistory, setPointsHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tgLoading, setTgLoading] = useState(false);
+  const [maxLoading, setMaxLoading] = useState(false);
 
   const unlinkTelegram = async () => {
     if (!confirm('Отключить Telegram от аккаунта?')) return;
@@ -126,6 +127,48 @@ export default function Cabinet() {
             <button onClick={connectTelegram} disabled={tgLoading}
               style={{ padding: '10px 18px', background: GOLD, border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               {tgLoading ? '...' : user?.telegramBonusGiven ? 'Подключить' : '+100 💎'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* MAX МЕССЕНДЖЕР */}
+      <div style={{ margin: '0 20px 20px', background: user?.maxId ? '#EBF0EB' : '#F9F7F4', border: `1px solid ${user?.maxId ? G : BD}`, borderRadius: 20, padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#5B6CEA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: W, fontSize: 16, fontWeight: 700, fontFamily: sans }}>M</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: INK }}>
+              {user?.maxId ? 'MAX подключён' : 'Подключи MAX'}
+            </div>
+            <div style={{ fontSize: 13, color: INK2, marginTop: 3, lineHeight: 1.4 }}>
+              {user?.maxId
+                ? `${user.maxUsername ? '@' + user.maxUsername : 'подключён'} — получай уведомления`
+                : user?.maxBonusGiven ? 'Подключи для уведомлений' : 'Получи +100 баллов'}
+            </div>
+          </div>
+          {user?.maxId ? (
+            <button onClick={async () => {
+              if (!confirm('Отключить MAX от аккаунта?')) return;
+              try {
+                await fetch('/api/max/unlink', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
+                if (refreshUser) await refreshUser(); else window.location.reload();
+              } catch {}
+            }}
+              style={{ padding: '8px 14px', background: 'none', border: '1px solid ' + BD, borderRadius: 20, color: INK3, fontFamily: sans, fontSize: 12, cursor: 'pointer' }}>
+              Отключить
+            </button>
+          ) : (
+            <button onClick={async () => {
+              setMaxLoading(true);
+              try {
+                const res = await fetch('/api/max/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
+                const data = await res.json();
+                if (data.url) window.open(data.url, '_blank');
+              } catch {}
+              setMaxLoading(false);
+            }} disabled={maxLoading}
+              style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {maxLoading ? '...' : user?.maxBonusGiven ? 'Подключить' : '+100'}
             </button>
           )}
         </div>

@@ -18,6 +18,9 @@ const User = sequelize.define('User', {
   linkTokenAt:       { type: DataTypes.DATE },
   lastSeenAt:        { type: DataTypes.DATE },
   chatSummary:       { type: DataTypes.TEXT },
+  maxId:             { type: DataTypes.STRING },
+  maxUsername:       { type: DataTypes.STRING },
+  maxBonusGiven:    { type: DataTypes.BOOLEAN, defaultValue: false },
 }, { timestamps: true });
 
 // Encrypt sensitive fields at rest
