@@ -41,8 +41,10 @@ router.post('/link-token', auth, async (req, res) => {
     const token = crypto.randomBytes(16).toString('hex');
     await User.update({ linkToken: token, linkTokenAt: new Date() }, { where: { id: req.user.id } });
     const botUsername = process.env.MAX_BOT_USERNAME || 'vforme_bot';
-    // MAX deep link: payload передаётся через ?payload= параметр
-    res.json({ url: `https://max.ru/${botUsername}?payload=${token}` });
+    // MAX не поддерживает payload в deep link — юзер отправит код боту вручную
+    const code = token.slice(0, 8).toUpperCase();
+    await User.update({ linkToken: code, linkTokenAt: new Date() }, { where: { id: req.user.id } });
+    res.json({ url: `https://max.ru/${botUsername}`, code });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -52,38 +54,31 @@ router.post('/webhook', async (req, res) => {
     console.log('MAX webhook:', JSON.stringify(req.body));
     const update = req.body;
 
-    // Извлекаем токен: bot_started → payload, message_created → /start TOKEN в тексте
-    let token = null;
-    let chatId = null;
-    let maxUserId = null;
-    let username = '';
-    let firstName = '';
+    const chatId = update.chat_id || update.message?.recipient?.chat_id;
+    const maxUserId = update.user_id || update.user?.user_id || update.message?.sender?.user_id;
+    const username = update.user?.username || update.message?.sender?.username || '';
+    const firstName = update.user?.first_name || update.user?.name || update.message?.sender?.name || '';
 
+    // bot_started — приветствие с инструкцией
     if (update.update_type === 'bot_started') {
-      token = update.payload || null;
-      chatId = update.chat_id;
-      maxUserId = update.user_id || update.user?.user_id;
-      username = update.user?.username || '';
-      firstName = update.user?.first_name || update.user?.name || '';
-    } else if (update.update_type === 'message_created' && update.message) {
-      const msg = update.message;
-      chatId = msg.recipient?.chat_id;
-      maxUserId = msg.sender?.user_id;
-      username = msg.sender?.username || '';
-      firstName = msg.sender?.name || '';
-      const text = msg.body?.text || '';
-      if (text.startsWith('/start')) token = text.split(' ')[1] || null;
+      // Проверяем — может уже привязан
+      const existing = await User.findOne({ where: { maxId: String(maxUserId) } });
+      if (existing) {
+        await sendMessage(chatId, `Привет, ${firstName}! Ваш аккаунт уже привязан к V Форме.`);
+      } else {
+        await sendMessage(chatId, `Привет, ${firstName}!\n\nЧтобы привязать аккаунт V Форме:\n1. Откройте приложение → Аккаунт → Подключить MAX\n2. Скопируйте код\n3. Отправьте его сюда`);
+      }
     }
 
-    if (token && chatId) {
-      const { Op } = require('sequelize');
-      const user = await User.findOne({
-        where: { linkToken: token, linkTokenAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
-      });
-      if (user) {
-        if (user.maxId && user.maxId === String(maxUserId)) {
-          await sendMessage(chatId, 'Ваш аккаунт уже привязан!');
-        } else {
+    // message_created — проверяем код привязки
+    if (update.update_type === 'message_created' && update.message) {
+      const text = (update.message.body?.text || '').trim().toUpperCase();
+      if (text.length >= 6 && text.length <= 32) {
+        const { Op } = require('sequelize');
+        const user = await User.findOne({
+          where: { linkToken: text, linkTokenAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+        });
+        if (user) {
           await user.update({ maxId: String(maxUserId || chatId), maxUsername: username, linkToken: null });
           let bonusGiven = false;
           if (!user.maxBonusGiven) {
@@ -93,12 +88,10 @@ router.post('/webhook', async (req, res) => {
           }
           await sendMessage(chatId, `Аккаунт привязан!\n\nПривет, ${firstName}! Вам начислено +100 баллов.\n\nДобро пожаловать в V Форме!`);
           sendToUser(user.id, { type: 'max_linked', bonusGiven, points: bonusGiven ? 100 : 0 });
+        } else {
+          await sendMessage(chatId, 'Код не найден или устарел. Получите новый в приложении.');
         }
-      } else {
-        await sendMessage(chatId, 'Ссылка устарела. Получите новую в приложении.');
       }
-    } else if (chatId && !token) {
-      await sendMessage(chatId, 'Перейдите в приложение V Форме и нажмите "Подключить MAX".');
     }
     res.json({ ok: true });
   } catch (e) {
