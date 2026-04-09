@@ -1,6 +1,10 @@
 const router = require('express').Router();
+const rateLimit = require('express-rate-limit');
 const https = require('https');
 const auth = require('../middleware/auth');
+
+const chatLimit = rateLimit({ windowMs: 60000, max: 10, message: { error: 'Слишком много сообщений. Подожди минуту.' } });
+const uploadLimit = rateLimit({ windowMs: 60000, max: 5, message: { error: 'Слишком много загрузок.' } });
 const role = require('../middleware/role');
 const ChatSettings = require('../models/ChatSettings');
 const ChatMessage = require('../models/ChatMessage');
@@ -57,7 +61,7 @@ const upload = multer({
   },
 });
 
-router.post('/upload', auth, upload.single('file'), async (req, res) => {
+router.post('/upload', auth, uploadLimit, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
     const ext = path.extname(req.file.originalname).toLowerCase();
@@ -220,7 +224,7 @@ async function buildClientContext(userId) {
   return lines.join('\n');
 }
 
-router.post('/message', auth, async (req, res) => {
+router.post('/message', auth, chatLimit, async (req, res) => {
   try {
     const message = (req.body.message || '').slice(0, 5000);
     if (!message) return res.status(400).json({ error: 'Нет сообщения' });
@@ -337,7 +341,7 @@ router.post('/message', auth, async (req, res) => {
 });
 
 // POST image message — сохраняем и сразу отправляем в AI как vision
-router.post('/image-message', auth, async (req, res) => {
+router.post('/image-message', auth, chatLimit, async (req, res) => {
   try {
     const { imageUrl } = req.body;
     if (!imageUrl) return res.status(400).json({ error: 'Нет URL' });

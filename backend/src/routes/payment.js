@@ -1,7 +1,10 @@
 require('dotenv').config();
 const router = require('express').Router();
+const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const auth = require('../middleware/auth');
+
+const webhookLimit = rateLimit({ windowMs: 60000, max: 60, message: { error: 'Too many requests' } });
 const User = require('../models/User');
 const Points = require('../models/Points');
 const Order = require('../models/Order');
@@ -116,14 +119,18 @@ router.post('/create-protocol', auth, async (req, res) => {
 });
 
 // Webhook от Prodamus
-router.post('/webhook', async (req, res) => {
+router.post('/webhook', webhookLimit, async (req, res) => {
   try {
     const data = req.body;
     console.log('Prodamus webhook received, status:', data.payment_status, 'orderId:', data.order_id);
 
-    // Проверка подписи
+    // Проверка подписи (обязательна)
     const secret = process.env.PRODAMUS_SECRET;
-    if (secret) {
+    if (!secret) {
+      console.error('PRODAMUS_SECRET не настроен');
+      return res.status(500).json({ error: 'Webhook not configured' });
+    }
+    {
       const sign = req.headers['x-signature'] || req.headers['sign'] || data.sign;
       if (!sign) {
         console.error('Webhook: подпись отсутствует');

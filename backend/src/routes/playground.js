@@ -1,9 +1,12 @@
 // Playground — прототип атласа здоровья без авторизации.
 // Переиспользует общую логику из utils/atlasAnalyze.js.
 const router = require('express').Router();
+const rateLimit = require('express-rate-limit');
 const { analyzeAnswers } = require('../utils/atlasAnalyze');
 
-router.post('/analyze', async (req, res) => {
+const playgroundLimit = rateLimit({ windowMs: 60000, max: 5, message: { error: 'Слишком много запросов' } });
+
+router.post('/analyze', playgroundLimit, async (req, res) => {
   try {
     const { answers = {}, complaints = '', levels = {} } = req.body || {};
     const result = await analyzeAnswers({ answers, complaints, levels });

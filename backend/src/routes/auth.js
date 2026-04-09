@@ -108,7 +108,8 @@ router.post('/resend-verify', codeLimit, require('../middleware/auth'), async (r
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/forgot-password', authLimit, async (req, res) => {
+const pwdResetLimit = rateLimit({ windowMs: 30 * 60 * 1000, max: 3, message: { error: 'Слишком много запросов на сброс пароля. Подожди 30 минут.' } });
+router.post('/forgot-password', pwdResetLimit, async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ where: { email } });
@@ -121,7 +122,7 @@ router.post('/forgot-password', authLimit, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', pwdResetLimit, async (req, res) => {
   try {
     const { token, password } = req.body;
     if (!token || !password || password.length < 6) return res.status(400).json({ error: 'Данные некорректны' });

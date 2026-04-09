@@ -84,6 +84,19 @@ app.use('/api/atlas',        require('./routes/atlas'));
 app.use('/api/health',       require('./routes/health'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+// Перехват: скрываем детали ошибок от клиента в production
+app.use((req, res, next) => {
+  const origJson = res.json.bind(res);
+  res.json = (body) => {
+    if (res.statusCode >= 500 && body?.error && process.env.NODE_ENV === 'production') {
+      console.error(`[500] ${req.method} ${req.path}: ${body.error}`);
+      return origJson({ error: 'Внутренняя ошибка сервера' });
+    }
+    return origJson(body);
+  };
+  next();
+});
+
 // Централизованный error handler — ДОЛЖЕН быть последним
 const { errorHandler } = require('./middleware/errorHandler');
 app.use(errorHandler);
