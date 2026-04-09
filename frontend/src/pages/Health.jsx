@@ -362,32 +362,40 @@ function FilterDropdown({ label, options, selected, multi, onChange }) {
   );
 }
 
-// ─── Paywall карточка с iframe ───────────────────────────────
+// ─── Paywall карточка с виджетом Prodamus ────────────────────
 function PaywallCard({ price, payUrl, payLoading, onPay, ctaTitle = 'Открой полный курс', ctaHint = 'После оплаты материалы откроются автоматически' }) {
+  function openWidget() {
+    // Сначала создаём заказ на бэке, потом открываем виджет с полученным payUrl
+    onPay();
+  }
+
+  useEffect(() => {
+    if (!payUrl) return;
+    // payUrl содержит все параметры (order_id, email, product) — открываем виджет
+    if (typeof window.payformWidget === 'function') {
+      window.payformWidget(payUrl);
+    } else {
+      // fallback — открываем в новом окне
+      window.open(payUrl, '_blank');
+    }
+  }, [payUrl]);
+
   return (
     <div style={{
       background: W, border: `1px solid ${BD}`, borderRadius: 18, padding: '20px 18px', marginBottom: 16,
     }}>
-      {payUrl ? (
-        <div style={{ width: '100%', height: 540, borderRadius: 14, overflow: 'hidden', border: `1px solid ${BD}` }}>
-          <iframe src={payUrl} style={{ width: '100%', height: '100%', border: 'none' }} allow="payment" />
-        </div>
-      ) : (
-        <>
-          <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: INK, marginBottom: 6 }}>
-            {ctaTitle}
-          </div>
-          <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginBottom: 16 }}>
-            {ctaHint}
-          </div>
-          <button onClick={onPay} disabled={payLoading} style={{
-            width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 28,
-            color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
-          }}>
-            {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${price} руб.`}
-          </button>
-        </>
-      )}
+      <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: INK, marginBottom: 6 }}>
+        {ctaTitle}
+      </div>
+      <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginBottom: 16 }}>
+        {ctaHint}
+      </div>
+      <button onClick={openWidget} disabled={payLoading} style={{
+        width: '100%', padding: '18px', background: GOLD, border: 'none', borderRadius: 28,
+        color: W, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', letterSpacing: 1,
+      }}>
+        {payLoading ? 'Загрузка…' : `ОПЛАТИТЬ ${price} руб.`}
+      </button>
     </div>
   );
 }
