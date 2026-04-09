@@ -8,6 +8,6 @@ const ChatMessage = sequelize.define('ChatMessage', {
   content:   { type: DataTypes.TEXT, allowNull: false },
   isAi:      { type: DataTypes.BOOLEAN, defaultValue: true }, // true = AI ответил, false = admin вручную
   summarized: { type: DataTypes.BOOLEAN, defaultValue: false }, // включено в summary, не передаётся LLM напрямую
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ fields: ['userId', 'createdAt'] }] });
 
 module.exports = ChatMessage;

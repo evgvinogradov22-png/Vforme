@@ -132,8 +132,11 @@ async function rollUpSummary(userId, prevSummary) {
   }
 }
 
-// Каталог продуктов для AI — чтобы умел ссылаться когда уместно
+// Каталог продуктов для AI — кеш 5 минут
+let _catalogCache = null;
+let _catalogCacheAt = 0;
 async function buildCatalogContext() {
+  if (_catalogCache && Date.now() - _catalogCacheAt < 5 * 60 * 1000) return _catalogCache;
   try {
     const Program = require('../models/Program');
     const Protocol = require('../models/Protocol');
@@ -155,7 +158,9 @@ async function buildCatalogContext() {
     if (protocols.length) { lines.push('Протоколы:');  protocols.forEach(p => lines.push(fmt('protocol', p))); }
     if (schemes.length)   { lines.push('Схемы БАД:');  schemes.forEach(p => lines.push(fmt('scheme', p))); }
     lines.push('=== КОНЕЦ КАТАЛОГА ===');
-    return lines.join('\n');
+    _catalogCache = lines.join('\n');
+    _catalogCacheAt = Date.now();
+    return _catalogCache;
   } catch { return ''; }
 }
 

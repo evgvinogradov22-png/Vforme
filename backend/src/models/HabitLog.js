@@ -5,5 +5,5 @@ const HabitLog = sequelize.define('HabitLog', {
   userId: { type: DataTypes.UUID, allowNull: false },
   date:   { type: DataTypes.DATEONLY, allowNull: false },
   log:    { type: DataTypes.JSONB, defaultValue: {} },
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ unique: true, fields: ['userId', 'date'] }] });
 module.exports = HabitLog;

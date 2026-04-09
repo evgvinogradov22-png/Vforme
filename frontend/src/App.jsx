@@ -6,7 +6,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Programs from './pages/Programs';
-import Supplements from './pages/Supplements';
+// import Supplements from './pages/Supplements'; // unused
 import Recipes from './pages/Recipes';
 import Tracker from './pages/Tracker';
 import Cabinet from './pages/Cabinet';
@@ -14,7 +14,7 @@ import Protocols from './pages/Protocols';
 import ResetPassword from './pages/ResetPassword';
 import VerifyCode from './pages/VerifyCode';
 import PaymentSuccess from './pages/PaymentSuccess';
-import Materials from './pages/Materials';
+// import Materials from './pages/Materials'; // unused
 import Chat from './pages/Chat';
 import Playground from './pages/Playground';
 import Atlas from './pages/Atlas';
@@ -135,8 +135,9 @@ function AppShell() {
     };
     window.addEventListener('message', onMessage);
     window.addEventListener('popstate', check);
-    const t = setInterval(check, 1000);
-    return () => { window.removeEventListener('popstate', check); window.removeEventListener('message', onMessage); clearInterval(t); };
+    const t = setInterval(check, 2000);
+    const killTimer = setTimeout(() => clearInterval(t), 15000); // stop polling after 15s
+    return () => { window.removeEventListener('popstate', check); window.removeEventListener('message', onMessage); clearInterval(t); clearTimeout(killTimer); };
   }, []);
 
   if (loading) return (

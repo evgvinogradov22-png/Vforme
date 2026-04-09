@@ -10,6 +10,6 @@ const Order = sequelize.define('Order', {
   promoId:   { type: DataTypes.UUID },
   type:      { type: DataTypes.STRING, defaultValue: 'program' }, // program | protocol
   status:    { type: DataTypes.ENUM('pending','paid','failed'), defaultValue: 'pending' },
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ fields: ['userId'] }, { fields: ['status', 'createdAt'] }] });
 
 module.exports = Order;

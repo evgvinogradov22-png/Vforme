@@ -65,12 +65,6 @@ export const tracker = {
   toggleShopping: (id, done) => req('PATCH', `/tracker/shopping/${id}`, { done }),
   deleteShopping: (id) => req('DELETE', `/tracker/shopping/${id}`),
   clearShopping: () => req('DELETE', '/tracker/shopping'),
-  // legacy tasks
-  getTasks: () => req('GET', '/tracker/tasks'),
-  createTask: (data) => req('POST', '/tracker/tasks', data),
-  updateTask: (id, data) => req('PATCH', `/tracker/tasks/${id}`, data),
-  // legacy aliases
-  saveHabit: (data) => req('POST', '/tracker/habits/log', data),
 };
 
 export const profile = {

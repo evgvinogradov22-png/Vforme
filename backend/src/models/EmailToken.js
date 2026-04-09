@@ -9,6 +9,6 @@ const EmailToken = sequelize.define('EmailToken', {
   type:      { type: DataTypes.ENUM('verify', 'reset'), allowNull: false },
   expiresAt: { type: DataTypes.DATE, allowNull: false },
   used:      { type: DataTypes.BOOLEAN, defaultValue: false },
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ fields: ['tokenHash', 'type', 'used'] }] });
 
 module.exports = EmailToken;
