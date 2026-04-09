@@ -225,8 +225,8 @@ function AppShell() {
       {tab === 'tracker' && <Tracker flash={flash} />}
       {tab === 'cabinet' && <Cabinet />}
 
-      {/* НАВБАР — стиль iOS Tab Bar */}
-      <div style={{
+      {/* НАВБАР */}
+      <div className="vf-navbar" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         background: 'rgba(255,255,255,0.92)',
         backdropFilter: 'saturate(180%) blur(20px)',
@@ -236,34 +236,32 @@ function AppShell() {
         justifyContent: 'space-around',
         zIndex: 100,
         maxWidth: 480, margin: '0 auto',
-        padding: 0,
-        flexDirection: 'column',
+        padding: '10px 4px 10px',
+        paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-around', paddingTop: 10, paddingBottom: 6, paddingLeft: 4, paddingRight: 4 }}>
-          {TABS.map(t => {
-            const active = tab === t.id;
-            return (
-              <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
-                style={{
-                  flex: 1, padding: 0,
-                  background: 'none', border: 'none',
-                  color: active ? G : '#8E8E93',
-                  cursor: 'pointer',
-                  fontSize: 10, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
-                  fontWeight: active ? 600 : 400,
-                  letterSpacing: 0.2,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                  transition: 'color .18s ease',
-                  minWidth: 0,
-                }}>
-                <TabIcon name={t.icon} size={32} />
-                <span style={{ lineHeight: 1 }}>{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
+        {TABS.map(t => {
+          const active = tab === t.id;
+          return (
+            <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
+              style={{
+                flex: 1, padding: 0,
+                background: 'none', border: 'none',
+                color: active ? G : '#8E8E93',
+                cursor: 'pointer',
+                fontSize: 10, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+                fontWeight: active ? 600 : 400,
+                letterSpacing: 0.2,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                transition: 'color .18s ease',
+                minWidth: 0,
+              }}>
+              <TabIcon name={t.icon} size={30} />
+              <span style={{ lineHeight: 1 }}>{t.label}</span>
+            </button>
+          );
+        })}
       </div>
+      <style>{`.vf-navbar { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; }`}</style>
 
       <Toast message={toast} />
     </div>
