@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { tracker as trackerApi } from '../../api';
 import { Spinner } from '../../components/UI';
+import { renderMarkdown } from '../../utils/md';
 import { G, GL, GLL, GOLD, BD, INK, INK2, INK3, OW, W, sans, serif } from '../../utils/theme';
 
 const TIME_OPTIONS = [
@@ -93,7 +94,7 @@ export default function SupplementsTab() {
               </div>
               {s.recommendation && (
                 <div style={{ marginTop: 10, padding: 10, background: OW, borderRadius: 10, fontSize: 12, color: INK2, fontFamily: sans, lineHeight: 1.5 }}>
-                  💡 {s.recommendation}
+                  {renderMarkdown(s.recommendation)}
                 </div>
               )}
             </div>

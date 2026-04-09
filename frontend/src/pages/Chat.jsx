@@ -38,7 +38,7 @@ export default function Chat() {
   useEffect(() => {
     Promise.all([
       fetch('/api/chat/settings', { headers: { Authorization: 'Bearer ' + TOKEN() } }).then(r => r.json()),
-      fetch('/api/chat/history?limit=30', { headers: { Authorization: 'Bearer ' + TOKEN() } }).then(r => r.json()),
+      fetch('/api/chat/history?limit=2', { headers: { Authorization: 'Bearer ' + TOKEN() } }).then(r => r.json()),
     ]).then(([settings, hist]) => {
       const w = settings.welcomeMessage || welcome;
       setWelcome(w);

@@ -98,7 +98,7 @@ export default function Cabinet() {
               </div>
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: user?.subscription?.plan === 'club' ? GOLD : G, fontFamily: sans }}>
-              {user?.subscription?.plan === 'club' ? '399 ₽/мес' : 'Free →'}
+              {user?.subscription?.plan === 'club' ? 'Активна' : 'Free →'}
             </div>
           </div>
         </div>

@@ -171,8 +171,11 @@ const VC_STYLES = `
 `;
 
 // ─── Карточка ────────────────────────────────────────────────
-function FeedCard({ item, onClick, locked }) {
+function FeedCard({ item, onClick, locked, isClub }) {
   const free = Number(item.price) === 0;
+  const price = Number(item.price);
+  const discountPrice = isClub && price > 0 ? Math.round(price * 0.9) : null;
+  const priceLabel = free ? 'БЕСПЛАТНО' : discountPrice ? `${discountPrice} руб. (-10%)` : `${price} руб.`;
   const kindLabel = KIND_LABELS[item.kind] || 'ПРОДУКТ';
   const hasCover = !!item.coverImage;
 
@@ -227,7 +230,7 @@ function FeedCard({ item, onClick, locked }) {
             {kindLabel}
           </div>
           <div style={{ position: 'absolute', top: 12, right: 12, ...glassPill({ fontSize: 13, padding: '7px 14px' }) }}>
-            {free ? 'БЕСПЛАТНО' : `${item.price} руб.`}
+            {priceLabel}
           </div>
         </div>
       )}
@@ -238,7 +241,7 @@ function FeedCard({ item, onClick, locked }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div style={flatPill()}>{kindLabel}</div>
             <div style={{ ...flatPill(true), fontSize: 14, padding: '6px 14px' }}>
-              {free ? 'БЕСПЛАТНО' : `${item.price} руб.`}
+              {priceLabel}
             </div>
           </div>
         )}
@@ -632,7 +635,7 @@ function ProtocolPage({ protocol, onBack }) {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
                           <button onClick={async () => {
-                            try { await trackerApi.addShopping({ name, category: 'supplement', source: data.title || 'Протокол' }); alert('Добавлено в список покупок'); } catch (e) { alert(e.message); }
+                            try { await trackerApi.addShopping({ name, category: 'supplement', source: data.title || 'Протокол', link: link || null }); alert('Добавлено в список покупок'); } catch (e) { alert(e.message); }
                           }} style={{ padding: '8px 12px', background: GLL, color: G, border: '1px solid ' + G + '33', borderRadius: 10, fontSize: 11, fontWeight: 700, fontFamily: sans, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                             + В список
                           </button>
@@ -715,7 +718,7 @@ function SchemePage({ scheme, onBack }) {
                       </div>
                     </div>
                     <button onClick={async () => {
-                      try { await trackerApi.addShopping({ name: s.name, category: 'supplement', source: scheme.title || 'Схема' }); alert('Добавлено в список покупок'); } catch (e) { alert(e.message); }
+                      try { await trackerApi.addShopping({ name: s.name, category: 'supplement', source: scheme.title || 'Схема', link: s.link || s.buyUrl || null }); alert('Добавлено в список покупок'); } catch (e) { alert(e.message); }
                     }} style={{ padding: '8px 12px', background: GLL, color: G, border: '1px solid ' + G + '33', borderRadius: 10, fontSize: 11, fontWeight: 700, fontFamily: sans, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       + В список
                     </button>
@@ -895,7 +898,7 @@ export default function Health() {
           </div>
         )}
         {!loading && filtered.map(item => (
-          <FeedCard key={`${item.kind}-${item.id}`} item={item} locked={isItemLocked(item)} onClick={() => handleOpen(item)} />
+          <FeedCard key={`${item.kind}-${item.id}`} item={item} locked={isItemLocked(item)} isClub={isClub} onClick={() => handleOpen(item)} />
         ))}
       </div>
     </div>

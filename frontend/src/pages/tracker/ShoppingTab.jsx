@@ -72,6 +72,7 @@ export default function ShoppingTab() {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, color: INK, fontFamily: sans, textDecoration: it.done ? 'line-through' : 'none' }}>{it.name}</div>
             {it.source && <div style={{ fontSize: 11, color: INK3, marginTop: 2, fontFamily: sans }}>из: {it.source}</div>}
+            {it.link && <a href={it.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: G, fontFamily: sans, fontWeight: 600, marginTop: 3, display: 'inline-block' }}>Купить →</a>}
           </div>
           <button onClick={() => remove(it.id)} style={{ background: 'none', border: 'none', color: INK3, fontSize: 18, cursor: 'pointer', padding: 4 }}>×</button>
         </div>

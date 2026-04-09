@@ -172,8 +172,15 @@ function AppShell() {
       {/* ХЕДЕР */}
       <div style={{ background: G, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ color: W, fontSize: 20, fontWeight: 600, letterSpacing: 3, fontFamily: serif }}>V ФОРМЕ</div>
-        <div style={{ background: GOLD, color: W, fontSize: 13, fontWeight: 700, borderRadius: 30, padding: '7px 16px', letterSpacing: 1, fontFamily: sans }}>
-          {user.name || 'Привет 👋'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {user.subscription?.plan === 'club' && (
+            <div style={{ background: GOLD, width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(196,162,107,0.4)' }}>
+              <span style={{ color: W, fontSize: 14, fontWeight: 700 }}>V</span>
+            </div>
+          )}
+          <div style={{ background: GOLD, color: W, fontSize: 13, fontWeight: 700, borderRadius: 30, padding: '7px 16px', letterSpacing: 1, fontFamily: sans }}>
+            {user.name || 'Привет'}
+          </div>
         </div>
       </div>
 

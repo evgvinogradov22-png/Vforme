@@ -9,6 +9,7 @@ const ShoppingItem = sequelize.define('ShoppingItem', {
   source:     { type: DataTypes.STRING },    // рецепт / протокол / схема — текст
   sourceId:   { type: DataTypes.UUID },
   done:       { type: DataTypes.BOOLEAN, defaultValue: false },
+  link:       { type: DataTypes.STRING },
 }, {
   timestamps: true,
   indexes: [{ fields: ['userId'] }],

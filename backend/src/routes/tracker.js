@@ -184,7 +184,7 @@ router.get('/shopping', auth, async (req, res) => {
 
 router.post('/shopping', auth, async (req, res) => {
   try {
-    const { items, name, category, source, sourceId } = req.body || {};
+    const { items, name, category, source, sourceId, link } = req.body || {};
     if (Array.isArray(items) && items.length > 0 && items.length <= 100) {
       const created = await Promise.all(items.map(it => ShoppingItem.create({
         userId: req.user.id,
@@ -192,6 +192,7 @@ router.post('/shopping', auth, async (req, res) => {
         category: it.category || 'ingredient',
         source: it.source || null,
         sourceId: it.sourceId || null,
+        link: it.link || null,
       }).catch(() => null)));
       return res.json(created.filter(Boolean));
     }
@@ -202,6 +203,7 @@ router.post('/shopping', auth, async (req, res) => {
       category: category || 'ingredient',
       source: source || null,
       sourceId: sourceId || null,
+      link: link || null,
     });
     res.json(row);
   } catch (e) { res.status(500).json({ error: e.message }); }
