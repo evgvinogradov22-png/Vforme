@@ -171,7 +171,7 @@ const VC_STYLES = `
 `;
 
 // ─── Карточка ────────────────────────────────────────────────
-function FeedCard({ item, onClick }) {
+function FeedCard({ item, onClick, locked }) {
   const free = Number(item.price) === 0;
   const kindLabel = KIND_LABELS[item.kind] || 'ПРОДУКТ';
   const hasCover = !!item.coverImage;
@@ -199,12 +199,15 @@ function FeedCard({ item, onClick }) {
   });
 
   return (
-    <div onClick={onClick} style={{
-      background: W, border: `1px solid ${BD}`, borderRadius: 20,
+    <div onClick={locked ? undefined : onClick} style={{
+      background: locked ? '#F0EFED' : W, border: `1px solid ${BD}`, borderRadius: 20,
       overflow: 'hidden',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-      cursor: 'pointer',
+      boxShadow: locked ? 'none' : '0 2px 10px rgba(0,0,0,0.04)',
+      cursor: locked ? 'default' : 'pointer',
       transition: 'transform .12s',
+      opacity: locked ? 0.5 : 1,
+      filter: locked ? 'grayscale(0.6)' : 'none',
+      position: 'relative',
     }}
       onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.99)'; }}
       onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
@@ -581,7 +584,14 @@ function ProtocolPage({ protocol, onBack }) {
                 ctaHint="После оплаты материалы откроются автоматически"
                 freePickAvail={(user?.subscription?.plan || 'free') === 'free' && (user?.freePicks || []).length < 3}
                 onFreePick={async () => {
-                  try { await subApi.addFreePick(protocol.id, 'protocol'); refreshUser(); alert('Продукт добавлен бесплатно!'); } catch (e) { alert(e.message); }
+                  try {
+                    await subApi.addFreePick(protocol.id, 'protocol');
+                    await refreshUser();
+                    // Перезагрузить данные протокола чтобы hasAccess обновился
+                    const r = await fetch(`/api/protocols/${protocol.id}`, { headers: authHeaders() });
+                    const d = await r.json();
+                    if (d && !d.error) setData(d);
+                  } catch (e) { alert(e.message); }
                 }}
               />
             </div>
@@ -670,6 +680,7 @@ function ProtocolPage({ protocol, onBack }) {
 
 // ─── Схема БАД (отдельная страница) ──────────────────────────
 function SchemePage({ scheme, onBack }) {
+  const { user, refreshUser } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -682,7 +693,12 @@ function SchemePage({ scheme, onBack }) {
   }, [scheme.id]);
 
   const free = Number(scheme.price) === 0;
-  const status = free ? 'БЕСПЛАТНО' : `${scheme.price} руб.`;
+  const plan = user?.subscription?.plan || 'free';
+  const isClub = plan === 'club';
+  const isPicked = (user?.freePicks || []).some(p => p.productId === scheme.id);
+  const hasAccess = free || isClub || isPicked;
+  const canPick = !hasAccess && (user?.freePicks || []).length < 3;
+  const status = free ? 'БЕСПЛАТНО' : hasAccess ? 'ОТКРЫТ' : `${scheme.price} руб.`;
 
   return (
     <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
@@ -693,7 +709,24 @@ function SchemePage({ scheme, onBack }) {
 
       {loading && <div style={{ padding: 40, textAlign: 'center' }}><Spinner /></div>}
 
-      {!loading && data && (
+      {!loading && data && !hasAccess && (
+        <div style={{ padding: '0 22px' }}>
+          {canPick && (
+            <button onClick={async () => {
+              try { await subApi.addFreePick(scheme.id, 'scheme'); await refreshUser(); } catch (e) { alert(e.message); }
+            }} style={{ width: '100%', padding: 16, background: G, color: W, border: 'none', borderRadius: 14, fontFamily: sans, fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>
+              Выбрать бесплатно ({(user?.freePicks || []).length}/3)
+            </button>
+          )}
+          {!canPick && (
+            <div style={{ textAlign: 'center', padding: 20, color: INK3, fontFamily: sans, fontSize: 14 }}>
+              Лимит бесплатных продуктов исчерпан. Оформи подписку Клуб для доступа.
+            </div>
+          )}
+        </div>
+      )}
+
+      {!loading && data && hasAccess && (
         <div style={{ padding: '0 22px' }}>
           {data.items && data.items.length > 0 && (
             <div>
@@ -746,7 +779,8 @@ function injectVcStyles() {
 
 // ─── Главная страница Здоровье ───────────────────────────────
 export default function Health() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const [showSubscription, setShowSubscription] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [kindFilter, setKindFilter] = useState([]);
@@ -794,11 +828,45 @@ export default function Health() {
   if (openProtocol) return <ProtocolPage protocol={openProtocol} onBack={() => setOpenProtocol(null)} />;
   if (openScheme) return <SchemePage scheme={openScheme} onBack={() => setOpenScheme(null)} />;
 
+  const plan = user?.subscription?.plan || 'free';
+  const isClub = plan === 'club';
+  const freePicks = user?.freePicks || [];
+  const freePickIds = freePicks.map(p => p.productId);
+  const freePicksLeft = 3 - freePicks.length;
+  const ownedPrograms = user?.programAccess || [];
+
+  function isItemAccessible(item) {
+    if (isClub) return true;
+    if (Number(item.price) === 0) return true;
+    if (item.kind === 'program' && ownedPrograms.includes(item.id)) return true;
+    if (freePickIds.includes(item.id)) return true;
+    return false;
+  }
+
+  function isItemLocked(item) {
+    if (isItemAccessible(item)) return false;
+    if (item.kind === 'program') return false; // programs always clickable (paywall inside)
+    if (freePicksLeft > 0) return false; // can still pick
+    return true; // no picks left, not accessible
+  }
+
   const handleOpen = (item) => {
     if (item.kind === 'program')  setOpenProgram(item);
     if (item.kind === 'protocol') setOpenProtocol(item);
     if (item.kind === 'scheme')   setOpenScheme(item);
   };
+
+  const handleFreePick = async (item) => {
+    try {
+      await subApi.addFreePick(item.id, item.kind);
+      refreshUser();
+    } catch (e) { alert(e.message); }
+  };
+
+  if (showSubscription) {
+    const Subscription = require('./Subscription').default;
+    return <Subscription onClose={() => setShowSubscription(false)} />;
+  }
 
   return (
     <div style={{
@@ -807,10 +875,25 @@ export default function Health() {
       paddingBottom: 100,
     }}>
       <div style={{ padding: '18px 20px 10px' }}>
-        <div style={{ fontFamily: serif, fontSize: 26, fontWeight: 700, color: INK }}>Здоровье</div>
-        <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginTop: 2 }}>
-          Программы, протоколы и схемы БАДов
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontFamily: serif, fontSize: 26, fontWeight: 700, color: INK }}>Программы</div>
+            <div style={{ fontSize: 13, color: INK3, fontFamily: sans, marginTop: 2 }}>
+              Протоколы, схемы БАД и лекции
+            </div>
+          </div>
+          {!isClub && (
+            <button onClick={() => setShowSubscription(true)} style={{ padding: '8px 14px', background: GOLD, color: W, border: 'none', borderRadius: 10, fontFamily: sans, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              Клуб 399₽
+            </button>
+          )}
         </div>
+        {!isClub && (
+          <div style={{ marginTop: 10, padding: '10px 14px', background: GLL, borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: G, fontFamily: sans }}>Бесплатных продуктов: <b>{freePicks.length}/3</b></span>
+            {freePicksLeft === 0 && <span style={{ fontSize: 11, color: INK3, fontFamily: sans }}>Лимит исчерпан</span>}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '8px 20px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -845,7 +928,7 @@ export default function Health() {
           </div>
         )}
         {!loading && filtered.map(item => (
-          <FeedCard key={`${item.kind}-${item.id}`} item={item} onClick={() => handleOpen(item)} />
+          <FeedCard key={`${item.kind}-${item.id}`} item={item} locked={isItemLocked(item)} onClick={() => handleOpen(item)} />
         ))}
       </div>
     </div>

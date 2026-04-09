@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { profile as profileApi, points as pointsApi } from '../api';
+import { profile as profileApi, points as pointsApi, subscription as subApi } from '../api';
+import Subscription from './Subscription';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from '../components/UI';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, OW, W, RED, REDBG, sans, serif } from '../utils/theme';
@@ -28,6 +29,7 @@ export default function Cabinet() {
   const [pointsHistory, setPointsHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tgLoading, setTgLoading] = useState(false);
+  const [showSub, setShowSub] = useState(false);
 
   const unlinkTelegram = async () => {
     if (!confirm('Отключить Telegram от аккаунта?')) return;
@@ -85,23 +87,26 @@ export default function Cabinet() {
       <div style={{ padding: '24px 20px' }}>
 
         {/* ПОДПИСКА */}
-        <div style={{ margin: '0 0 20px', background: (user?.subscription?.plan === 'club') ? '#FBF5EB' : OW, border: `1px solid ${(user?.subscription?.plan === 'club') ? GOLD : BD}`, borderRadius: 20, padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: INK, fontFamily: sans }}>
-                {user?.subscription?.plan === 'club' ? 'Клуб V Форме' : 'Бесплатный план'}
+        {showSub && <Subscription onClose={() => { setShowSub(false); refreshUser(); }} />}
+        {!showSub && (
+          <div onClick={() => setShowSub(true)} style={{ margin: '0 0 20px', background: (user?.subscription?.plan === 'club') ? '#FBF5EB' : OW, border: `1px solid ${(user?.subscription?.plan === 'club') ? GOLD : BD}`, borderRadius: 20, padding: '20px', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: INK, fontFamily: sans }}>
+                  {user?.subscription?.plan === 'club' ? 'Клуб V Форме' : 'Бесплатный план'}
+                </div>
+                <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>
+                  {user?.subscription?.plan === 'club'
+                    ? `Активна до ${new Date(user.subscription.currentPeriodEnd).toLocaleDateString('ru-RU')}`
+                    : `${(user?.freePicks || []).length}/3 бесплатных продукта • Нажми для апгрейда`}
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>
-                {user?.subscription?.plan === 'club'
-                  ? `Активна до ${new Date(user.subscription.currentPeriodEnd).toLocaleDateString('ru-RU')}`
-                  : `${(user?.freePicks || []).length}/3 бесплатных продукта`}
+              <div style={{ fontSize: 14, fontWeight: 700, color: user?.subscription?.plan === 'club' ? GOLD : G, fontFamily: sans }}>
+                {user?.subscription?.plan === 'club' ? '399 ₽/мес' : 'Free →'}
               </div>
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: user?.subscription?.plan === 'club' ? GOLD : G, fontFamily: sans }}>
-              {user?.subscription?.plan === 'club' ? '399 ₽/мес' : 'Free'}
             </div>
           </div>
-        </div>
+        )}
 
         {/* TELEGRAM */}
       <div style={{ margin: '0 20px 20px', background: user?.telegramId ? '#EBF0EB' : '#F9F7F4', border: `1px solid ${user?.telegramId ? G : BD}`, borderRadius: 20, padding: '20px' }}>
