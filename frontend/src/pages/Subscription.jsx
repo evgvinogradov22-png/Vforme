@@ -10,6 +10,7 @@ export default function Subscription({ onClose }) {
 
   const plan = user?.subscription?.plan || 'free';
   const isClub = plan === 'club';
+  const freePicks = user?.freePicks || [];
 
   useEffect(() => { subApi.get().then(setSubData).catch(console.error); }, []);
 
@@ -45,11 +46,10 @@ export default function Subscription({ onClose }) {
         <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
         {onClose && (
           <button onClick={onClose} style={{ position: 'absolute', top: 16, left: 16, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: '8px 14px', color: W, fontFamily: sans, fontSize: 14, cursor: 'pointer', backdropFilter: 'blur(10px)' }}>
-            ← Назад
+            Назад
           </button>
         )}
         <div style={{ textAlign: 'center', position: 'relative', zIndex: 1, paddingTop: onClose ? 24 : 0 }}>
-          <div style={{ fontSize: 42, marginBottom: 8 }}>V</div>
           <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 700, color: W, marginBottom: 8 }}>
             Клуб V Форме
           </div>
@@ -61,7 +61,7 @@ export default function Subscription({ onClose }) {
 
       <div style={{ padding: '0 20px', marginTop: -24, position: 'relative', zIndex: 2 }}>
 
-        {/* Comparison */}
+        {/* Features */}
         <div style={{ background: W, borderRadius: 22, padding: '24px 20px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', marginBottom: 16 }}>
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
             <span style={{ fontFamily: serif, fontSize: 36, fontWeight: 700, color: GOLD }}>399</span>
@@ -73,15 +73,18 @@ export default function Subscription({ onClose }) {
           </div>
 
           {[
-            { icon: '📋', text: 'Все протоколы здоровья', sub: 'Без ограничений по количеству' },
-            { icon: '💊', text: 'Все схемы БАДов', sub: 'Персональные рекомендации' },
-            { icon: '🎙', text: 'Все лекции Кристины', sub: 'Аудио + расшифровка' },
-            { icon: '💬', text: 'Безлимитный AI-чат', sub: 'Вопросы 24/7, персональные ответы' },
-            { icon: '🧪', text: 'Конструктор добавок', sub: 'AI подберёт схему под тебя' },
-            { icon: '💰', text: 'Скидка 10% на программы', sub: 'На все платные курсы' },
+            { text: 'Все протоколы здоровья', sub: 'Без ограничений по количеству' },
+            { text: 'Все схемы БАДов', sub: 'Персональные рекомендации' },
+            { text: 'Все лекции Кристины', sub: 'Аудио + расшифровка' },
+            { text: 'Безлимитный AI-чат', sub: 'Вопросы 24/7, персональные ответы' },
+            { text: 'Чек-лист добавок', sub: 'Создай удобный список из БАДов' },
+            { text: 'Рецепты под твоё питание', sub: 'Подбор рецептов специально для тебя' },
+            { text: 'Скидка 10% на программы', sub: 'На все платные курсы' },
           ].map((f, i) => (
-            <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '12px 0', borderBottom: i < 5 ? '1px solid ' + BD : 'none' }}>
-              <div style={{ fontSize: 22, flexShrink: 0, width: 32, textAlign: 'center' }}>{f.icon}</div>
+            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0', borderBottom: i < 6 ? '1px solid ' + BD : 'none' }}>
+              <div style={{ width: 24, height: 24, borderRadius: 7, background: GLL, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                <span style={{ color: G, fontSize: 12, fontWeight: 700 }}>+</span>
+              </div>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: INK, fontFamily: sans }}>{f.text}</div>
                 <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginTop: 2 }}>{f.sub}</div>
@@ -100,7 +103,7 @@ export default function Subscription({ onClose }) {
                 boxShadow: '0 4px 16px rgba(196, 162, 107, 0.4)',
                 letterSpacing: 0.5,
               }}>
-              {loading ? 'Загрузка…' : 'Присоединиться к Клубу'}
+              {loading ? 'Загрузка...' : 'Присоединиться к Клубу'}
             </button>
           ) : (
             <div style={{ marginTop: 20, textAlign: 'center' }}>
@@ -116,14 +119,6 @@ export default function Subscription({ onClose }) {
           )}
         </div>
 
-        {/* Social proof */}
-        <div style={{ background: W, borderRadius: 18, padding: '18px 20px', marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-          <div style={{ fontSize: 13, color: INK2, fontFamily: sans, textAlign: 'center', lineHeight: 1.6 }}>
-            Одна консультация нутрициолога стоит <b>3 000–5 000 руб.</b>{'\n'}
-            В Клубе ты получаешь доступ к AI-нутрициологу <b>24/7</b> за <b>399 руб/мес</b> — это <b>13 руб/день</b>.
-          </div>
-        </div>
-
         {/* Free plan */}
         <div style={{ background: OW, borderRadius: 18, padding: '18px 20px', marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: INK3, fontFamily: sans, marginBottom: 12, letterSpacing: 1 }}>
@@ -137,14 +132,14 @@ export default function Subscription({ onClose }) {
             '10 сообщений в чате / день',
           ].map((f, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ color: INK3, fontSize: 12 }}>✓</span>
+              <span style={{ color: INK3, fontSize: 12 }}>--</span>
               <span style={{ fontSize: 13, color: INK2, fontFamily: sans }}>{f}</span>
             </div>
           ))}
-          {!isClub && subData && (
+          {!isClub && (
             <div style={{ marginTop: 12, padding: '10px 14px', background: W, borderRadius: 10, textAlign: 'center' }}>
               <span style={{ fontSize: 13, color: G, fontFamily: sans, fontWeight: 600 }}>
-                Использовано: {subData.freePicksCount}/3 продуктов
+                Использовано: {freePicks.length}/3 продуктов
               </span>
             </div>
           )}
