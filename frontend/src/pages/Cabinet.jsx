@@ -161,20 +161,31 @@ export default function Cabinet() {
       {pointsHistory.length > 0 && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 11, color: INK3, letterSpacing: 1.5, fontWeight: 700, marginBottom: 12, fontFamily: sans }}>ИСТОРИЯ БАЛЛОВ</div>
-            {pointsHistory.slice(0, 5).map((p, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid ' + BD }}>
-                <div style={{ fontSize: 14, color: INK, fontFamily: sans }}>{
-                  p.reason === 'lecture_complete' ? '✓ Урок завершён' :
-                  p.reason === 'module_complete' ? '🏆 Модуль завершён' :
-                  p.reason === 'program_purchase' ? '💳 Покупка программы' :
-                  p.reason === 'telegram_link' ? '✈️ Подключение Telegram' :
-                  p.reason === 'free_program' ? '🎁 Бесплатная программа' :
-                  p.reason === 'protocol_purchase' ? '📋 Покупка протокола' :
-                  p.reason || 'Начисление'
-                }</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: GOLD, fontFamily: sans }}>+{p.amount}</div>
-              </div>
-            ))}
+            {pointsHistory.slice(0, 8).map((p, i) => {
+              const labels = {
+                lecture_complete: { text: 'Урок завершён', bg: GLL, color: G },
+                module_complete: { text: 'Модуль завершён', bg: GLL, color: G },
+                program_purchase: { text: 'Покупка программы', bg: '#FBF5EB', color: GOLD },
+                protocol_purchase: { text: 'Покупка протокола', bg: '#FBF5EB', color: GOLD },
+                free_program: { text: 'Бесплатная программа', bg: GLL, color: G },
+                telegram_link: { text: 'Подключение Telegram', bg: '#E8F4FD', color: '#2196F3' },
+                max_link: { text: 'Подключение MAX', bg: '#EEEDF7', color: '#5B6CEA' },
+              };
+              const l = labels[p.reason] || { text: p.reason || 'Начисление', bg: OW, color: INK2 };
+              const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : '';
+              return (
+                <div key={p.id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < pointsHistory.length - 1 ? '1px solid ' + BD : 'none' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: l.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ color: l.color, fontSize: 14, fontWeight: 700 }}>+</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: INK, fontFamily: sans }}>{l.text}</div>
+                    {date && <div style={{ fontSize: 11, color: INK3, fontFamily: sans, marginTop: 1 }}>{date}</div>}
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: l.color, fontFamily: serif }}>+{p.amount}</div>
+                </div>
+              );
+            })}
           </div>
         )}
 
