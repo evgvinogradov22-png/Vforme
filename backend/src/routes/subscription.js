@@ -83,6 +83,10 @@ router.post('/free-pick', auth, async (req, res) => {
       if (!(await Program.findByPk(productId))) return res.status(404).json({ error: 'Продукт не найден' });
     }
 
+    // Нужен привязанный мессенджер для бесплатного тарифа
+    const u = await User.findByPk(req.user.id);
+    if (!u.telegramId && !u.maxId) return res.status(403).json({ error: 'messenger_required', message: 'Привяжите Telegram или MAX для активации бесплатного доступа' });
+
     if (!(await canAddFreePick(req.user.id))) return res.status(403).json({ error: 'Лимит 3 бесплатных продукта' });
 
     const [pick] = await FreeProductPick.findOrCreate({

@@ -100,6 +100,13 @@ function AppShell() {
     return () => window.removeEventListener('vforme:open-health-product', handler);
   }, []);
 
+  // Переключение таба из любого компонента
+  useEffect(() => {
+    const h = (e) => setTab(e.detail);
+    window.addEventListener('vforme:switch-tab', h);
+    return () => window.removeEventListener('vforme:switch-tab', h);
+  }, []);
+
   // Live-обновления через WebSocket
   useWebSocket((msg) => {
     if (!msg || !msg.type) return;
