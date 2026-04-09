@@ -227,7 +227,7 @@ function AppShell() {
 
       {/* НАВБАР */}
       <div className="vf-navbar" style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
+        position: 'fixed', bottom: 10, left: 0, right: 0,
         background: 'rgba(255,255,255,0.92)',
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',
