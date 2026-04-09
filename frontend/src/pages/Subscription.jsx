@@ -128,7 +128,7 @@ export default function Subscription({ onClose }) {
             '3 продукта на выбор',
             'Все рецепты с КБЖУ',
             'Трекер привычек',
-            'Атлас здоровья',
+            'Карта здоровья',
             '10 сообщений в чате / день',
           ].map((f, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>

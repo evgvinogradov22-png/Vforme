@@ -186,19 +186,24 @@ export default function Atlas({ onGoChat }) {
     }
   };
 
-  if (loading) {
+  if (loading || submitting) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: INK3, fontFamily: sans }}>
-        Загружаю твой атлас…
-      </div>
-    );
-  }
-
-  if (submitting) {
-    return (
-      <div style={{ padding: 60, textAlign: 'center' }}>
-        <div style={{ fontFamily: serif, fontSize: 20, color: INK, marginBottom: 10 }}>Кристина изучает твою анкету…</div>
-        <div style={{ fontFamily: sans, fontSize: 13, color: INK3 }}>Это займёт 5–10 секунд</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100dvh - 140px)', padding: 40 }}>
+        <div style={{ position: 'relative', marginBottom: 24 }}>
+          <img src="/img/kristina.jpg" alt="" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid ' + G }} onError={e => { e.target.style.display = 'none'; }} />
+          <div style={{
+            position: 'absolute', top: -4, left: -4, width: 88, height: 88, borderRadius: '50%',
+            border: '3px solid transparent', borderTopColor: GOLD,
+            animation: 'spin 1s linear infinite',
+          }} />
+        </div>
+        <div style={{ fontFamily: serif, fontSize: 18, color: INK, marginBottom: 6 }}>
+          {submitting ? 'Кристина изучает твою анкету…' : 'Загружаю твою карту…'}
+        </div>
+        <div style={{ fontFamily: sans, fontSize: 13, color: INK3 }}>
+          {submitting ? 'Это займёт несколько секунд' : 'Подожди немного'}
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }

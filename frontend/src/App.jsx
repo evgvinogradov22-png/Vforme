@@ -52,7 +52,6 @@ const TABS = [
   { id: 'health',  icon: 'health',  label: 'Программы' },
   { id: 'chat',    icon: 'chat',    label: 'Чат' },
   { id: 'tracker', icon: 'tracker', label: 'Трекер' },
-  { id: 'cabinet', icon: 'cabinet', label: 'Аккаунт' },
 ];
 
 function AppShell() {
@@ -189,7 +188,7 @@ function AppShell() {
       {/* ХЕДЕР */}
       <div style={{ background: G, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ color: W, fontSize: 20, fontWeight: 600, letterSpacing: 3, fontFamily: serif }}>V ФОРМЕ</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div onClick={() => setTab('cabinet')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
           {user.subscription?.plan === 'club' && (
             <div style={{ background: GOLD, width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(196,162,107,0.4)' }}>
               <span style={{ color: W, fontSize: 14, fontWeight: 700 }}>V</span>
@@ -257,25 +256,25 @@ function AppShell() {
         justifyContent: 'space-around',
         zIndex: 100,
         maxWidth: 480, margin: '0 auto',
-        padding: '8px 12px max(8px, env(safe-area-inset-bottom)) 12px',
+        padding: '12px 8px max(12px, env(safe-area-inset-bottom)) 8px',
       }}>
         {TABS.map(t => {
           const active = tab === t.id;
           return (
             <button key={t.id} onClick={() => { analytics.tabSwitch(t.id); log.tabSwitch(t.id); setTab(t.id); }}
               style={{
-                flex: 1, padding: '6px 4px',
+                flex: 1, padding: '8px 4px',
                 background: 'none', border: 'none',
                 color: active ? G : '#8E8E93',
                 cursor: 'pointer',
-                fontSize: 10, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+                fontSize: 11, fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
                 fontWeight: active ? 600 : 500,
                 letterSpacing: -0.1,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                 transition: 'color .18s ease',
                 minWidth: 0,
               }}>
-              <TabIcon name={t.icon} size={26} />
+              <TabIcon name={t.icon} size={30} />
               <span style={{ lineHeight: 1 }}>{t.label}</span>
             </button>
           );

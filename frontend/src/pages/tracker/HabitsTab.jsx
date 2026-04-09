@@ -72,7 +72,7 @@ export default function HabitsTab() {
       {habits.length === 0 && (
         <button onClick={aiGenerate} disabled={aiBusy}
           style={{ width: '100%', padding: 16, background: G, color: W, border: 'none', borderRadius: 14, fontFamily: sans, fontWeight: 700, fontSize: 15, marginBottom: 12, cursor: 'pointer', opacity: aiBusy ? 0.6 : 1 }}>
-          {aiBusy ? 'Подбираем…' : '✨ Подобрать 5 привычек на основе Атласа'}
+          {aiBusy ? 'Подбираем…' : 'Подобрать 5 привычек на основе Карты'}
         </button>
       )}
 
