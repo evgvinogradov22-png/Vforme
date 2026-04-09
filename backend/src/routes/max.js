@@ -30,7 +30,7 @@ function maxApi(method, path, data) {
 }
 
 async function sendMessage(chatId, text) {
-  return maxApi('POST', '/messages', { chat_id: chatId, text });
+  return maxApi('POST', `/messages?chat_id=${chatId}`, { text });
 }
 
 // Webhook от MAX
