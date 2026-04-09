@@ -227,7 +227,7 @@ function AppShell() {
 
       {/* НАВБАР */}
       <div className="vf-navbar" style={{
-        position: 'fixed', bottom: 10, left: 0, right: 0,
+        position: 'fixed', bottom: 0, left: 0, right: 0,
         background: 'rgba(255,255,255,0.92)',
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',
@@ -236,8 +236,7 @@ function AppShell() {
         justifyContent: 'space-around',
         zIndex: 100,
         maxWidth: 480, margin: '0 auto',
-        padding: '10px 4px 10px',
-        paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
+        padding: '10px 4px 20px',
       }}>
         {TABS.map(t => {
           const active = tab === t.id;
@@ -261,7 +260,7 @@ function AppShell() {
           );
         })}
       </div>
-      <style>{`.vf-navbar { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; }`}</style>
+      <style>{`.vf-navbar { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important; }`}</style>
 
       <Toast message={toast} />
     </div>
