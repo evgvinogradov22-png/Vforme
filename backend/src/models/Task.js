@@ -7,5 +7,5 @@ const Task = sequelize.define('Task', {
   source:    { type: DataTypes.STRING },
   lectureId: { type: DataTypes.UUID },
   done:      { type: DataTypes.BOOLEAN, defaultValue: false },
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ fields: ['userId'] }] });
 module.exports = Task;

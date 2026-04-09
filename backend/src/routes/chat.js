@@ -213,7 +213,7 @@ async function buildClientContext(userId) {
 
 router.post('/message', auth, async (req, res) => {
   try {
-    const { message } = req.body;
+    const message = (req.body.message || '').slice(0, 5000);
     if (!message) return res.status(400).json({ error: 'Нет сообщения' });
 
     let s = await ChatSettings.findOne();

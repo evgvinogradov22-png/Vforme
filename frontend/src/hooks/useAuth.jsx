@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
 
   const refreshUser = async () => {
     try {
-      const data = await auth.me();
+      const data = await authApi.me();
       if (data) setUser(data);
     } catch(e) {}
   };

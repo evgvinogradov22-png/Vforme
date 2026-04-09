@@ -9,21 +9,19 @@ log_to_db() {
   local STATUS="$1"
   local ERR="$2"
   # .env лежит в /var/www/vforme/backend/.env
-  local DB_NAME=$(grep -E '^DB_NAME=' /var/www/vforme/backend/.env | cut -d= -f2)
-  local DB_USER=$(grep -E '^DB_USER=' /var/www/vforme/backend/.env | cut -d= -f2)
-  local DB_PASSWORD=$(grep -E '^DB_PASSWORD=' /var/www/vforme/backend/.env | cut -d= -f2)
-  local DB_HOST=$(grep -E '^DB_HOST=' /var/www/vforme/backend/.env | cut -d= -f2)
-  [ -z "$DB_HOST" ] && DB_HOST=localhost
+  # Читаем .env один раз через source в subshell
   local UUID=$(cat /proc/sys/kernel/random/uuid)
   local NOW=$(date -u +"%Y-%m-%d %H:%M:%S")
   local COMMIT=$(cd /var/www/vforme && git rev-parse --short HEAD 2>/dev/null || echo '')
   local FULL_DESC="${DESC} [${COMMIT}]"
-  PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=0 <<EOF 2>/dev/null
-INSERT INTO "DeployHistories"
-  ("id", "env", "action", "desc", "status", "errorMsg", "userName", "userEmail", "createdAt", "updatedAt")
-VALUES
-  ('$UUID', 'prod', 'deploy', '$FULL_DESC', '$STATUS', '${ERR//\'/}', 'Shell', 'deploy.sh', '$NOW', '$NOW');
-EOF
+  local SAFE_ERR="${ERR//\'/}"
+  (
+    set -a
+    . /var/www/vforme/backend/.env 2>/dev/null
+    set +a
+    PGPASSWORD="$DB_PASSWORD" psql -h "${DB_HOST:-localhost}" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=0 -c \
+      "INSERT INTO \"DeployHistories\" (\"id\",\"env\",\"action\",\"desc\",\"status\",\"errorMsg\",\"userName\",\"userEmail\",\"createdAt\",\"updatedAt\") VALUES ('$UUID','prod','deploy','$FULL_DESC','$STATUS','$SAFE_ERR','Shell','deploy.sh','$NOW','$NOW');" 2>/dev/null
+  )
 }
 
 set -e

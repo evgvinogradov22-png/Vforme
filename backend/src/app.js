@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const helmet = require('helmet');
 const http = require('http');
 const cors = require('cors');
 const path = require('path');
@@ -44,6 +45,7 @@ const ALLOWED_ORIGINS = [
   process.env.NODE_ENV !== 'production' && 'http://localhost:5174',
 ].filter(Boolean);
 
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin || ALLOWED_ORIGINS.includes(origin)) cb(null, true);

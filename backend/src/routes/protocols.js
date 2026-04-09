@@ -12,21 +12,27 @@ router.get('/', auth, async (req, res) => {
     const access = await ProtocolAccess.findAll({ where: { userId: req.user.id } });
     const accessIds = access.map(a => a.protocolId);
 
-    const result = await Promise.all(protocols.map(async p => {
+    // Batch: все supplement IDs за 1 запрос
+    const allSuppIds = [];
+    protocols.forEach(p => {
+      const sups = p.toJSON().supplements || [];
+      sups.forEach(s => { if (s.supplementId) allSuppIds.push(s.supplementId); });
+    });
+    const supps = allSuppIds.length > 0 ? await Supplement.findAll({ where: { id: [...new Set(allSuppIds)] } }) : [];
+    const suppMap = {};
+    supps.forEach(s => { suppMap[s.id] = s; });
+
+    const result = protocols.map(p => {
       const proto = p.toJSON();
       proto.hasAccess = proto.price === 0 || accessIds.includes(proto.id);
-
-      // Attach supplement details
       if (proto.supplements?.length) {
-        const suppIds = proto.supplements.map(s => s.supplementId).filter(Boolean);
-        const supps = await Supplement.findAll({ where: { id: suppIds } });
         proto.supplements = proto.supplements.map(s => ({
           ...s,
-          supplement: supps.find(x => x.id === s.supplementId) || null,
+          supplement: suppMap[s.supplementId] || null,
         }));
       }
       return proto;
-    }));
+    });
 
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }

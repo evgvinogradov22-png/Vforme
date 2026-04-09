@@ -6,5 +6,5 @@ const Comment = sequelize.define('Comment', {
   userId:   { type: DataTypes.UUID },
   userName: { type: DataTypes.STRING },
   text:     { type: DataTypes.TEXT, allowNull: false },
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ fields: ['recipeId'] }, { fields: ['userId'] }] });
 module.exports = Comment;

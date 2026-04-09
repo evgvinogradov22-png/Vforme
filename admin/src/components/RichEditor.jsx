@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { C } from './UI';
 
 // ── TOOLBAR ──────────────────────────────────────────────────
@@ -69,7 +70,7 @@ export default function RichEditor({ value, onChange, placeholder = 'Начни 
     if (!editorRef.current) return;
     if (editorRef.current.innerHTML !== value) {
       isUpdating.current = true;
-      editorRef.current.innerHTML = value || '';
+      editorRef.current.innerHTML = DOMPurify.sanitize(value || '');
       isUpdating.current = false;
     }
   }, [value]);

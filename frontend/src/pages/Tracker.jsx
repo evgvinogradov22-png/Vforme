@@ -82,7 +82,7 @@ function StatsCalendar({ onClose }) {
         setLogs(map);
       } catch {} finally { setLoaded(true); }
     })();
-  });
+  }, []);
 
   const y = cursor.getFullYear(), m = cursor.getMonth();
   const monthDays = useMemo(() => {

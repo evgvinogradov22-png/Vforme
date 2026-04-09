@@ -8,6 +8,6 @@ const Points = sequelize.define('Points', {
   reason:    { type: DataTypes.STRING }, // 'lecture_complete', 'module_complete', 'program_complete'
   refId:     { type: DataTypes.UUID },   // lectureId / moduleId / programId
   refType:   { type: DataTypes.STRING }, // 'lecture' | 'module' | 'program'
-}, { timestamps: true });
+}, { timestamps: true, indexes: [{ fields: ['userId'] }] });
 
 module.exports = Points;
