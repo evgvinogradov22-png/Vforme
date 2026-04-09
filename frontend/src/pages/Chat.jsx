@@ -265,7 +265,7 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
-      <div style={{ padding: '12px 16px', background: W, borderTop: `1px solid ${BD}`, display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+      <div style={{ padding: '12px 16px', background: W, borderTop: `1px solid ${BD}`, display: 'flex', gap: 10, alignItems: 'center' }}>
         <label style={{ width: 44, height: 44, borderRadius: '50%', background: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 20 }}>
           📎
           <input type="file" style={{ display: 'none' }} onChange={e => { if (e.target.files[0]) uploadFile(e.target.files[0]); }} />

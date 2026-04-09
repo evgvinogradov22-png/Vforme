@@ -69,8 +69,7 @@ function AtlasMain({ result, onRetake, onGoChat }) {
       {/* Сообщение от Кристины */}
       <div style={{ padding: '0 18px', marginTop: 12 }}>
         <div style={{
-          background: W, borderRadius: 22, padding: '18px 20px 20px',
-          border: `1px solid ${BD}`, boxShadow: '0 2px 14px rgba(0,0,0,0.04)',
+          background: 'transparent', padding: '0',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <div style={{
@@ -88,7 +87,7 @@ function AtlasMain({ result, onRetake, onGoChat }) {
             </div>
           </div>
 
-          <div style={{ fontFamily: sans, fontSize: 14, color: INK, lineHeight: 1.6, marginBottom: 14 }}>
+          <div style={{ fontFamily: sans, fontSize: 16, color: INK, lineHeight: 1.7, marginBottom: 18 }}>
             {renderMarkdown(result.message || '—', 'kr')}
           </div>
 
@@ -105,7 +104,7 @@ function AtlasMain({ result, onRetake, onGoChat }) {
       {recommended.length > 0 && (
         <div style={{ marginTop: 24 }}>
           <div style={{ padding: '0 20px', marginBottom: 12 }}>
-            <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 700, color: INK }}>Рекомендуем начать</div>
+            <div style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: INK }}>Рекомендуем начать</div>
           </div>
 
           <div style={{ padding: '0 20px', marginBottom: 14, display: 'flex', gap: 8 }}>

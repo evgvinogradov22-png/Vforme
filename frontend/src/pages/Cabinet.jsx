@@ -84,6 +84,7 @@ export default function Cabinet() {
           <div style={{ fontSize: 28, fontWeight: 700, color: GOLD, fontFamily: serif }}>{totalPoints}</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontFamily: sans, letterSpacing: 1 }}>БАЛЛОВ</div>
         </div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontFamily: sans, marginTop: 8, maxWidth: 260 }}>Скоро тут появится магазин, где можно будет потратить баллы</div>
       </div>
 
       <div style={{ padding: '24px 20px' }}>
@@ -108,58 +109,44 @@ export default function Cabinet() {
         </div>
 
         {/* TELEGRAM */}
-      <div style={{ margin: '0 20px 20px', background: user?.telegramId ? '#EBF0EB' : '#F9F7F4', border: `1px solid ${user?.telegramId ? G : BD}`, borderRadius: 20, padding: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ fontSize: 32 }}>✈️</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: INK }}>
-              {user?.telegramId ? 'Telegram подключён' : 'Подключи Telegram'}
+        <div style={{ marginBottom: 12, background: user?.telegramId ? '#EBF0EB' : OW, border: `1px solid ${user?.telegramId ? G : BD}`, borderRadius: 16, padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: INK, fontFamily: sans }}>
+                {user?.telegramId ? 'Telegram подключён' : 'Подключи Telegram'}
+              </div>
+              {user?.telegramId && <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>@{user.telegramUsername || 'подключён'}</div>}
             </div>
-            <div style={{ fontSize: 13, color: INK2, marginTop: 3, lineHeight: 1.4 }}>
-              {user?.telegramId
-                ? `@${user.telegramUsername || 'подключён'} — получай уведомления`
-                : user?.telegramBonusGiven ? 'Подключи для получения уведомлений' : 'Получи +100 баллов и уведомления'}
-            </div>
+            {user?.telegramId ? (
+              <div style={{ padding: '6px 12px', background: GLL, borderRadius: 10, color: G, fontFamily: sans, fontSize: 12, fontWeight: 600 }}>Привязан</div>
+            ) : (
+              <button onClick={connectTelegram} disabled={tgLoading}
+                style={{ padding: '10px 18px', background: GOLD, border: 'none', borderRadius: 12, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {tgLoading ? '...' : user?.telegramBonusGiven ? 'Подключить' : '+100'}
+              </button>
+            )}
           </div>
-          {user?.telegramId ? (
-            <div style={{ padding: '8px 14px', background: GLL, borderRadius: 20, color: G, fontFamily: sans, fontSize: 12, fontWeight: 600 }}>
-              Привязан
-            </div>
-          ) : (
-            <button onClick={connectTelegram} disabled={tgLoading}
-              style={{ padding: '10px 18px', background: GOLD, border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              {tgLoading ? '...' : user?.telegramBonusGiven ? 'Подключить' : '+100 💎'}
-            </button>
-          )}
         </div>
-      </div>
 
-      {/* MAX МЕССЕНДЖЕР */}
-      <div style={{ margin: '0 20px 20px', background: user?.maxId ? '#EBF0EB' : '#F9F7F4', border: `1px solid ${user?.maxId ? G : BD}`, borderRadius: 20, padding: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#5B6CEA', display: 'flex', alignItems: 'center', justifyContent: 'center', color: W, fontSize: 16, fontWeight: 700, fontFamily: sans }}>M</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: INK }}>
-              {user?.maxId ? 'MAX подключён' : 'Подключи MAX'}
+        {/* MAX */}
+        <div style={{ marginBottom: 20, background: user?.maxId ? '#EBF0EB' : OW, border: `1px solid ${user?.maxId ? G : BD}`, borderRadius: 16, padding: '16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: INK, fontFamily: sans }}>
+                {user?.maxId ? 'MAX подключён' : 'Подключи MAX'}
+              </div>
+              {user?.maxId && <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>{user.maxUsername ? '@' + user.maxUsername : 'подключён'}</div>}
             </div>
-            <div style={{ fontSize: 13, color: INK2, marginTop: 3, lineHeight: 1.4 }}>
-              {user?.maxId
-                ? `${user.maxUsername ? '@' + user.maxUsername : 'подключён'} — получай уведомления`
-                : user?.maxBonusGiven ? 'Подключи для уведомлений' : 'Получи +100 баллов'}
-            </div>
+            {user?.maxId ? (
+              <div style={{ padding: '6px 12px', background: GLL, borderRadius: 10, color: G, fontFamily: sans, fontSize: 12, fontWeight: 600 }}>Привязан</div>
+            ) : (
+              <button onClick={() => { window.location.href = 'https://max.ru/id440131784034_bot'; }}
+                style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 12, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {user?.maxBonusGiven ? 'Подключить' : '+100'}
+              </button>
+            )}
           </div>
-          {user?.maxId ? (
-            <div style={{ padding: '8px 14px', background: GLL, borderRadius: 20, color: G, fontFamily: sans, fontSize: 12, fontWeight: 600 }}>
-              Привязан
-            </div>
-          ) : (
-            <button onClick={() => { window.location.href = 'https://max.ru/id440131784034_bot'; }}
-              style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              {user?.maxBonusGiven ? 'Подключить' : '+100'}
-            </button>
-          )}
         </div>
-      </div>
 
       {pointsHistory.length > 0 && (
           <div style={{ marginBottom: 24 }}>

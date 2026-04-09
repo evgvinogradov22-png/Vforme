@@ -114,14 +114,14 @@ function StatsCalendar({ onClose }) {
   return (
     <div style={{ background: W, borderRadius: 18, padding: 18, marginBottom: 18 }}>
       {/* Stats row */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-        <div style={{ flex: 1, background: GLL, borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
-          <div style={{ fontFamily: serif, fontSize: 26, fontWeight: 700, color: G, lineHeight: 1 }}>{streak}</div>
-          <div style={{ fontSize: 11, color: GL, marginTop: 3, fontFamily: sans }}>дней подряд</div>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
+        <div style={{ flex: 1, background: GLL, borderRadius: 16, padding: '18px 12px', textAlign: 'center' }}>
+          <div style={{ fontFamily: serif, fontSize: 34, fontWeight: 700, color: G, lineHeight: 1 }}>{streak}</div>
+          <div style={{ fontSize: 13, color: GL, marginTop: 6, fontFamily: sans }}>дней подряд</div>
         </div>
-        <div style={{ flex: 1, background: '#FBF5EB', borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
-          <div style={{ fontFamily: serif, fontSize: 26, fontWeight: 700, color: '#C4A26B', lineHeight: 1 }}>{todayDone}/{habits.length || 0}</div>
-          <div style={{ fontSize: 11, color: '#C4A26B', marginTop: 3, fontFamily: sans }}>сегодня</div>
+        <div style={{ flex: 1, background: '#FBF5EB', borderRadius: 16, padding: '18px 12px', textAlign: 'center' }}>
+          <div style={{ fontFamily: serif, fontSize: 34, fontWeight: 700, color: '#C4A26B', lineHeight: 1 }}>{todayDone}/{habits.length || 0}</div>
+          <div style={{ fontSize: 13, color: '#C4A26B', marginTop: 6, fontFamily: sans }}>сегодня</div>
         </div>
       </div>
 

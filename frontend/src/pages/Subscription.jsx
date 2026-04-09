@@ -131,9 +131,9 @@ export default function Subscription({ onClose }) {
             'Карта здоровья',
             '10 сообщений в чате / день',
           ].map((f, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ color: INK3, fontSize: 12 }}>--</span>
-              <span style={{ fontSize: 13, color: INK2, fontFamily: sans }}>{f}</span>
+            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ color: INK3, fontSize: 14 }}>--</span>
+              <span style={{ fontSize: 15, color: INK, fontFamily: sans }}>{f}</span>
             </div>
           ))}
           {!isClub && (

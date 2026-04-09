@@ -431,18 +431,8 @@ export default function Recipes({ user, flash }) {
           color: onlySaved ? F_TXT_ACT : F_TXT,
           border: `1px solid ${F_BD}`,
           fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 10,
         }}>
-          <span style={{
-            width: 18, height: 18, borderRadius: 5,
-            border: `1.5px solid ${onlySaved ? G : F_BD}`,
-            background: onlySaved ? G : W,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            {onlySaved && <span style={{ color: W, fontSize: 12, lineHeight: 1 }}>✓</span>}
-          </span>
-          ★ Сохранённые
+          Сохранённые
         </button>
       </div>
 
@@ -488,21 +478,21 @@ export default function Recipes({ user, flash }) {
             <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginBottom: 8 }}>
               {r.cat}{r.time ? ' · ' + r.time : ''}
             </div>
-            {/* КБЖУ строка */}
-            {r.kcal != null && (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: GOLD, background: '#FBF5EB', padding: '3px 10px', borderRadius: 10, fontFamily: sans }}>{r.kcal} ккал</span>
-                {r.protein != null && <span style={{ fontSize: 11, color: INK3, fontFamily: sans }}>Б {r.protein}г</span>}
-                {r.fat != null && <span style={{ fontSize: 11, color: INK3, fontFamily: sans }}>Ж {r.fat}г</span>}
-                {r.carbs != null && <span style={{ fontSize: 11, color: INK3, fontFamily: sans }}>У {r.carbs}г</span>}
+            {/* Diet тэги (вверху) */}
+            {r.dietTags?.length > 0 && (
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+                {r.dietTags.slice(0, 3).map((t, i) => (
+                  <span key={i} style={{ fontSize: 11, color: '#5A4D34', background: '#F3EFE6', border: '1px solid #D9D2C0', padding: '3px 9px', borderRadius: 10, fontFamily: sans, fontWeight: 600 }}>{t}</span>
+                ))}
               </div>
             )}
-            {/* Diet тэги */}
-            {r.dietTags?.length > 0 && (
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
-                {r.dietTags.slice(0, 3).map((t, i) => (
-                  <span key={i} style={{ fontSize: 10, color: '#5A4D34', background: '#F3EFE6', border: '1px solid #D9D2C0', padding: '3px 8px', borderRadius: 10, fontFamily: sans, fontWeight: 600 }}>{t}</span>
-                ))}
+            {/* КБЖУ строка */}
+            {r.kcal != null && (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: GOLD, background: '#FBF5EB', padding: '4px 10px', borderRadius: 10, fontFamily: sans }}>{r.kcal} ккал</span>
+                {r.protein != null && <span style={{ fontSize: 12, color: INK3, fontFamily: sans }}>Б {r.protein}г</span>}
+                {r.fat != null && <span style={{ fontSize: 12, color: INK3, fontFamily: sans }}>Ж {r.fat}г</span>}
+                {r.carbs != null && <span style={{ fontSize: 12, color: INK3, fontFamily: sans }}>У {r.carbs}г</span>}
               </div>
             )}
           </div>

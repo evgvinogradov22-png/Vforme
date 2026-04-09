@@ -906,17 +906,7 @@ export default function Health() {
           color: onlyFree ? F_TXT_ACT : F_TXT,
           border: `1px solid ${F_BD}`,
           fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 10,
         }}>
-          <span style={{
-            width: 18, height: 18, borderRadius: 5,
-            border: `1.5px solid ${onlyFree ? G : F_BD}`,
-            background: onlyFree ? G : W,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            {onlyFree && <span style={{ color: W, fontSize: 12, lineHeight: 1 }}>✓</span>}
-          </span>
           Бесплатно
         </button>
       </div>
