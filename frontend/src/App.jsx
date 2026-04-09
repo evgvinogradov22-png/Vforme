@@ -200,33 +200,13 @@ function AppShell() {
         </div>
       </div>
 
-      {/* ПЛАШКА TELEGRAM */}
-      {!user.telegramId && !user.telegramBonusGiven && (
-        <div onClick={async () => {
-          try {
-            const res = await fetch('/api/telegram/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
-            const data = await res.json();
-            if (data.url) {
-              window.location.href = data.url;
-              let attempts = 0;
-              const poll = setInterval(async () => {
-                attempts++;
-                try {
-                  const me = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
-                  const u = await me.json();
-                  if (u.telegramId) { setUser(u); clearInterval(poll); }
-                } catch(e) {}
-                if (attempts >= 30) clearInterval(poll);
-              }, 2000);
-            }
-          } catch(e) {}
-        }} style={{ background: '#1a8cff', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-          <span style={{ fontSize: 24 }}>✈️</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ color: '#fff', fontSize: 18, fontWeight: 700, fontFamily: sans }}>Подключи Telegram</div>
-            <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, fontFamily: sans }}>Получи +100 баллов и уведомления</div>
+      {/* ПЛАШКА: подключи мессенджер */}
+      {!user.telegramId && !user.maxId && (
+        <div onClick={() => setTab('cabinet')} style={{ background: G, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+          <div style={{ flex: 1, color: W, fontSize: 14, fontWeight: 600, fontFamily: sans }}>
+            Подключи Telegram или MAX
           </div>
-          <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 20 }}>›</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 18 }}>›</span>
         </div>
       )}
 
