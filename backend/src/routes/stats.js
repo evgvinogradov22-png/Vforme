@@ -1,13 +1,14 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const role = require('../middleware/role');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 
-function runCmd(cmd) {
+// Safe: only hardcoded shell commands, no user input
+function runShell(cmd) {
   return new Promise((resolve) => {
-    exec(cmd, { timeout: 5000 }, (err, stdout) => {
+    execFile('/bin/sh', ['-c', cmd], { timeout: 5000 }, (err, stdout) => {
       resolve(err ? '' : stdout.trim());
     });
   });
@@ -33,8 +34,8 @@ router.get('/system', SA, async (req, res) => {
     const uptime = `up ${hours}h ${minutes}m`;
 
     // CPU — async через /proc/stat если доступно
-    const cpuRaw = await runCmd("top -bn1 | grep 'Cpu(s)' | awk '{print $2}'").catch(() => '0');
-    const diskRaw = await runCmd("df -h / | awk 'NR==2{print $2,$3,$4,$5}'").catch(() => '');
+    const cpuRaw = await runShell("top -bn1 | grep 'Cpu(s)' | awk '{print $2}'").catch(() => '0');
+    const diskRaw = await runShell("df -h / | awk 'NR==2{print $2,$3,$4,$5}'").catch(() => '');
     const diskParts = diskRaw.split(' ');
 
     res.json({

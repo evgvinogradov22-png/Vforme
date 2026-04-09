@@ -185,7 +185,7 @@ router.get('/shopping', auth, async (req, res) => {
 router.post('/shopping', auth, async (req, res) => {
   try {
     const { items, name, category, source, sourceId } = req.body || {};
-    if (Array.isArray(items) && items.length > 0) {
+    if (Array.isArray(items) && items.length > 0 && items.length <= 100) {
       const created = await Promise.all(items.map(it => ShoppingItem.create({
         userId: req.user.id,
         name: String(it.name || '').slice(0, 200),

@@ -50,7 +50,11 @@ const s3 = new S3Client({
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (/^image\/(jpeg|jpg|png|gif|webp)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Только изображения'));
+  },
 });
 
 router.post('/upload', auth, upload.single('file'), async (req, res) => {

@@ -125,7 +125,9 @@ function AppShell() {
         log.paymentSuccess('Покупка', 0);
       }
     };
+    const TRUSTED_ORIGINS = ['https://widget.prodamus.ru', 'https://nutrikris.payform.ru', window.location.origin];
     const onMessage = (e) => {
+      if (!TRUSTED_ORIGINS.includes(e.origin)) return;
       try {
         const d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
         if (d && (d.payment_status === 'success' || d.status === 'success' || d.type === 'payment_success')) {

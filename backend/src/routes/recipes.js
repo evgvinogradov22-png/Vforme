@@ -145,8 +145,10 @@ router.post('/:id/save', auth, async (req, res) => {
 
 router.post('/:id/comment', auth, async (req, res) => {
   try {
+    const text = (req.body.text || '').slice(0, 2000);
+    if (!text.trim()) return res.status(400).json({ error: 'Пустой комментарий' });
     const user = await User.findByPk(req.user.id);
-    res.json(await Comment.create({ recipeId: req.params.id, userId: req.user.id, userName: user.name || user.email, text: req.body.text }));
+    res.json(await Comment.create({ recipeId: req.params.id, userId: req.user.id, userName: user.name || user.email, text }));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
