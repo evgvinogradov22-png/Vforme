@@ -29,7 +29,6 @@ export default function Cabinet() {
   const [loading, setLoading] = useState(true);
   const [tgLoading, setTgLoading] = useState(false);
   const [maxLoading, setMaxLoading] = useState(false);
-  const [maxCode, setMaxCode] = useState(null);
 
   const unlinkTelegram = async () => {
     if (!confirm('Отключить Telegram от аккаунта?')) return;
@@ -159,28 +158,18 @@ export default function Cabinet() {
               Отключить
             </button>
           ) : (
-            {maxCode ? (
-              <div style={{ textAlign: 'center' }}>
-                <div onClick={() => { navigator.clipboard?.writeText(maxCode); }} style={{ padding: '8px 16px', background: W, border: '2px dashed #5B6CEA', borderRadius: 12, color: '#5B6CEA', fontFamily: 'monospace', fontSize: 18, fontWeight: 700, cursor: 'pointer', letterSpacing: 2 }}>
-                  {maxCode}
-                </div>
-                <div style={{ fontSize: 10, color: INK3, marginTop: 4, fontFamily: sans }}>нажми чтобы скопировать</div>
-              </div>
-            ) : (
-              <button onClick={async () => {
-                setMaxLoading(true);
-                try {
-                  const res = await fetch('/api/max/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
-                  const data = await res.json();
-                  if (data.url) window.open(data.url, '_blank');
-                  if (data.code) setMaxCode(data.code);
-                } catch {}
-                setMaxLoading(false);
-              }} disabled={maxLoading}
-                style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                {maxLoading ? '...' : user?.maxBonusGiven ? 'Подключить' : '+100'}
-              </button>
-            )}
+            <button onClick={async () => {
+              setMaxLoading(true);
+              try {
+                const res = await fetch('/api/max/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
+                const data = await res.json();
+                if (data.url) window.open(data.url, '_blank');
+              } catch {}
+              setMaxLoading(false);
+            }} disabled={maxLoading}
+              style={{ padding: '10px 18px', background: '#5B6CEA', border: 'none', borderRadius: 20, color: W, fontFamily: sans, fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {maxLoading ? '...' : user?.maxBonusGiven ? 'Подключить' : '+100'}
+            </button>
           )}
         </div>
       </div>
