@@ -13,7 +13,7 @@ const AtlasResult = sequelize.define('AtlasResult', {
   aiMessage:         { type: DataTypes.TEXT },
   focusZoneIds:      { type: DataTypes.JSONB, defaultValue: [] },
   recommendedTitles: { type: DataTypes.JSONB, defaultValue: [] },
-  gender:            { type: DataTypes.STRING(16) },
+  gender:            { type: DataTypes.TEXT },
 }, {
   indexes: [
     { fields: ['userId'] },
