@@ -38,6 +38,7 @@ const UserSupplement = require('./models/UserSupplement');
 const ShoppingItem = require('./models/ShoppingItem');
 const Subscription = require('./models/Subscription');
 const FreeProductPick = require('./models/FreeProductPick');
+const BroadcastHistory = require('./models/BroadcastHistory');
 
 const app = express();
 const ALLOWED_ORIGINS = [
@@ -115,6 +116,7 @@ async function start() {
     await ShoppingItem.sync();
     await Subscription.sync();
     await FreeProductPick.sync();
+    await BroadcastHistory.sync();
     // Idempotent ALTER TABLE для полей которые появились после первой схемы.
     // ADD COLUMN IF NOT EXISTS безопасен и не тронет данные.
     try {

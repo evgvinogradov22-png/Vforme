@@ -86,3 +86,10 @@ export const supplements = {
   update: (id, data) => req('PUT', `/admin/supplements/${id}`, data),
   delete: (id) => req('DELETE', `/admin/supplements/${id}`),
 };
+
+export const broadcast = {
+  audience: () => req('GET', '/broadcast/audience'),
+  segments: () => req('GET', '/broadcast/segments'),
+  send: (data) => req('POST', '/broadcast/send', data),
+  history: () => req('GET', '/broadcast/history'),
+};

@@ -98,6 +98,18 @@ router.post('/webhook', async (req, res) => {
       } else {
         await sendMessage(chatId, '🌿 Перейдите в приложение и нажмите "Подключить Telegram".');
       }
+    } else if (text && !text.startsWith('/')) {
+      // Обычное сообщение от юзера в боте → пишем в ChatMessage
+      const linked = await User.findOne({ where: { telegramId: String(chatId) } });
+      if (linked) {
+        const ChatMessage = require('../models/ChatMessage');
+        await ChatMessage.create({ userId: linked.id, role: 'user', content: text, isAi: false });
+        const { broadcast } = require('../ws');
+        broadcast({ type: 'chat_admin_update', userId: linked.id });
+        // Уведомление админу
+        try { require('../utils/notify').sendTgNotification(`💬 <b>Сообщение из TG бота</b>\n${linked.name || linked.email}: ${text.slice(0, 100)}`); } catch {}
+        await sendMessage(chatId, 'Сообщение получено! Кристина ответит в ближайшее время.');
+      }
     }
     res.json({ ok: true });
   } catch (e) {

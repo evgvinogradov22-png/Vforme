@@ -56,10 +56,19 @@ router.post('/webhook', async (req, res) => {
     if (update.update_type === 'message_created' && update.message) {
       const text = (update.message.body?.text || '').trim().toLowerCase();
 
-      // Проверяем — этот MAX уже привязан к какому-то аккаунту?
+      // Проверяем — этот MAX уже привязан?
       const already = maxUserId ? await User.findOne({ where: { maxId: String(maxUserId) } }) : null;
       if (already) {
-        await sendMessage(chatId, 'Этот аккаунт MAX уже привязан к аккаунту V Форме. Использовать один мессенджер для нескольких аккаунтов нельзя.');
+        // Уже привязан — это обычное сообщение, пишем в ChatMessage
+        const msgText = (update.message.body?.text || '').trim();
+        if (msgText) {
+          const ChatMessage = require('../models/ChatMessage');
+          await ChatMessage.create({ userId: already.id, role: 'user', content: msgText, isAi: false });
+          const { broadcast } = require('../ws');
+          broadcast({ type: 'chat_admin_update', userId: already.id });
+          try { require('../utils/notify').sendTgNotification(`💬 <b>Сообщение из MAX</b>\n${already.name || already.email}: ${msgText.slice(0, 100)}`); } catch {}
+          await sendMessage(chatId, 'Сообщение получено! Кристина ответит в ближайшее время.');
+        }
         return res.json({ ok: true });
       }
 

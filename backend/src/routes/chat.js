@@ -439,11 +439,28 @@ router.post('/admin/chats/:userId/send', A, async (req, res) => {
     // Live: обновить список чатов у админов
     broadcast({ type: 'chat_admin_update', userId: req.params.userId });
     const user = await User.findByPk(req.params.userId);
+    const msgText = `Кристина:\n\n${content}`;
+    // Telegram
     if (user?.telegramId) {
-      const token = process.env.TELEGRAM_BOT_TOKEN;
-      const body = JSON.stringify({ chat_id: user.telegramId, text: `💬 Кристина:\n\n${content}` });
-      const opts = { hostname: 'api.telegram.org', path: `/bot${token}/sendMessage`, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } };
-      const r = https.request(opts, () => {}); r.on('error', () => {}); r.write(body); r.end();
+      try {
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+        let agent;
+        try { const { SocksProxyAgent } = require('socks-proxy-agent'); if (process.env.TG_PROXY) agent = new SocksProxyAgent(process.env.TG_PROXY); } catch {}
+        const body = JSON.stringify({ chat_id: user.telegramId, text: msgText, parse_mode: 'HTML' });
+        const opts = { hostname: 'api.telegram.org', path: `/bot${token}/sendMessage`, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }, ...(agent ? { agent } : {}) };
+        const r = https.request(opts, () => {}); r.on('error', () => {}); r.write(body); r.end();
+      } catch {}
+    }
+    // MAX
+    if (user?.maxId) {
+      try {
+        const maxToken = process.env.MAX_BOT_TOKEN;
+        if (maxToken) {
+          const body = JSON.stringify({ text: msgText });
+          const opts = { hostname: 'platform-api.max.ru', path: `/messages?chat_id=${user.maxId}`, method: 'POST', headers: { 'Authorization': maxToken, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } };
+          const r = https.request(opts, () => {}); r.on('error', () => {}); r.write(body); r.end();
+        }
+      } catch {}
     }
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
