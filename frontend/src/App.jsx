@@ -181,7 +181,6 @@ function AppShell() {
   }
 
   if (showPaymentSuccess) return <PaymentSuccess onContinue={() => { setShowPaymentSuccess(false); setTab('programs'); }} />;
-  if (!user.emailVerified && justRegistered) return <VerifyCode user={user} setUser={u => { sessionStorage.removeItem('justRegistered'); setUser(u); }} logout={logout} />;
 
   return (
     <div style={{ fontFamily: serif, background: W, width: '100%', minHeight: '100vh', paddingBottom: 'calc(78px + env(safe-area-inset-bottom))', color: '#1A1A1A' }}>

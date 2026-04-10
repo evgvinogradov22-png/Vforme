@@ -33,18 +33,13 @@ router.post('/register', authLimit, async (req, res) => {
     if (password.length < 6) { await t.rollback(); return res.status(400).json({ error: 'Пароль минимум 6 символов' }); }
     if (await User.findOne({ where: { email } })) { await t.rollback(); return res.status(400).json({ error: 'Email уже занят' }); }
     const hash = await bcrypt.hash(password, 12);
-    const user = await User.create({ email, password: hash, name, emailVerified: false }, { transaction: t });
+    const user = await User.create({ email, password: hash, name, emailVerified: true }, { transaction: t });
     await UserProfile.create({ userId: user.id }, { transaction: t });
-    // Инвалидируем старые коды перед выдачей нового
-    await EmailToken.update({ used: true }, { where: { userId: user.id, type: 'verify', used: false } });
-    const { code, hash: codeHash } = generateCode();
-    await EmailToken.create({ userId: user.id, tokenHash: codeHash, type: 'verify', expiresAt: new Date(Date.now() + 15 * 60 * 1000) }, { transaction: t });
     await t.commit();
-    try { await loggedSend(sendVerification, 'verify', email, user.id, name, code); } catch (e) { console.error('Email error:', e.message); }
     // Уведомление админу
     try { require('../utils/notify').sendTgNotification(`📱 <b>Новая регистрация</b>\n${name || '—'} (${email})`); } catch {}
     const jwtToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token: jwtToken, user: { id: user.id, email: user.email, name: user.name, role: user.role, emailVerified: false } });
+    res.json({ token: jwtToken, user: { id: user.id, email: user.email, name: user.name, role: user.role, emailVerified: true } });
   } catch (e) { await t.rollback(); res.status(500).json({ error: e.message }); }
 });
 
