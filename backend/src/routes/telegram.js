@@ -6,15 +6,26 @@ const Points = require('../models/Points');
 const auth = require('../middleware/auth');
 const { sendToUser } = require('../ws');
 
+function getAgent() {
+  const proxy = process.env.TG_PROXY;
+  if (!proxy) return undefined;
+  try {
+    const { SocksProxyAgent } = require('socks-proxy-agent');
+    return new SocksProxyAgent(proxy);
+  } catch { return undefined; }
+}
+
 function tgPost(method, data) {
   return new Promise((resolve, reject) => {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const body = JSON.stringify(data);
+    const agent = getAgent();
     const opts = {
       hostname: 'api.telegram.org',
       path: `/bot${token}/${method}`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      ...(agent ? { agent } : {}),
     };
     const req = https.request(opts, res => {
       let d = '';
