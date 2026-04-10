@@ -324,7 +324,6 @@ export default function Clients({ flash }) {
               const d = new Date(v);
               const label = d.toLocaleString('ru', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
               const diffH = Math.round((Date.now() - d.getTime()) / 3600000);
-              else if (diffD < 7) label = `${diffD} дн назад`;
               const fresh = diffH < 24;
               return <span style={{ fontSize: 12, color: fresh ? '#22C55E' : C.ink3, fontWeight: fresh ? 600 : 400 }}>{label}</span>;
             }},
