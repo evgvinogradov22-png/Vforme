@@ -45,7 +45,20 @@ export default function Cabinet() {
     try {
       const res = await fetch('/api/telegram/link-token', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('vforme_token') } });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+        // Polling при возвращении
+        let attempts = 0;
+        const poll = setInterval(async () => {
+          attempts++;
+          try {
+            const me = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + localStorage.getItem('vforme_token') } });
+            const u = await me.json();
+            if (u.telegramId) { if (refreshUser) refreshUser(); clearInterval(poll); }
+          } catch {}
+          if (attempts >= 30) clearInterval(poll);
+        }, 2000);
+      }
     } catch(e) {}
     setTgLoading(false);
   };

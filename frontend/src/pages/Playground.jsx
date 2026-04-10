@@ -354,13 +354,16 @@ export function ZoneSheet({ zone, level, content, onClose }) {
 }
 
 // ─── Карточка контента ───────────────────────────────────────
-export function ContentCard({ item }) {
-  const tag = item.kind === 'program' ? 'ПРОГРАММА' : 'ПРОТОКОЛ';
+export function ContentCard({ item, onClick }) {
+  const tag = item.kind === 'program' ? 'ПРОГРАММА' : item.kind === 'scheme' ? 'СХЕМА БАД' : 'ПРОТОКОЛ';
   const free = Number(item.price) === 0;
   return (
-    <div style={{
+    <div onClick={() => {
+      if (onClick) { onClick(item); return; }
+      window.dispatchEvent(new CustomEvent('vforme:open-health-product', { detail: { kind: item.kind, id: item.id, title: item.title } }));
+    }} style={{
       background: W, border: `1px solid ${BD}`, borderRadius: 16, padding: '14px 16px',
-      display: 'flex', alignItems: 'center', gap: 14,
+      display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer',
     }}>
       <div style={{
         width: 48, height: 48, borderRadius: 14, background: GLL,

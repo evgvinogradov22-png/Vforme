@@ -90,7 +90,7 @@ router.post('/webhook', async (req, res) => {
     }
     res.json({ ok: true });
   } catch (e) {
-    console.error('TG webhook error:', e.message);
+    console.error('TG webhook error:', e.message || e);
     res.json({ ok: true });
   }
 });
