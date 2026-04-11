@@ -22,9 +22,10 @@ function AtlasMain({ result, onRetake, onGoChat }) {
       .catch(e => console.error(e));
   }, []);
 
+  const entries = Object.entries(result.levels || {});
   const focusZoneId = result.focusZoneIds?.[0]
-    || [...Object.entries(result.levels || {})].sort((a, b) => a[1] - b[1])[0]?.[0];
-  const focusZone = ZONES.find(z => z.id === focusZoneId);
+    || (entries.length > 0 ? entries.sort((a, b) => a[1] - b[1])[0][0] : null);
+  const focusZone = focusZoneId ? ZONES.find(z => z.id === focusZoneId) : null;
 
   const recommended = useMemo(() => {
     if (!content.length) return [];

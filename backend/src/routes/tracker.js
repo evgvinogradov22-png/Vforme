@@ -186,15 +186,17 @@ router.post('/shopping', auth, async (req, res) => {
   try {
     const { items, name, category, source, sourceId, link } = req.body || {};
     if (Array.isArray(items) && items.length > 0 && items.length <= 100) {
-      const created = await Promise.all(items.map(it => ShoppingItem.create({
+      const valid = items.filter(it => it.name && String(it.name).trim());
+      if (valid.length === 0) return res.status(400).json({ error: 'Нет валидных элементов' });
+      const created = await Promise.all(valid.map(it => ShoppingItem.create({
         userId: req.user.id,
-        name: String(it.name || '').slice(0, 200),
+        name: String(it.name).trim().slice(0, 200),
         category: it.category || 'ingredient',
         source: it.source || null,
         sourceId: it.sourceId || null,
         link: it.link || null,
-      }).catch(() => null)));
-      return res.json(created.filter(Boolean));
+      })));
+      return res.json(created);
     }
     if (!name) return res.status(400).json({ error: 'Нет name / items' });
     const row = await ShoppingItem.create({

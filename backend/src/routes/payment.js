@@ -201,8 +201,9 @@ router.post('/webhook', webhookLimit, async (req, res) => {
       const { Op } = require('sequelize');
       const amount = parseFloat(data.sum || data.amount || 0);
       if (amount > 0) {
+        // Fallback: ищем самый свежий pending заказ с такой же суммой за последний час
         order = await Order.findOne({
-          where: { userId: user.id, status: 'pending', amount, createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+          where: { userId: user.id, status: 'pending', amount, createdAt: { [Op.gte]: new Date(Date.now() - 60 * 60 * 1000) } },
           order: [['createdAt', 'DESC']],
         });
       }
