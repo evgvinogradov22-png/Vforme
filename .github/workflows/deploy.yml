@@ -1,0 +1,24 @@
+name: Deploy V Forme
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /var/www/vforme
+            git pull origin main
+            cd backend && npm install --production
+            cd ../frontend && npm install && npm run build
+            cd ../admin && npm install && npm run build
+            cd ../backend && pm2 restart vforme-api
+            echo "✅ Deploy complete"

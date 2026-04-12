@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-vforme_db}
+      POSTGRES_USER: ${DB_USER:-vforme}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  backend:
+    build: ./backend
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    env_file: ./backend/.env
+    environment:
+      DB_HOST: postgres
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build: ./frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: ../frontend/Dockerfile
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+
+volumes:
+  pgdata:
+  redisdata:

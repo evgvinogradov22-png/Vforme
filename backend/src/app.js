@@ -1,4 +1,14 @@
 require('dotenv').config();
+
+// Sentry — мониторинг ошибок
+if (process.env.SENTRY_DSN) {
+  try {
+    const Sentry = require('@sentry/node');
+    Sentry.init({ dsn: process.env.SENTRY_DSN, environment: process.env.NODE_ENV || 'production', tracesSampleRate: 0.1 });
+    console.log('✅ Sentry подключён');
+  } catch (e) { console.log('Sentry не подключён:', e.message); }
+}
+
 const express = require('express');
 const helmet = require('helmet');
 const http = require('http');
