@@ -20,6 +20,7 @@ function ProtocolModal({ protocol, supplements, onClose, onSave }) {
   const [images, setImages] = useState(protocol?.content?.images || []);
   const [price, setPrice] = useState(String(protocol?.price ?? 0));
   const [available, setAvailable] = useState(protocol?.available ?? true);
+  const [clubOnly, setClubOnly] = useState(protocol?.clubOnly ?? false);
   const [coverImage, setCoverImage] = useState(protocol?.coverImage || '');
   const [suppLinks, setSuppLinks] = useState(protocol?.supplements || []);
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -54,7 +55,7 @@ function ProtocolModal({ protocol, supplements, onClose, onSave }) {
     setSaving(true);
     try {
       const payload = {
-        title, description, price: Number(price) || 0, available, coverImage,
+        title, description, price: Number(price) || 0, available, clubOnly, coverImage,
         content: { html, images },
         supplements: suppLinks.filter(s => s.link || s.supplementId),
       };
@@ -154,10 +155,14 @@ function ProtocolModal({ protocol, supplements, onClose, onSave }) {
         ))}
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 24 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14 }}>
           <input type="checkbox" checked={available} onChange={e => setAvailable(e.target.checked)} />
-          Протокол активен (виден пользователям)
+          Активен
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14, color: clubOnly ? '#C4A26B' : undefined }}>
+          <input type="checkbox" checked={clubOnly} onChange={e => setClubOnly(e.target.checked)} />
+          Только для клуба
         </label>
       </div>
 

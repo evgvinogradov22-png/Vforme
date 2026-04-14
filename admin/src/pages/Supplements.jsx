@@ -89,6 +89,12 @@ function SchemeModal({ scheme, programs, onClose, onSave }) {
           {programs.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
         </select>
       </div>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14, color: data.clubOnly ? '#C4A26B' : undefined }}>
+          <input type="checkbox" checked={data.clubOnly || false} onChange={e => setData(d => ({ ...d, clubOnly: e.target.checked }))} />
+          Только для клуба
+        </label>
+      </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <Btn onClick={onClose} variant="ghost" style={{ flex: 1 }}>Отмена</Btn>
         <Btn onClick={save} disabled={!data.title || saving} variant="primary" style={{ flex: 2 }}>{saving ? 'Сохраняем...' : 'Сохранить'}</Btn>
