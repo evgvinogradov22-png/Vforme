@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { recipes as recipesApi, tracker as trackerApi } from '../api';
+import { useAuth } from '../hooks/useAuth';
 import { Spinner, BackHeader } from '../components/UI';
 import { G, GLL, GOLD, BD, INK, INK2, INK3, OW, W, sans, serif } from '../utils/theme';
 
@@ -222,7 +223,15 @@ export default function Recipes({ user, flash }) {
     }
   };
 
+  const isClub = user?.subscription?.plan === 'club';
+
   const openOne = async (id) => {
+    // Проверяем clubOnly в списке до загрузки
+    const item = recipeList.find(r => r.id === id) || savedList.find(r => r.id === id);
+    if (item?.clubOnly && !isClub) {
+      window.dispatchEvent(new Event('vforme:open-subscription'));
+      return;
+    }
     try {
       const r = await recipesApi.getOne(id);
       setOpenRecipe(r);
@@ -443,8 +452,10 @@ export default function Recipes({ user, flash }) {
         </div>
       )}
 
-      {!loading && visibleList.map(r => (
-        <div key={r.id} onClick={() => openOne(r.id)} style={{ border: '1px solid ' + BD, borderRadius: 18, marginBottom: 14, overflow: 'hidden', cursor: 'pointer', background: W }}>
+      {!loading && visibleList.map(r => {
+        const locked = r.clubOnly && !isClub;
+        return (
+        <div key={r.id} onClick={() => openOne(r.id)} style={{ border: '1px solid ' + (r.clubOnly ? GOLD + '44' : BD), borderRadius: 18, marginBottom: 14, overflow: 'hidden', cursor: 'pointer', background: W, opacity: locked ? 0.6 : 1, filter: locked ? 'grayscale(0.4)' : 'none', position: 'relative' }}>
           {r.imageUrl ? (
             <div style={{ position: 'relative' }}>
               <div style={{
@@ -496,8 +507,11 @@ export default function Recipes({ user, flash }) {
               </div>
             )}
           </div>
+          {r.clubOnly && (
+            <div style={{ position: 'absolute', top: 12, left: 12, background: GOLD, color: W, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 8, letterSpacing: 0.5, zIndex: 2 }}>В КЛУБЕ</div>
+          )}
         </div>
-      ))}
+      );})}
     </div>
   );
 }
