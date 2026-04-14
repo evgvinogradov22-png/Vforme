@@ -9,5 +9,6 @@ const SupplementScheme = sequelize.define('SupplementScheme', {
   available: { type: DataTypes.BOOLEAN, defaultValue: true },
   tags:      { type: DataTypes.JSONB, defaultValue: [] },
   coverImage: { type: DataTypes.STRING },
+  clubOnly:   { type: DataTypes.BOOLEAN, defaultValue: false },
 }, { timestamps: true });
 module.exports = SupplementScheme;

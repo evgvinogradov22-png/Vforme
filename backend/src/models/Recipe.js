@@ -17,5 +17,6 @@ const Recipe = sequelize.define('Recipe', {
   authorName:  { type: DataTypes.STRING },
   likes:       { type: DataTypes.INTEGER, defaultValue: 0 },
   dietTags:    { type: DataTypes.JSONB, defaultValue: [] }, // ['кето','без глютена','веган', ...]
+  clubOnly:    { type: DataTypes.BOOLEAN, defaultValue: false },
 }, { timestamps: true });
 module.exports = Recipe;

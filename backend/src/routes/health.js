@@ -58,7 +58,7 @@ router.get('/feed', async (req, res) => {
         coverImage: p.coverImage || null,
         price: Number(p.price) || 0,
         tags: tagsFor(p.tags, p.title, p.description),
-        meta: '',
+        meta: '', clubOnly: !!p.clubOnly,
       })),
       ...schemes.map(s => ({
         id: s.id, kind: 'scheme',
@@ -67,7 +67,7 @@ router.get('/feed', async (req, res) => {
         coverImage: s.coverImage || null,
         price: Number(s.price) || 0,
         tags: tagsFor(s.tags, s.title, s.desc),
-        meta: supCount[s.id] ? `${supCount[s.id]} БАДов` : '',
+        meta: supCount[s.id] ? `${supCount[s.id]} БАДов` : '', clubOnly: !!s.clubOnly,
       })),
     ];
 

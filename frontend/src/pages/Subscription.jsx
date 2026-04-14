@@ -10,7 +10,6 @@ export default function Subscription({ onClose }) {
 
   const plan = user?.subscription?.plan || 'free';
   const isClub = plan === 'club';
-  const freePicks = user?.freePicks || [];
 
   useEffect(() => { subApi.get().then(setSubData).catch(console.error); }, []);
 
@@ -125,8 +124,8 @@ export default function Subscription({ onClose }) {
             БЕСПЛАТНЫЙ ДОСТУП
           </div>
           {[
-            '3 продукта на выбор',
-            'Все рецепты с КБЖУ',
+            'Бесплатные протоколы и схемы',
+            'Бесплатные рецепты',
             'Трекер привычек',
             'Карта здоровья',
             '10 сообщений в чате / день',
@@ -136,13 +135,6 @@ export default function Subscription({ onClose }) {
               <span style={{ fontSize: 15, color: INK, fontFamily: sans }}>{f}</span>
             </div>
           ))}
-          {!isClub && (
-            <div style={{ marginTop: 12, padding: '10px 14px', background: W, borderRadius: 10, textAlign: 'center' }}>
-              <span style={{ fontSize: 13, color: G, fontFamily: sans, fontWeight: 600 }}>
-                Использовано: {freePicks.length}/3 продуктов
-              </span>
-            </div>
-          )}
         </div>
 
       </div>

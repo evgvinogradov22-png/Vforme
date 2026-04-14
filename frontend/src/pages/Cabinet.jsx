@@ -112,7 +112,7 @@ export default function Cabinet() {
               <div style={{ fontSize: 12, color: INK3, marginTop: 2, fontFamily: sans }}>
                 {user?.subscription?.plan === 'club'
                   ? `Активна до ${new Date(user.subscription.currentPeriodEnd).toLocaleDateString('ru-RU')}`
-                  : `${(user?.freePicks || []).length}/3 бесплатных продукта • Нажми для апгрейда`}
+                  : 'Нажми для апгрейда'}
               </div>
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: user?.subscription?.plan === 'club' ? GOLD : G, fontFamily: sans }}>

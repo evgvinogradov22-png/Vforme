@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify';
 import { useAuth } from '../hooks/useAuth';
 import { G, GL, GLL, GOLD, GOLDD, BD, INK, INK2, INK3, W, sans, serif } from '../utils/theme';
 import { Spinner } from '../components/UI';
-import { tracker as trackerApi, subscription as subApi } from '../api';
+import { tracker as trackerApi } from '../api';
 
 const TOKEN = () => localStorage.getItem('vforme_token');
 const authHeaders = () => ({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + TOKEN() });
@@ -175,7 +175,7 @@ function FeedCard({ item, onClick, locked, isClub }) {
   const free = Number(item.price) === 0;
   const price = Number(item.price);
   const discountPrice = isClub && price > 0 ? Math.round(price * 0.9) : null;
-  const priceLabel = free ? 'БЕСПЛАТНО' : discountPrice ? `${discountPrice} руб. (-10%)` : `${price} руб.`;
+  const priceLabel = item.clubOnly ? 'В КЛУБЕ' : free ? 'БЕСПЛАТНО' : discountPrice ? `${discountPrice} руб. (-10%)` : `${price} руб.`;
   const kindLabel = KIND_LABELS[item.kind] || 'ПРОДУКТ';
   const hasCover = !!item.coverImage;
 
@@ -676,13 +676,9 @@ function SchemePage({ scheme, onBack }) {
       .finally(() => setLoading(false));
   }, [scheme.id]);
 
-  const free = Number(scheme.price) === 0;
-  const plan = user?.subscription?.plan || 'free';
-  const isClub = plan === 'club';
-  const isPicked = (user?.freePicks || []).some(p => p.productId === scheme.id);
-  const hasAccess = free || isClub || isPicked;
-  const canPick = !hasAccess && (user?.freePicks || []).length < 3;
-  const status = free ? 'БЕСПЛАТНО' : hasAccess ? 'ОТКРЫТ' : `${scheme.price} руб.`;
+  const isClub = (user?.subscription?.plan || 'free') === 'club';
+  const hasAccess = scheme.clubOnly ? isClub : true;
+  const status = !scheme.clubOnly ? 'БЕСПЛАТНО' : hasAccess ? 'В КЛУБЕ' : 'КЛУБ';
 
   return (
     <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', paddingBottom: 100 }}>
@@ -747,7 +743,6 @@ function injectVcStyles() {
 // ─── Главная страница Здоровье ───────────────────────────────
 export default function Health() {
   const { user, refreshUser } = useAuth();
-  const [showMessengerGate, setShowMessengerGate] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [kindFilter, setKindFilter] = useState([]);
@@ -797,22 +792,17 @@ export default function Health() {
 
   const plan = user?.subscription?.plan || 'free';
   const isClub = plan === 'club';
-  const freePicks = user?.freePicks || [];
-  const freePickIds = freePicks.map(p => p.productId);
-  const freePicksLeft = 3 - freePicks.length;
   const ownedPrograms = user?.programAccess || [];
 
   function isItemAccessible(item) {
+    if (!item.clubOnly) return true; // бесплатный продукт
     if (isClub) return true;
-    if (freePickIds.includes(item.id)) return true;
     if (item.kind === 'program' && ownedPrograms.includes(item.id)) return true;
     return false;
   }
 
   function isItemLocked(item) {
-    if (isItemAccessible(item)) return false;
-    if (freePicksLeft > 0) return false;
-    return true;
+    return !isItemAccessible(item);
   }
 
   const openItem = (item) => {
@@ -821,53 +811,13 @@ export default function Health() {
     if (item.kind === 'scheme')   setOpenScheme(item);
   };
 
-  const hasMessenger = !!(user?.telegramId || user?.maxId);
-
-  const handleOpen = async (item) => {
-    // Уже есть доступ (club, куплено, или free pick) — открываем
+  const handleOpen = (item) => {
     if (isItemAccessible(item)) { openItem(item); return; }
-
-    // Нет мессенджера — нужно привязать для бесплатного доступа
-    if (!hasMessenger && !isClub) {
-      setShowMessengerGate(true);
-      return;
-    }
-
-    // Нет доступа — добавляем как free pick (если слоты есть)
-    if (freePicksLeft > 0) {
-      try {
-        await subApi.addFreePick(item.id, item.kind);
-        await refreshUser();
-        openItem(item);
-      } catch (e) {
-        if (e.message?.includes('messenger_required')) setShowMessengerGate(true);
-        else alert(e.message);
-      }
-      return;
-    }
-
-    // Лимит исчерпан — подписка
+    // Клубный контент — открыть подписку
     window.dispatchEvent(new Event('vforme:open-subscription'));
   };
 
-  if (showMessengerGate) return (
-    <div style={{ background: '#F9F7F4', minHeight: 'calc(100dvh - 60px)', padding: '40px 24px', textAlign: 'center' }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🔗</div>
-      <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 700, color: INK, marginBottom: 8 }}>Привяжи мессенджер</div>
-      <div style={{ fontSize: 14, color: INK2, fontFamily: sans, lineHeight: 1.6, marginBottom: 28, maxWidth: 320, margin: '0 auto 28px' }}>
-        Для активации бесплатного доступа подключи Telegram или MAX в разделе Аккаунт
-      </div>
-      <button onClick={() => { setShowMessengerGate(false); window.dispatchEvent(new CustomEvent('vforme:switch-tab', { detail: 'cabinet' })); }}
-        style={{ padding: '16px 32px', background: G, color: W, border: 'none', borderRadius: 14, fontFamily: sans, fontWeight: 700, fontSize: 16, cursor: 'pointer', marginBottom: 12 }}>
-        Перейти в Аккаунт
-      </button>
-      <br />
-      <button onClick={() => setShowMessengerGate(false)}
-        style={{ padding: '12px 24px', background: 'transparent', border: '1px solid ' + BD, borderRadius: 12, color: INK3, fontFamily: sans, fontSize: 14, cursor: 'pointer', marginTop: 8 }}>
-        Назад
-      </button>
-    </div>
-  );
+
 
   return (
     <div style={{
@@ -889,12 +839,6 @@ export default function Health() {
             </button>
           )}
         </div>
-        {!isClub && (
-          <div style={{ marginTop: 10, padding: '10px 14px', background: GLL, borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 13, color: G, fontFamily: sans }}>Бесплатных продуктов: <b>{freePicks.length}/3</b></span>
-            {freePicksLeft === 0 && <span style={{ fontSize: 11, color: INK3, fontFamily: sans }}>Лимит исчерпан</span>}
-          </div>
-        )}
       </div>
 
       <div style={{ padding: '8px 20px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>

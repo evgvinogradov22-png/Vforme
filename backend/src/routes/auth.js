@@ -61,11 +61,9 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
       // Обновляем дату последнего захода (не блокируем ответ)
       user.update({ lastSeenAt: new Date() }).catch(() => {});
     }
-    // Добавляем подписку + free picks
+    // Добавляем подписку
     const Subscription = require('../models/Subscription');
-    const FreeProductPick = require('../models/FreeProductPick');
     const sub = await Subscription.findOne({ where: { userId: user.id } });
-    const picks = await FreeProductPick.findAll({ where: { userId: user.id } });
     const userData = user.toJSON();
     const isActive = sub?.plan === 'club' && sub?.status === 'active' && (!sub.currentPeriodEnd || new Date(sub.currentPeriodEnd) > new Date());
     userData.subscription = {
@@ -73,7 +71,6 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
       status: sub?.status || 'active',
       currentPeriodEnd: sub?.currentPeriodEnd || null,
     };
-    userData.freePicks = picks.map(p => ({ productId: p.productId, productType: p.productType }));
     res.json(userData);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
