@@ -196,7 +196,7 @@ export default function Supplements({ flash }) {
       )}
 
       {schemeModal !== null && (
-        <SchemeModal scheme={schemeModal.id ? schemeModal : null} programs={programs} onClose={() => setSchemeModal(null)} onSave={() => { load(); flash('Сохранено'); }} />
+        <SchemeModal key={JSON.stringify(schemeModal)} scheme={Object.keys(schemeModal).length > 0 ? schemeModal : null} programs={programs} onClose={() => setSchemeModal(null)} onSave={() => { load(); flash('Сохранено'); }} />
       )}
       {supModal !== null && (
         <SupplementModal supplement={supModal.id ? supModal : null} schemeId={supModal.schemeId} onClose={() => setSupModal(null)} onSave={() => { load(); flash('Сохранено'); }} />

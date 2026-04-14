@@ -246,7 +246,8 @@ export default function Protocols({ flash }) {
 
       {modal !== null && (
         <ProtocolModal
-          protocol={modal.id ? modal : null}
+          key={JSON.stringify(modal)}
+          protocol={Object.keys(modal).length > 0 ? modal : null}
           supplements={supplements}
           onClose={() => setModal(null)}
           onSave={() => { load(); flash('Сохранено'); }}

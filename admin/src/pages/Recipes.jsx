@@ -193,7 +193,7 @@ export default function Recipes({ flash }) {
           <div style={{ fontSize: 14, color: C.ink3, marginTop: 2 }}>{list.length} рецептов</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <AiFillButton type="recipe" onFilled={(data) => setModal({ title: data.title, cat: data.cat, time: data.time, ingredients: (data.ingredients||[]).join('\n'), steps: (data.steps||[]).join('\n'), kcal: data.kcal, protein: data.protein, fat: data.fat, carbs: data.carbs, fact: data.fact, dietTags: data.dietTags, clubOnly: data.clubOnly })} />
+          <AiFillButton type="recipe" onFilled={(data) => setModal({ title: data.title, cat: data.cat, time: data.time, ingredients: data.ingredients || [], steps: data.steps || [], kcal: data.kcal, protein: data.protein, fat: data.fat, carbs: data.carbs, fact: data.fact, dietTags: data.dietTags || [], clubOnly: data.clubOnly })} />
           <Btn onClick={() => setModal({})} variant="primary">+ Рецепт</Btn>
         </div>
       </div>
@@ -225,7 +225,7 @@ export default function Recipes({ flash }) {
       </Card>
 
       {modal !== null && (
-        <RecipeModal recipe={modal.id ? modal : null} onClose={() => setModal(null)} onSave={() => { load(); flash('Сохранено'); }} />
+        <RecipeModal key={JSON.stringify(modal)} recipe={Object.keys(modal).length > 0 ? modal : null} onClose={() => setModal(null)} onSave={() => { load(); flash('Сохранено'); }} />
       )}
     </div>
   );
