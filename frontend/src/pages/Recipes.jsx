@@ -407,24 +407,23 @@ export default function Recipes({ user, flash }) {
 
   // ─── LIST ───────────────────────────────────────────────────
   return (
-    <div style={{ padding: '24px 20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{ fontFamily: serif, fontSize: 28, fontWeight: 600, color: G }}>Рецепты</div>
+    <div style={{ padding: '20px 20px 80px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <div style={{ fontFamily: serif, fontSize: 30, fontWeight: 600, color: INK }}>Рецепты</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={handleRandom} title="Случайный рецепт" style={{ background: W, border: '1px solid ' + BD, borderRadius: 20, padding: '8px 14px', color: INK2, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>🎲 Случайный</button>
-          <button onClick={() => setAddingRecipe(true)} style={{ background: G, border: 'none', borderRadius: 20, padding: '8px 16px', color: W, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>+ Добавить</button>
+          <button onClick={handleRandom} style={{ background: OW, border: 'none', borderRadius: 12, padding: '10px 14px', color: INK2, fontFamily: sans, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Случайный</button>
+          <button onClick={() => setAddingRecipe(true)} style={{ background: G, border: 'none', borderRadius: 12, padding: '10px 16px', color: W, fontFamily: sans, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ Добавить</button>
         </div>
       </div>
-      <div style={{ fontSize: 14, color: INK2, marginBottom: 14, fontFamily: sans }}>{visibleList.length} рецептов</div>
+      <div style={{ fontSize: 14, color: INK3, marginBottom: 16, fontFamily: sans }}>{visibleList.length} рецептов</div>
 
-      {/* Поиск */}
       <input
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder="Поиск по названию или ингредиенту..."
+        placeholder="Поиск..."
         style={{
           width: '100%', boxSizing: 'border-box',
-          border: '1px solid ' + BD, borderRadius: 14,
+          border: 'none', borderRadius: 14, background: OW,
           padding: '12px 16px', fontSize: 14, fontFamily: sans, color: INK, background: W,
           outline: 'none', marginBottom: 14,
         }}
@@ -455,60 +454,46 @@ export default function Recipes({ user, flash }) {
       {!loading && visibleList.map(r => {
         const locked = r.clubOnly && !isClub;
         return (
-        <div key={r.id} onClick={() => openOne(r.id)} style={{ border: '1px solid ' + (r.clubOnly ? GOLD + '44' : BD), borderRadius: 18, marginBottom: 14, overflow: 'hidden', cursor: 'pointer', background: W, opacity: locked ? 0.6 : 1, filter: locked ? 'grayscale(0.4)' : 'none', position: 'relative' }}>
-          {r.imageUrl ? (
+        <div key={r.id} onClick={() => openOne(r.id)} style={{ borderRadius: 20, marginBottom: 16, overflow: 'hidden', cursor: 'pointer', background: W, opacity: locked ? 0.55 : 1, filter: locked ? 'grayscale(0.5)' : 'none', position: 'relative', boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
+          {r.imageUrl && (
             <div style={{ position: 'relative' }}>
-              <div style={{
-                width: '100%', aspectRatio: '3 / 1',
-                backgroundImage: `url(${r.imageUrl})`,
-                backgroundSize: 'cover', backgroundPosition: 'center',
-              }} />
-              {/* Лайк overlay glass */}
+              <div style={{ width: '100%', aspectRatio: '5 / 2', backgroundImage: `url(${r.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
               <button onClick={(e) => handleLike(r.id, e)} style={{
-                position: 'absolute', top: 12, right: 12,
-                display: 'flex', alignItems: 'center', gap: 5,
-                height: 32, padding: '0 12px', borderRadius: 16,
-                background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-                border: 'none', cursor: 'pointer',
-                color: r.liked ? '#E55' : INK2, fontFamily: sans, fontWeight: 700, fontSize: 13,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                position: 'absolute', top: 14, right: 14, display: 'flex', alignItems: 'center', gap: 5,
+                height: 34, padding: '0 14px', borderRadius: 17,
+                background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                border: 'none', cursor: 'pointer', color: r.liked ? '#E55' : INK3, fontFamily: sans, fontWeight: 600, fontSize: 14,
               }}>{r.liked ? '♥' : '♡'} {r.likes || 0}</button>
-              {/* Сохранить overlay */}
               <button onClick={(e) => handleSave(r.id, e)} style={{
-                position: 'absolute', top: 12, left: 12,
-                width: 32, height: 32, borderRadius: 16,
-                background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-                border: 'none', cursor: 'pointer', fontSize: 16,
-                color: r.saved ? GOLD : INK3,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                position: 'absolute', top: 14, left: 14, width: 34, height: 34, borderRadius: 17,
+                background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                border: 'none', cursor: 'pointer', fontSize: 17, color: r.saved ? GOLD : INK3,
               }}>{r.saved ? '★' : '☆'}</button>
             </div>
-          ) : null}
-          <div style={{ padding: '14px 18px' }}>
-            <div style={{ fontFamily: serif, fontSize: 17, fontWeight: 600, color: INK, marginBottom: 4 }}>{r.title}</div>
-            <div style={{ fontSize: 12, color: INK3, fontFamily: sans, marginBottom: 8 }}>
+          )}
+          <div style={{ padding: '16px 20px' }}>
+            <div style={{ fontFamily: serif, fontSize: 19, fontWeight: 600, color: INK, marginBottom: 6, lineHeight: 1.3 }}>{r.title}</div>
+            <div style={{ fontSize: 14, color: INK3, fontFamily: sans, marginBottom: 10 }}>
               {r.cat}{r.time ? ' · ' + r.time : ''}
             </div>
-            {/* Diet тэги (вверху) */}
             {r.dietTags?.length > 0 && (
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                 {r.dietTags.slice(0, 3).map((t, i) => (
-                  <span key={i} style={{ fontSize: 11, color: '#5A4D34', background: '#F3EFE6', border: '1px solid #D9D2C0', padding: '3px 9px', borderRadius: 10, fontFamily: sans, fontWeight: 600 }}>{t}</span>
+                  <span key={i} style={{ fontSize: 12, color: INK2, background: OW, padding: '4px 10px', borderRadius: 8, fontFamily: sans, fontWeight: 500 }}>{t}</span>
                 ))}
               </div>
             )}
-            {/* КБЖУ строка */}
             {r.kcal != null && (
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: GOLD, background: '#FBF5EB', padding: '4px 10px', borderRadius: 10, fontFamily: sans }}>{r.kcal} ккал</span>
-                {r.protein != null && <span style={{ fontSize: 12, color: INK3, fontFamily: sans }}>Б {r.protein}г</span>}
-                {r.fat != null && <span style={{ fontSize: 12, color: INK3, fontFamily: sans }}>Ж {r.fat}г</span>}
-                {r.carbs != null && <span style={{ fontSize: 12, color: INK3, fontFamily: sans }}>У {r.carbs}г</span>}
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: GOLD, fontFamily: sans }}>{r.kcal} ккал</span>
+                {r.protein != null && <span style={{ fontSize: 13, color: INK3, fontFamily: sans }}>Б {r.protein}г</span>}
+                {r.fat != null && <span style={{ fontSize: 13, color: INK3, fontFamily: sans }}>Ж {r.fat}г</span>}
+                {r.carbs != null && <span style={{ fontSize: 13, color: INK3, fontFamily: sans }}>У {r.carbs}г</span>}
               </div>
             )}
           </div>
           {r.clubOnly && (
-            <div style={{ position: 'absolute', top: 12, left: 12, background: GOLD, color: W, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 8, letterSpacing: 0.5, zIndex: 2 }}>В КЛУБЕ</div>
+            <div style={{ position: 'absolute', top: 14, left: r.imageUrl ? 56 : 14, background: GOLD, color: W, fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 8, letterSpacing: 0.3, zIndex: 2 }}>В КЛУБЕ</div>
           )}
         </div>
       );})}

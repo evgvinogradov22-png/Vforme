@@ -11,5 +11,5 @@ export const OW    = '#F9F7F4';
 export const W     = '#FFFFFF';
 export const RED   = '#CC4444';
 export const REDBG = '#FFF0F0';
-export const sans  = "'Arial', sans-serif";
-export const serif = "'Georgia', serif";
+export const sans  = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif";
+export const serif = "'Georgia', 'Times New Roman', serif";
