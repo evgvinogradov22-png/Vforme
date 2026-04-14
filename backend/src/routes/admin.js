@@ -345,8 +345,8 @@ const Protocol = require('../models/Protocol');
 const ProtocolAccess = require('../models/ProtocolAccess');
 
 router.get('/protocols', A, async (req, res) => { res.json(await Protocol.findAll({ order: [['order','ASC']] })); });
-router.post('/protocols', A, async (req, res) => { try { const row = await Protocol.create(pick(req.body, ['title','desc','content','supplements','price','available','order','tags','coverImage','clubOnly'])); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json(row); } catch(e) { res.status(500).json({ error: e.message }); } });
-router.put('/protocols/:id', A, async (req, res) => { try { const f = pick(req.body, ['title','desc','content','supplements','price','available','order','tags','coverImage','clubOnly']); await Protocol.update(f, { where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.post('/protocols', A, async (req, res) => { try { const row = await Protocol.create(pick(req.body, ['title','description','desc','content','supplements','price','available','order','tags','coverImage','clubOnly'])); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json(row); } catch(e) { res.status(500).json({ error: e.message }); } });
+router.put('/protocols/:id', A, async (req, res) => { try { const f = pick(req.body, ['title','description','desc','content','supplements','price','available','order','tags','coverImage','clubOnly']); await Protocol.update(f, { where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 router.delete('/protocols/:id', A, async (req, res) => { try { await Protocol.destroy({ where: { id: req.params.id } }); broadcast({ type: 'data_updated', entity: 'protocols' }); res.json({ ok: true }); } catch(e) { res.status(500).json({ error: e.message }); } });
 
 // Открыть доступ к протоколу вручную
