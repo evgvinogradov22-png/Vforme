@@ -146,7 +146,8 @@ function RecipeModal({ recipe, onClose, onSave }) {
         }}>
           {uploadingImg ? 'Загружаем…' : (data.imageUrl ? '🔄 Заменить фото' : '📷 Загрузить фото')}
           <input type="file" accept="image/*" style={{ display: 'none' }}
-            onChange={e => uploadImage(e.target.files[0])} />
+            onClick={e => { e.target.value = ''; }}
+            onChange={e => { if (e.target.files[0]) uploadImage(e.target.files[0]); }} />
         </label>
         {data.imageUrl && (
           <button type="button" onClick={() => setData(d => ({ ...d, imageUrl: '' }))} style={{

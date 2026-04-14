@@ -30,7 +30,10 @@ const upload = multer({
 
 router.post('/image', auth, upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
+    if (!req.file) {
+      console.error('Upload: req.file пустой, headers:', req.headers['content-type']);
+      return res.status(400).json({ error: 'Файл не загружен' });
+    }
 
     const ext = path.extname(req.file.originalname).toLowerCase();
     const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
