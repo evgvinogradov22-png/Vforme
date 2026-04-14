@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { recipes as recipesApi } from '../api';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea, Table } from '../components/UI';
+import AiFillButton from '../components/AiFillButton';
 
 function RecipeModal({ recipe, onClose, onSave }) {
   const [data, setData] = useState(recipe || { title: '', cat: 'Завтрак', time: '', kcal: '', protein: '', fat: '', carbs: '', fact: '', dietTags: [], imageUrl: '' });
@@ -185,7 +186,10 @@ export default function Recipes({ flash }) {
           <div style={{ fontSize: 24, fontWeight: 700, color: C.ink }}>Рецепты</div>
           <div style={{ fontSize: 14, color: C.ink3, marginTop: 2 }}>{list.length} рецептов</div>
         </div>
-        <Btn onClick={() => setModal({})} variant="primary">+ Рецепт</Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <AiFillButton type="recipe" onFilled={(data) => setModal({ title: data.title, cat: data.cat, time: data.time, ingredients: (data.ingredients||[]).join('\n'), steps: (data.steps||[]).join('\n'), kcal: data.kcal, protein: data.protein, fat: data.fat, carbs: data.carbs, fact: data.fact, dietTags: data.dietTags, clubOnly: data.clubOnly })} />
+          <Btn onClick={() => setModal({})} variant="primary">+ Рецепт</Btn>
+        </div>
       </div>
 
       <Card style={{ padding: 0 }}>

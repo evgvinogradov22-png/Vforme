@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea, Badge } from '../components/UI';
 import RichEditor from '../components/RichEditor';
 import ImageUpload from '../components/ImageUpload';
+import AiFillButton from '../components/AiFillButton';
 
 const BASE = '/api';
 function getToken() { return localStorage.getItem('vforme_admin_token'); }
@@ -201,7 +202,10 @@ export default function Protocols({ flash }) {
           <div style={{ fontSize: 24, fontWeight: 700, color: C.ink }}>Протоколы</div>
           <div style={{ fontSize: 14, color: C.ink3, marginTop: 2 }}>{list.length} протоколов</div>
         </div>
-        <Btn onClick={() => setModal({})} variant="primary">+ Протокол</Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <AiFillButton type="protocol" onFilled={(data) => setModal({ ...data, title: data.title, description: data.description, content: data.content, tags: data.tags, clubOnly: data.clubOnly })} />
+          <Btn onClick={() => setModal({})} variant="primary">+ Протокол</Btn>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

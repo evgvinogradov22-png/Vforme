@@ -441,4 +441,104 @@ router.delete('/orders/:id', SA, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// AI заполнение — парсит текст и возвращает структурированные поля
+router.post('/ai-fill', A, async (req, res) => {
+  try {
+    const { type, text } = req.body; // type: 'protocol' | 'scheme' | 'recipe'
+    if (!text || !type) return res.status(400).json({ error: 'Нужны type и text' });
+
+    const prompts = {
+      protocol: `Ты нутрициолог. Из текста ниже создай структуру протокола здоровья.
+Верни JSON:
+{
+  "title": "название протокола",
+  "description": "описание 2-3 предложения",
+  "content": { "html": "<h2>...</h2><p>...</p>" },
+  "supplements": [{ "name": "название БАДа", "note": "когда и как принимать" }],
+  "tags": ["жкт", "иммунитет"],
+  "clubOnly": false
+}
+Контент в html должен быть красиво отформатирован с заголовками, списками, абзацами.
+Только JSON, без markdown обёртки.`,
+
+      scheme: `Ты нутрициолог. Из текста ниже создай схему приёма БАДов.
+Верни JSON:
+{
+  "title": "название схемы",
+  "desc": "описание 1-2 предложения",
+  "items": [{ "name": "название БАДа", "dose": "дозировка", "time": "когда принимать", "note": "примечание" }],
+  "tags": ["щитовидка", "энергия"],
+  "clubOnly": false
+}
+Только JSON, без markdown обёртки.`,
+
+      recipe: `Ты нутрициолог-повар. Из текста ниже создай рецепт.
+Верни JSON:
+{
+  "title": "название блюда",
+  "cat": "Завтрак" или "Обед" или "Ужин" или "Перекус" или "Десерт" или "Напиток",
+  "time": "время приготовления (напр. 30 мин)",
+  "ingredients": ["ингредиент 1 — 200 г", "ингредиент 2 — 1 шт"],
+  "steps": ["Шаг 1", "Шаг 2", "Шаг 3"],
+  "kcal": число,
+  "protein": число,
+  "fat": число,
+  "carbs": число,
+  "fact": "интересный факт о блюде 1-2 предложения",
+  "dietTags": ["без глютена", "высокобелковое"],
+  "clubOnly": false
+}
+Только JSON, без markdown обёртки.`,
+    };
+
+    const systemPrompt = prompts[type];
+    if (!systemPrompt) return res.status(400).json({ error: 'Неизвестный тип: ' + type });
+
+    const https = require('https');
+    const body = JSON.stringify({
+      model: 'anthropic/claude-sonnet-4.6',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: text },
+      ],
+      max_tokens: 2000,
+      temperature: 0.3,
+    });
+
+    const opts = {
+      hostname: 'openrouter.ai', path: '/api/v1/chat/completions', method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://app.nutrikris.ru',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    };
+
+    const raw = await new Promise((resolve, reject) => {
+      const r = https.request(opts, resp => {
+        resp.setEncoding('utf8');
+        let d = ''; resp.on('data', c => d += c); resp.on('end', () => resolve(d));
+      });
+      r.on('error', reject); r.write(body); r.end();
+    });
+
+    const data = JSON.parse(raw);
+    const aiText = data?.choices?.[0]?.message?.content;
+    if (!aiText) return res.status(502).json({ error: 'AI не ответил' });
+
+    let parsed;
+    try {
+      const cleaned = aiText.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+      const i = cleaned.indexOf('{'); const j = cleaned.lastIndexOf('}');
+      parsed = JSON.parse(cleaned.slice(i, j + 1));
+    } catch { return res.status(502).json({ error: 'AI вернул не JSON', raw: aiText }); }
+
+    res.json(parsed);
+  } catch (e) {
+    console.error('AI fill error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

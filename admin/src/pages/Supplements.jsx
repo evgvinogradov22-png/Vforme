@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { schemes as schemesApi, supplements as supplementsApi, programs as programsApi } from '../api';
 import { C, Spinner, Card, Btn, Modal, Input, Textarea } from '../components/UI';
 import ImageUpload from '../components/ImageUpload';
+import AiFillButton from '../components/AiFillButton';
 
 function SupplementModal({ supplement, schemeId, onClose, onSave }) {
   const [data, setData] = useState(supplement || { schemeId, name: '', brand: '', dose: '', time: '', note: '', buyUrl: '', image: '', order: 0 });
@@ -135,7 +136,10 @@ export default function Supplements({ flash }) {
           <div style={{ fontSize: 24, fontWeight: 700, color: C.ink }}>Схемы БАДов</div>
           <div style={{ fontSize: 14, color: C.ink3, marginTop: 2 }}>{schemeList.length} схем</div>
         </div>
-        <Btn onClick={() => setSchemeModal({})} variant="primary">+ Схема</Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <AiFillButton type="scheme" onFilled={(data) => setSchemeModal({ title: data.title, desc: data.desc, tags: data.tags, clubOnly: data.clubOnly, _aiItems: data.items })} />
+          <Btn onClick={() => setSchemeModal({})} variant="primary">+ Схема</Btn>
+        </div>
       </div>
 
       {schemeList.map(scheme => (

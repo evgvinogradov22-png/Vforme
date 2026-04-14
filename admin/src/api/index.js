@@ -87,6 +87,10 @@ export const supplements = {
   delete: (id) => req('DELETE', `/admin/supplements/${id}`),
 };
 
+export const ai = {
+  fill: (type, text) => req('POST', '/admin/ai-fill', { type, text }),
+};
+
 export const broadcast = {
   audience: () => req('GET', '/broadcast/audience'),
   segments: () => req('GET', '/broadcast/segments'),
