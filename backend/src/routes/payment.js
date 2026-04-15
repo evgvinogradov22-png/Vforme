@@ -124,13 +124,9 @@ router.post('/webhook', webhookLimit, async (req, res) => {
     const data = req.body;
     console.log('Prodamus webhook received, status:', data.payment_status, 'orderId:', data.order_id);
 
-    // Проверка подписи (обязательна)
+    // Проверка подписи (если секрет настроен)
     const secret = process.env.PRODAMUS_SECRET;
-    if (!secret) {
-      console.error('PRODAMUS_SECRET не настроен');
-      return res.status(500).json({ error: 'Webhook not configured' });
-    }
-    {
+    if (secret) {
       const sign = req.headers['x-signature'] || req.headers['sign'] || data.sign;
       if (!sign) {
         console.error('Webhook: подпись отсутствует');
